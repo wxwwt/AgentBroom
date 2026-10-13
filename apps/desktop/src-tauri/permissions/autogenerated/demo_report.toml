@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-demo-report"
+description = "Enables the demo_report command without any pre-configured scope."
+commands.allow = ["demo_report"]
+
+[[permission]]
+identifier = "deny-demo-report"
+description = "Denies the demo_report command without any pre-configured scope."
+commands.deny = ["demo_report"]

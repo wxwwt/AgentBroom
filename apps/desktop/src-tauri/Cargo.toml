@@ -1,0 +1,17 @@
+[package]
+name = "agentbroom-desktop"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "agentbroom_desktop"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+agentbroom-core = { path = "../../../crates/core" }
+serde_json.workspace = true

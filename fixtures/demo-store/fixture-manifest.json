@@ -1,0 +1,58 @@
+{
+  "kind": "agentbroom-synthetic-fixture",
+  "schemaVersion": 1,
+  "files": [
+    {
+      "path": "sessions/atlas-1.jsonl",
+      "category": "sessions"
+    },
+    {
+      "path": "sessions/atlas-2.jsonl",
+      "category": "sessions"
+    },
+    {
+      "path": "sessions/atlas-helper.jsonl",
+      "category": "sessions"
+    },
+    {
+      "path": "sessions/atlas-fork.jsonl",
+      "category": "sessions"
+    },
+    {
+      "path": "sessions/orbit.jsonl",
+      "category": "sessions"
+    },
+    {
+      "path": "sessions/orbit-tests.jsonl",
+      "category": "sessions"
+    },
+    {
+      "path": "sessions/sprout.jsonl",
+      "category": "sessions"
+    },
+    {
+      "path": "archives/notebook.jsonl",
+      "category": "archives"
+    },
+    {
+      "path": "sessions/oversized-header.jsonl",
+      "category": "sessions"
+    },
+    {
+      "path": "archives/compressed.jsonl.zst",
+      "category": "archives"
+    },
+    {
+      "path": "thread_history_1.sqlite",
+      "category": "history"
+    },
+    {
+      "path": "logs_1.sqlite-wal",
+      "category": "logs"
+    },
+    {
+      "path": "generated_assets/sample.txt",
+      "category": "assets"
+    }
+  ]
+}

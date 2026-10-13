@@ -1,0 +1,14 @@
+/node_modules/
+/target/
+**/dist/
+**/.vite/
+**/node_modules/
+**/src-tauri/gen/
+.DS_Store
+*.log
+.env
+.env.*
+!/.env.example
+coverage/
+/artifacts/
+/work/

@@ -1,0 +1,810 @@
+{
+  "inventory": {
+    "schemaVersion": 1,
+    "sourceKind": "demo",
+    "datasetLabel": "Bundled synthetic demo store",
+    "sourceFingerprint": "2bea7f403fe0081ebafe82bc43fdc4d329425aa28c60ff44828aefe21a01ba64",
+    "items": [
+      {
+        "key": "sessions/atlas-1.jsonl",
+        "category": "sessions",
+        "logicalBytes": 102903,
+        "allocatedBytes": 106496
+      },
+      {
+        "key": "sessions/atlas-2.jsonl",
+        "category": "sessions",
+        "logicalBytes": 51603,
+        "allocatedBytes": 53248
+      },
+      {
+        "key": "sessions/atlas-helper.jsonl",
+        "category": "sessions",
+        "logicalBytes": 28829,
+        "allocatedBytes": 32768
+      },
+      {
+        "key": "sessions/atlas-fork.jsonl",
+        "category": "sessions",
+        "logicalBytes": 63023,
+        "allocatedBytes": 65536
+      },
+      {
+        "key": "sessions/orbit.jsonl",
+        "category": "sessions",
+        "logicalBytes": 85798,
+        "allocatedBytes": 86016
+      },
+      {
+        "key": "sessions/orbit-tests.jsonl",
+        "category": "sessions",
+        "logicalBytes": 37373,
+        "allocatedBytes": 40960
+      },
+      {
+        "key": "sessions/sprout.jsonl",
+        "category": "sessions",
+        "logicalBytes": 68705,
+        "allocatedBytes": 69632
+      },
+      {
+        "key": "archives/notebook.jsonl",
+        "category": "archives",
+        "logicalBytes": 34512,
+        "allocatedBytes": 36864
+      },
+      {
+        "key": "sessions/oversized-header.jsonl",
+        "category": "sessions",
+        "logicalBytes": 70001,
+        "allocatedBytes": 73728
+      },
+      {
+        "key": "archives/compressed.jsonl.zst",
+        "category": "archives",
+        "logicalBytes": 5580,
+        "allocatedBytes": 8192
+      },
+      {
+        "key": "thread_history_1.sqlite",
+        "category": "history",
+        "logicalBytes": 55500,
+        "allocatedBytes": 57344
+      },
+      {
+        "key": "logs_1.sqlite-wal",
+        "category": "logs",
+        "logicalBytes": 19000,
+        "allocatedBytes": 20480
+      },
+      {
+        "key": "generated_assets/sample.txt",
+        "category": "assets",
+        "logicalBytes": 19740,
+        "allocatedBytes": 20480
+      }
+    ],
+    "threads": [
+      {
+        "id": "demo-atlas",
+        "title": "Build the Atlas dashboard",
+        "project": "atlas-web",
+        "relation": "root",
+        "activity": "completed",
+        "updatedAt": "2026-10-08T09:30:00Z",
+        "parentId": null,
+        "sharedHistoryFrom": null,
+        "files": [
+          "sessions/atlas-1.jsonl",
+          "sessions/atlas-2.jsonl"
+        ],
+        "segmentIds": [
+          "segment-atlas-1",
+          "segment-atlas-2"
+        ],
+        "ownBytes": 154506,
+        "inclusiveBytes": 183335,
+        "ownedDescendantIds": [
+          "demo-atlas-helper"
+        ],
+        "protectionReasons": [
+          "Referenced by an independent fork"
+        ]
+      },
+      {
+        "id": "demo-atlas-fork",
+        "title": "Explore an alternative layout",
+        "project": "atlas-web",
+        "relation": "fork",
+        "activity": "completed",
+        "updatedAt": "2026-10-08T09:30:00Z",
+        "parentId": null,
+        "sharedHistoryFrom": "demo-atlas",
+        "files": [
+          "sessions/atlas-fork.jsonl"
+        ],
+        "segmentIds": [
+          "segment-atlas-fork"
+        ],
+        "ownBytes": 63023,
+        "inclusiveBytes": 63023,
+        "ownedDescendantIds": [],
+        "protectionReasons": []
+      },
+      {
+        "id": "demo-atlas-helper",
+        "title": "Inspect dashboard components",
+        "project": "atlas-web",
+        "relation": "spawned",
+        "activity": "completed",
+        "updatedAt": "2026-10-08T09:30:00Z",
+        "parentId": "demo-atlas",
+        "sharedHistoryFrom": null,
+        "files": [
+          "sessions/atlas-helper.jsonl"
+        ],
+        "segmentIds": [
+          "segment-atlas-helper"
+        ],
+        "ownBytes": 28829,
+        "inclusiveBytes": 28829,
+        "ownedDescendantIds": [],
+        "protectionReasons": []
+      },
+      {
+        "id": "demo-notebook",
+        "title": "Summarize a sample investigation",
+        "project": "notebook",
+        "relation": "root",
+        "activity": "archived",
+        "updatedAt": "2026-10-08T09:30:00Z",
+        "parentId": null,
+        "sharedHistoryFrom": null,
+        "files": [
+          "archives/notebook.jsonl"
+        ],
+        "segmentIds": [
+          "segment-notebook"
+        ],
+        "ownBytes": 34512,
+        "inclusiveBytes": 34512,
+        "ownedDescendantIds": [],
+        "protectionReasons": []
+      },
+      {
+        "id": "demo-orbit",
+        "title": "Refactor the Orbit API",
+        "project": "orbit-api",
+        "relation": "root",
+        "activity": "completed",
+        "updatedAt": "2026-10-08T09:30:00Z",
+        "parentId": null,
+        "sharedHistoryFrom": null,
+        "files": [
+          "sessions/orbit.jsonl"
+        ],
+        "segmentIds": [
+          "segment-orbit"
+        ],
+        "ownBytes": 85798,
+        "inclusiveBytes": 123171,
+        "ownedDescendantIds": [
+          "demo-orbit-tests"
+        ],
+        "protectionReasons": []
+      },
+      {
+        "id": "demo-orbit-tests",
+        "title": "Review API test coverage",
+        "project": "orbit-api",
+        "relation": "spawned",
+        "activity": "completed",
+        "updatedAt": "2026-10-08T09:30:00Z",
+        "parentId": "demo-orbit",
+        "sharedHistoryFrom": null,
+        "files": [
+          "sessions/orbit-tests.jsonl"
+        ],
+        "segmentIds": [
+          "segment-orbit-tests"
+        ],
+        "ownBytes": 37373,
+        "inclusiveBytes": 37373,
+        "ownedDescendantIds": [],
+        "protectionReasons": []
+      },
+      {
+        "id": "demo-sprout",
+        "title": "Ship the Sprout landing page",
+        "project": "sprout-site",
+        "relation": "root",
+        "activity": "active",
+        "updatedAt": "2026-10-08T09:30:00Z",
+        "parentId": null,
+        "sharedHistoryFrom": null,
+        "files": [
+          "sessions/sprout.jsonl"
+        ],
+        "segmentIds": [
+          "segment-sprout"
+        ],
+        "ownBytes": 68705,
+        "inclusiveBytes": 68705,
+        "ownedDescendantIds": [],
+        "protectionReasons": [
+          "Active conversation"
+        ]
+      },
+      {
+        "id": "unknown:archives/compressed.jsonl.zst",
+        "title": "Unresolved sample record",
+        "project": "Unclassified",
+        "relation": "unknown",
+        "activity": "unknown",
+        "updatedAt": "",
+        "parentId": null,
+        "sharedHistoryFrom": null,
+        "files": [
+          "archives/compressed.jsonl.zst"
+        ],
+        "segmentIds": [],
+        "ownBytes": 5580,
+        "inclusiveBytes": 5580,
+        "ownedDescendantIds": [],
+        "protectionReasons": [
+          "Compressed sample content was not inspected.",
+          "Incomplete relationship metadata"
+        ]
+      },
+      {
+        "id": "unknown:sessions/oversized-header.jsonl",
+        "title": "Unresolved sample record",
+        "project": "Unclassified",
+        "relation": "unknown",
+        "activity": "unknown",
+        "updatedAt": "",
+        "parentId": null,
+        "sharedHistoryFrom": null,
+        "files": [
+          "sessions/oversized-header.jsonl"
+        ],
+        "segmentIds": [],
+        "ownBytes": 70001,
+        "inclusiveBytes": 70001,
+        "ownedDescendantIds": [],
+        "protectionReasons": [
+          "Header exceeds the bounded metadata budget.",
+          "Incomplete relationship metadata"
+        ]
+      }
+    ],
+    "totals": [
+      {
+        "category": "sessions",
+        "logicalBytes": 508235,
+        "allocatedBytes": 528384,
+        "files": 8
+      },
+      {
+        "category": "archives",
+        "logicalBytes": 40092,
+        "allocatedBytes": 45056,
+        "files": 2
+      },
+      {
+        "category": "history",
+        "logicalBytes": 55500,
+        "allocatedBytes": 57344,
+        "files": 1
+      },
+      {
+        "category": "logs",
+        "logicalBytes": 19000,
+        "allocatedBytes": 20480,
+        "files": 1
+      },
+      {
+        "category": "assets",
+        "logicalBytes": 19740,
+        "allocatedBytes": 20480,
+        "files": 1
+      }
+    ],
+    "warnings": [
+      "sessions/oversized-header.jsonl: Header exceeds the bounded metadata budget.",
+      "archives/compressed.jsonl.zst: Compressed sample content was not inspected."
+    ],
+    "executionEnabled": false
+  },
+  "previews": {
+    "[\"demo-atlas-fork\",\"demo-notebook\",\"demo-orbit\"]": {
+      "schemaVersion": 1,
+      "sourceKind": "demo",
+      "sourceFingerprint": "2bea7f403fe0081ebafe82bc43fdc4d329425aa28c60ff44828aefe21a01ba64",
+      "selectedIds": [
+        "demo-atlas-fork",
+        "demo-notebook",
+        "demo-orbit"
+      ],
+      "affectedIds": [
+        "demo-atlas-fork",
+        "demo-notebook",
+        "demo-orbit",
+        "demo-orbit-tests"
+      ],
+      "rows": [
+        {
+          "id": "demo-atlas-fork",
+          "title": "Explore an alternative layout",
+          "project": "atlas-web",
+          "relation": "fork",
+          "activity": "completed",
+          "updatedAt": "2026-10-08T09:30:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": "demo-atlas",
+          "files": [
+            "sessions/atlas-fork.jsonl"
+          ],
+          "segmentIds": [
+            "segment-atlas-fork"
+          ],
+          "ownBytes": 63023,
+          "inclusiveBytes": 63023,
+          "ownedDescendantIds": [],
+          "protectionReasons": []
+        },
+        {
+          "id": "demo-notebook",
+          "title": "Summarize a sample investigation",
+          "project": "notebook",
+          "relation": "root",
+          "activity": "archived",
+          "updatedAt": "2026-10-08T09:30:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "archives/notebook.jsonl"
+          ],
+          "segmentIds": [
+            "segment-notebook"
+          ],
+          "ownBytes": 34512,
+          "inclusiveBytes": 34512,
+          "ownedDescendantIds": [],
+          "protectionReasons": []
+        },
+        {
+          "id": "demo-orbit",
+          "title": "Refactor the Orbit API",
+          "project": "orbit-api",
+          "relation": "root",
+          "activity": "completed",
+          "updatedAt": "2026-10-08T09:30:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/orbit.jsonl"
+          ],
+          "segmentIds": [
+            "segment-orbit"
+          ],
+          "ownBytes": 85798,
+          "inclusiveBytes": 123171,
+          "ownedDescendantIds": [
+            "demo-orbit-tests"
+          ],
+          "protectionReasons": []
+        },
+        {
+          "id": "demo-orbit-tests",
+          "title": "Review API test coverage",
+          "project": "orbit-api",
+          "relation": "spawned",
+          "activity": "completed",
+          "updatedAt": "2026-10-08T09:30:00Z",
+          "parentId": "demo-orbit",
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/orbit-tests.jsonl"
+          ],
+          "segmentIds": [
+            "segment-orbit-tests"
+          ],
+          "ownBytes": 37373,
+          "inclusiveBytes": 37373,
+          "ownedDescendantIds": [],
+          "protectionReasons": []
+        }
+      ],
+      "logicalBytes": 220706,
+      "executionEnabled": false,
+      "notices": [
+        "Inspection only. No deletion is available.",
+        "These bytes describe synthetic files, not recoverable or freed space."
+      ]
+    },
+    "[\"demo-atlas-fork\",\"demo-notebook\"]": {
+      "schemaVersion": 1,
+      "sourceKind": "demo",
+      "sourceFingerprint": "2bea7f403fe0081ebafe82bc43fdc4d329425aa28c60ff44828aefe21a01ba64",
+      "selectedIds": [
+        "demo-atlas-fork",
+        "demo-notebook"
+      ],
+      "affectedIds": [
+        "demo-atlas-fork",
+        "demo-notebook"
+      ],
+      "rows": [
+        {
+          "id": "demo-atlas-fork",
+          "title": "Explore an alternative layout",
+          "project": "atlas-web",
+          "relation": "fork",
+          "activity": "completed",
+          "updatedAt": "2026-10-08T09:30:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": "demo-atlas",
+          "files": [
+            "sessions/atlas-fork.jsonl"
+          ],
+          "segmentIds": [
+            "segment-atlas-fork"
+          ],
+          "ownBytes": 63023,
+          "inclusiveBytes": 63023,
+          "ownedDescendantIds": [],
+          "protectionReasons": []
+        },
+        {
+          "id": "demo-notebook",
+          "title": "Summarize a sample investigation",
+          "project": "notebook",
+          "relation": "root",
+          "activity": "archived",
+          "updatedAt": "2026-10-08T09:30:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "archives/notebook.jsonl"
+          ],
+          "segmentIds": [
+            "segment-notebook"
+          ],
+          "ownBytes": 34512,
+          "inclusiveBytes": 34512,
+          "ownedDescendantIds": [],
+          "protectionReasons": []
+        }
+      ],
+      "logicalBytes": 97535,
+      "executionEnabled": false,
+      "notices": [
+        "Inspection only. No deletion is available.",
+        "These bytes describe synthetic files, not recoverable or freed space."
+      ]
+    },
+    "[\"demo-atlas-fork\",\"demo-orbit\"]": {
+      "schemaVersion": 1,
+      "sourceKind": "demo",
+      "sourceFingerprint": "2bea7f403fe0081ebafe82bc43fdc4d329425aa28c60ff44828aefe21a01ba64",
+      "selectedIds": [
+        "demo-atlas-fork",
+        "demo-orbit"
+      ],
+      "affectedIds": [
+        "demo-atlas-fork",
+        "demo-orbit",
+        "demo-orbit-tests"
+      ],
+      "rows": [
+        {
+          "id": "demo-atlas-fork",
+          "title": "Explore an alternative layout",
+          "project": "atlas-web",
+          "relation": "fork",
+          "activity": "completed",
+          "updatedAt": "2026-10-08T09:30:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": "demo-atlas",
+          "files": [
+            "sessions/atlas-fork.jsonl"
+          ],
+          "segmentIds": [
+            "segment-atlas-fork"
+          ],
+          "ownBytes": 63023,
+          "inclusiveBytes": 63023,
+          "ownedDescendantIds": [],
+          "protectionReasons": []
+        },
+        {
+          "id": "demo-orbit",
+          "title": "Refactor the Orbit API",
+          "project": "orbit-api",
+          "relation": "root",
+          "activity": "completed",
+          "updatedAt": "2026-10-08T09:30:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/orbit.jsonl"
+          ],
+          "segmentIds": [
+            "segment-orbit"
+          ],
+          "ownBytes": 85798,
+          "inclusiveBytes": 123171,
+          "ownedDescendantIds": [
+            "demo-orbit-tests"
+          ],
+          "protectionReasons": []
+        },
+        {
+          "id": "demo-orbit-tests",
+          "title": "Review API test coverage",
+          "project": "orbit-api",
+          "relation": "spawned",
+          "activity": "completed",
+          "updatedAt": "2026-10-08T09:30:00Z",
+          "parentId": "demo-orbit",
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/orbit-tests.jsonl"
+          ],
+          "segmentIds": [
+            "segment-orbit-tests"
+          ],
+          "ownBytes": 37373,
+          "inclusiveBytes": 37373,
+          "ownedDescendantIds": [],
+          "protectionReasons": []
+        }
+      ],
+      "logicalBytes": 186194,
+      "executionEnabled": false,
+      "notices": [
+        "Inspection only. No deletion is available.",
+        "These bytes describe synthetic files, not recoverable or freed space."
+      ]
+    },
+    "[\"demo-atlas-fork\"]": {
+      "schemaVersion": 1,
+      "sourceKind": "demo",
+      "sourceFingerprint": "2bea7f403fe0081ebafe82bc43fdc4d329425aa28c60ff44828aefe21a01ba64",
+      "selectedIds": [
+        "demo-atlas-fork"
+      ],
+      "affectedIds": [
+        "demo-atlas-fork"
+      ],
+      "rows": [
+        {
+          "id": "demo-atlas-fork",
+          "title": "Explore an alternative layout",
+          "project": "atlas-web",
+          "relation": "fork",
+          "activity": "completed",
+          "updatedAt": "2026-10-08T09:30:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": "demo-atlas",
+          "files": [
+            "sessions/atlas-fork.jsonl"
+          ],
+          "segmentIds": [
+            "segment-atlas-fork"
+          ],
+          "ownBytes": 63023,
+          "inclusiveBytes": 63023,
+          "ownedDescendantIds": [],
+          "protectionReasons": []
+        }
+      ],
+      "logicalBytes": 63023,
+      "executionEnabled": false,
+      "notices": [
+        "Inspection only. No deletion is available.",
+        "These bytes describe synthetic files, not recoverable or freed space."
+      ]
+    },
+    "[\"demo-notebook\",\"demo-orbit\"]": {
+      "schemaVersion": 1,
+      "sourceKind": "demo",
+      "sourceFingerprint": "2bea7f403fe0081ebafe82bc43fdc4d329425aa28c60ff44828aefe21a01ba64",
+      "selectedIds": [
+        "demo-notebook",
+        "demo-orbit"
+      ],
+      "affectedIds": [
+        "demo-notebook",
+        "demo-orbit",
+        "demo-orbit-tests"
+      ],
+      "rows": [
+        {
+          "id": "demo-notebook",
+          "title": "Summarize a sample investigation",
+          "project": "notebook",
+          "relation": "root",
+          "activity": "archived",
+          "updatedAt": "2026-10-08T09:30:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "archives/notebook.jsonl"
+          ],
+          "segmentIds": [
+            "segment-notebook"
+          ],
+          "ownBytes": 34512,
+          "inclusiveBytes": 34512,
+          "ownedDescendantIds": [],
+          "protectionReasons": []
+        },
+        {
+          "id": "demo-orbit",
+          "title": "Refactor the Orbit API",
+          "project": "orbit-api",
+          "relation": "root",
+          "activity": "completed",
+          "updatedAt": "2026-10-08T09:30:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/orbit.jsonl"
+          ],
+          "segmentIds": [
+            "segment-orbit"
+          ],
+          "ownBytes": 85798,
+          "inclusiveBytes": 123171,
+          "ownedDescendantIds": [
+            "demo-orbit-tests"
+          ],
+          "protectionReasons": []
+        },
+        {
+          "id": "demo-orbit-tests",
+          "title": "Review API test coverage",
+          "project": "orbit-api",
+          "relation": "spawned",
+          "activity": "completed",
+          "updatedAt": "2026-10-08T09:30:00Z",
+          "parentId": "demo-orbit",
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/orbit-tests.jsonl"
+          ],
+          "segmentIds": [
+            "segment-orbit-tests"
+          ],
+          "ownBytes": 37373,
+          "inclusiveBytes": 37373,
+          "ownedDescendantIds": [],
+          "protectionReasons": []
+        }
+      ],
+      "logicalBytes": 157683,
+      "executionEnabled": false,
+      "notices": [
+        "Inspection only. No deletion is available.",
+        "These bytes describe synthetic files, not recoverable or freed space."
+      ]
+    },
+    "[\"demo-notebook\"]": {
+      "schemaVersion": 1,
+      "sourceKind": "demo",
+      "sourceFingerprint": "2bea7f403fe0081ebafe82bc43fdc4d329425aa28c60ff44828aefe21a01ba64",
+      "selectedIds": [
+        "demo-notebook"
+      ],
+      "affectedIds": [
+        "demo-notebook"
+      ],
+      "rows": [
+        {
+          "id": "demo-notebook",
+          "title": "Summarize a sample investigation",
+          "project": "notebook",
+          "relation": "root",
+          "activity": "archived",
+          "updatedAt": "2026-10-08T09:30:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "archives/notebook.jsonl"
+          ],
+          "segmentIds": [
+            "segment-notebook"
+          ],
+          "ownBytes": 34512,
+          "inclusiveBytes": 34512,
+          "ownedDescendantIds": [],
+          "protectionReasons": []
+        }
+      ],
+      "logicalBytes": 34512,
+      "executionEnabled": false,
+      "notices": [
+        "Inspection only. No deletion is available.",
+        "These bytes describe synthetic files, not recoverable or freed space."
+      ]
+    },
+    "[\"demo-orbit\"]": {
+      "schemaVersion": 1,
+      "sourceKind": "demo",
+      "sourceFingerprint": "2bea7f403fe0081ebafe82bc43fdc4d329425aa28c60ff44828aefe21a01ba64",
+      "selectedIds": [
+        "demo-orbit"
+      ],
+      "affectedIds": [
+        "demo-orbit",
+        "demo-orbit-tests"
+      ],
+      "rows": [
+        {
+          "id": "demo-orbit",
+          "title": "Refactor the Orbit API",
+          "project": "orbit-api",
+          "relation": "root",
+          "activity": "completed",
+          "updatedAt": "2026-10-08T09:30:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/orbit.jsonl"
+          ],
+          "segmentIds": [
+            "segment-orbit"
+          ],
+          "ownBytes": 85798,
+          "inclusiveBytes": 123171,
+          "ownedDescendantIds": [
+            "demo-orbit-tests"
+          ],
+          "protectionReasons": []
+        },
+        {
+          "id": "demo-orbit-tests",
+          "title": "Review API test coverage",
+          "project": "orbit-api",
+          "relation": "spawned",
+          "activity": "completed",
+          "updatedAt": "2026-10-08T09:30:00Z",
+          "parentId": "demo-orbit",
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/orbit-tests.jsonl"
+          ],
+          "segmentIds": [
+            "segment-orbit-tests"
+          ],
+          "ownBytes": 37373,
+          "inclusiveBytes": 37373,
+          "ownedDescendantIds": [],
+          "protectionReasons": []
+        }
+      ],
+      "logicalBytes": 123171,
+      "executionEnabled": false,
+      "notices": [
+        "Inspection only. No deletion is available.",
+        "These bytes describe synthetic files, not recoverable or freed space."
+      ]
+    },
+    "[]": {
+      "schemaVersion": 1,
+      "sourceKind": "demo",
+      "sourceFingerprint": "2bea7f403fe0081ebafe82bc43fdc4d329425aa28c60ff44828aefe21a01ba64",
+      "selectedIds": [],
+      "affectedIds": [],
+      "rows": [],
+      "logicalBytes": 0,
+      "executionEnabled": false,
+      "notices": [
+        "Inspection only. No deletion is available.",
+        "These bytes describe synthetic files, not recoverable or freed space."
+      ]
+    }
+  }
+}
