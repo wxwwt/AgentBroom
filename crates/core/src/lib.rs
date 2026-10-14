@@ -662,3 +662,5 @@ pub fn web_catalog(inventory: Inventory) -> Result<WebCatalog, InspectError> {
 pub mod cleanup;
 #[cfg(feature = "synthetic-cleanup")]
 pub mod synthetic_cleanup;
+
+pub mod native_scope;

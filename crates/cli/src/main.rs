@@ -15,6 +15,8 @@ enum Command {
     Scan,
     /// Aggregate-only real inventory; never prints titles, IDs or paths.
     CodexSummary,
+    /// Local read-only cleanup analysis. Output may contain private metadata.
+    CleanupScope { ids: Vec<String> },
     /// Development-only synthetic fixture commands; never used by the app.
     #[command(hide = true)]
     Fixtures {
@@ -29,6 +31,7 @@ enum FixtureCommand {
     Verify,
     WebCatalog,
     CleanupCatalog,
+    NativeScope,
 }
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
@@ -36,6 +39,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!(
             "{}",
             serde_json::to_string(&agentbroom_core::codex::scan_default()?)?
+        );
+        return Ok(());
+    }
+    if let Command::CleanupScope { ref ids } = args.command {
+        let inventory = agentbroom_core::codex::scan_default()?;
+        let analysis = agentbroom_core::cleanup::plan(&inventory, ids, &[])?;
+        println!(
+            "{}",
+            serde_json::to_string(&serde_json::json!({
+                "inventoryPartial": inventory.partial_coverage,
+                "analysis": analysis
+            }))?
         );
         return Ok(());
     }
@@ -54,6 +69,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let Command::Fixtures { command } = args.command else {
         unreachable!()
     };
+    if matches!(command, FixtureCommand::NativeScope) {
+        use std::io::Read;
+        let mut input = Vec::new();
+        std::io::stdin().take(65537).read_to_end(&mut input)?;
+        if input.len() > 65536 {
+            return Err("Native evidence exceeds budget".into());
+        }
+        let evidence: agentbroom_core::native_scope::NativeScopeEvidence =
+            serde_json::from_slice(&input)?;
+        println!(
+            "{}",
+            serde_json::to_string(&agentbroom_core::native_scope::assess(&evidence))?
+        );
+        return Ok(());
+    }
     if matches!(command, FixtureCommand::CleanupCatalog) {
         let cases: serde_json::Value =
             serde_json::from_str(include_str!("../../../fixtures/cleanup-cases.json"))?;
@@ -84,7 +114,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             &[],
             &inventory.source_fingerprint,
         )?)?,
-        FixtureCommand::CleanupCatalog => unreachable!(),
+        FixtureCommand::CleanupCatalog | FixtureCommand::NativeScope => unreachable!(),
         FixtureCommand::WebCatalog => serde_json::to_string_pretty(&web_catalog(inventory)?)?,
     };
     println!("{json}");

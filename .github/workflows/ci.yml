@@ -16,5 +16,23 @@ jobs:
       - run: cargo test --locked -p agentbroom-core -p agentbroom-cli
       - run: cargo test --locked -p agentbroom-core --features synthetic-cleanup
       - run: npm run test:fixtures
+      - run: npm run test:native-helper
       - run: npm test
       - run: npm run build
+
+  native-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --locked -p agentbroom-cli
+      - name: Install isolated official native test runtime
+        run: npm install --prefix "$RUNNER_TEMP/agentbroom-codex" --ignore-scripts --no-audit --no-fund --save-exact @openai/codex@0.162.1
+      - name: Run native contracts on generated data only
+        env:
+          AGENTBROOM_TEST_CODEX_BIN: ${{ runner.temp }}/agentbroom-codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex
+        run: python3 scripts/native_codex_contract.py

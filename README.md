@@ -35,6 +35,7 @@ npm run desktop:dev      # native Tauri app
 
 ```sh
 npm test
+npm run test:native-helper
 npm run build
 npm run desktop:build
 cargo run -p agentbroom-cli -- codex-summary # real aggregate counts/sizes only
@@ -43,6 +44,17 @@ cargo run -p agentbroom-cli -- codex-summary # real aggregate counts/sizes only
 The localhost development UI uses a loopback-only, same-origin endpoint backed by the same Rust CLI scanner. It does not fall back to synthetic data. The native application uses `scan_codex` IPC and does not host HTTP. Both automatically inspect real metadata on startup. Synthetic fixture generation is for tests only; fixtures are not bundled into the app.
 
 Choose either the browser or native development command; stop the browser development server before starting native development, as both use port 1420. Rust `cargo` must be available on PATH. Static web builds require the local read-only development bridge or the native app; there is no remote inventory service.
+
+## Native contract tests
+
+Developer-only native integration tests use the official Codex CLI 0.162.1 executable. They create a fresh private HOME/CODEX_HOME and synthetic rollouts/database, then test native deletion, spawned descendants, independent/copied forks, external shared history, multiple segments, writer conflicts and mismatched scopes. They never accept an existing data root and never fall back to your global CLI. Python 3 is needed only for these tests; it is not part of the desktop runtime.
+
+```sh
+cargo build --locked -p agentbroom-cli
+AGENTBROOM_TEST_CODEX_BIN=/path/to/official-0.162.1/codex npm run test:native
+```
+
+The `cleanup-scope <logical-id>...` CLI command is a local, read-only analysis using the shared Rust planner; its output can contain private metadata and must not be published. Comparing observed/native logical-ID sets is evidence only, never permission to delete. Production `cleanup_execute` remains locked. These tests do not establish safety for a live store, complete auxiliary-database effects, atomic scope checks, recovery or reclaimed disk space.
 
 ## Documentation
 

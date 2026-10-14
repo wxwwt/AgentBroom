@@ -15,7 +15,9 @@
     "desktop:build": "cd apps/desktop && tauri build --bundles app",
     "fixtures:generate": "node scripts/generate-demo.mjs",
     "tauri": "tauri",
-    "test:fixtures": "node scripts/generate-catalog.mjs"
+    "test:fixtures": "node scripts/generate-catalog.mjs",
+    "test:native": "python3 scripts/native_codex_contract.py",
+    "test:native-helper": "python3 -m unittest discover -s scripts -p native_codex_contract_test.py"
   },
   "dependencies": {
     "react": "19.3.0",

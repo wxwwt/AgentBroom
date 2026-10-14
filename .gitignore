@@ -15,3 +15,7 @@ coverage/
 
 # Internal design, research, review and verification notes are local-only.
 /docs/
+
+# Python is used only by the isolated native contract tests.
+**/__pycache__/
+*.py[cod]
