@@ -18,7 +18,7 @@ AgentBroom is an early, local-first desktop inspection prototype for coding-agen
 - Cleanup review candidates, observed main/spawn scope, retained records, outside dependencies and explicit blocking reasons.
 - Tauri desktop and an internal CLI sharing one Rust core.
 
-Real Codex deletion, database reclamation, compression and recovery are **not implemented**. A feature-gated developer harness really deletes backend-generated synthetic files, updates synthetic JSON state, and verifies removed and preserved objects; it has no path/real-store constructor and is absent from default desktop builds. See the [roadmap](docs/roadmap.md) for the gates those capabilities would need.
+Real Codex deletion, database reclamation, compression and recovery are **not implemented**. A feature-gated developer harness really deletes backend-generated synthetic files, updates synthetic JSON state, and verifies removed and preserved objects; it has no path/real-store constructor and is absent from default desktop builds.
 
 ## Development
 
@@ -44,17 +44,9 @@ The localhost development UI uses a loopback-only, same-origin endpoint backed b
 
 Choose either the browser or native development command; stop the browser development server before starting native development, as both use port 1420. Rust `cargo` must be available on PATH. Static web builds require the local read-only development bridge or the native app; there is no remote inventory service.
 
-## Design
+## Documentation
 
-- [Cleanup detailed design](docs/cleanup-design.md), [two Cursor design reviews](docs/cleanup-review.md), [synthetic test plan](docs/cleanup-test-plan.md)
-- [Live-only startup and verification](docs/live-use.md)
-- [Codex read-only adapter design and limits](docs/codex-readonly-design.md)
-- [Original demo detailed design and IPC boundaries](docs/detail-design.md)
-- [Verification plan](docs/test-plan.md)
-- [Observed verification](docs/verification.md)
-- [Language settings and validation](docs/i18n.md)
-- [Public search evidence for additional languages](docs/language-search-research.md)
-- [Roadmap](docs/roadmap.md)
+Public usage, development and security guidance is kept in this README, [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md). Internal designs, research, review reports and verification notes are local-only under `docs/`, excluded from Git and not distributed with this repository.
 
 ## Contributing
 

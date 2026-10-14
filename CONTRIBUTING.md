@@ -10,3 +10,7 @@ AgentBroom is at the read-only inventory + cleanup preview + isolated synthetic 
 6. Discuss expansion of real-store inspection or writable features first; they need separate version-bound contracts and isolated evidence.
 
 Contributions to the UI, accessibility, documentation and fixture coverage are welcome.
+
+## Documentation publication boundary
+
+Keep internal design proposals, research, review reports and verification notes in the local `docs/` directory. This directory is ignored by Git. Do not force-add it, copy its contents into tracked files, or publish it in pull request bodies, comments, releases or external review packages without explicit user authorization. Public usage and contribution/security guidance belongs in the root README, CONTRIBUTING and SECURITY files.

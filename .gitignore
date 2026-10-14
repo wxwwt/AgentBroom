@@ -12,3 +12,6 @@
 coverage/
 /artifacts/
 /work/
+
+# Internal design, research, review and verification notes are local-only.
+/docs/

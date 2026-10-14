@@ -22,12 +22,12 @@ npm run dev
 npm run desktop:dev
 ```
 
-[清理详细方案](docs/cleanup-design.md) · [两位 Cursor 审核](docs/cleanup-review.md) · [合成测试计划](docs/cleanup-test-plan.md) · [启动与验证](docs/live-use.md) · [详细设计](docs/detail-design.md) · [验证结果](docs/verification.md) · [路线图](docs/roadmap.md) · [贡献说明](CONTRIBUTING.md)
+[贡献说明](CONTRIBUTING.md) · [安全说明](SECURITY.md)
 
 欢迎贡献界面、无障碍、文档和合成测试。请勿在公开 issue 中上传真实对话、路径或凭据。MIT 开源。开发者 synthetic-cleanup feature 已实现合成文件实际删除、JSON 状态更新和双向结果验证；默认桌面构建不包含该删除器，不接收真实目录。原生 Codex 删除、数据库腾空间和中断恢复仍需另外验证。
 
 真实模式只解析有界 session_meta 首行、session_index 标题和桌面置顶 ID。首行可能含指令等字段，未使用字段会被丢弃；不解析对话正文。数据库/WAL/SHM、凭据、配置、图片和其他文件只统计大小。外置 sqlite_home 和远端数据不包含在内。
 
-[只读适配器设计与限制](docs/codex-readonly-design.md)。文件长度和分配块都不等于可回收空间。
+文件长度和分配块都不等于可回收空间。
 
-[语言切换说明](docs/i18n.md) · [额外语言的公开搜索调研](docs/language-search-research.md)
+公开使用、开发和安全说明保留在仓库根目录。内部设计方案、调研、审核与验证记录仅保存在本地 `docs/`，不由 Git 跟踪或上传。
