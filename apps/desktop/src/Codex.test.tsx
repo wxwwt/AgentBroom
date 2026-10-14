@@ -1,21 +1,25 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import catalog from "./data/catalog.json";
-import type { Inventory, Thread } from "./types";
-const bridge = vi.hoisted(() => ({ load: vi.fn(), preview: vi.fn(), report: vi.fn() }));
-vi.mock("./bridge", () => ({nativeRuntime: true, sourceLabel: "Native demo scanner", loadInventory: bridge.load, getPreview: bridge.preview, getReport: bridge.report, errorText: (e: Error) => e.message}));
-import App from "./App";
-function real(): Inventory {
- const base = catalog.inventory.threads[0] as Thread;
- return {...structuredClone(catalog.inventory) as Inventory, sourceKind: "codex", partialCoverage: true, datasetLabel: "Synthetic native Codex", sourceFingerprint: "synthetic-real",
-  threads: Array.from({length: 65}, (_,i) => ({...base, id:`synthetic-${i}`, title:`Local synthetic ${i}`, relation: i===0 ? "root" : i===1 ? "fork" : "spawned", parentId:i===0 ? null : "synthetic-0", sourceType:"synthetic", ownedDescendantIds:i===0 ? ["synthetic-2"] : [], forkSources:i===1 ? ["synthetic-0"] : [], protectionReasons:["Read-only inspection", "Live status unknown"]})), warnings:["Live filesystem observation, not an atomic snapshot."]};
-}
-afterEach(() => {cleanup();vi.resetAllMocks();});
-async function start() {bridge.load.mockImplementation(async (source: string) => source==="codex" ? real() : structuredClone(catalog.inventory));render(<App/>);await screen.findByText("Where the bytes live");}
-async function inspect() {fireEvent.click(screen.getByRole("button",{name:"Inspect local Codex"}));await screen.findByText("Local Codex · read-only");await screen.findByText("Native Codex scanner");}
-describe("native Codex UI contract using synthetic metadata",() => {
- it("switches sources and never offers a real preview or export",async()=>{await start();await inspect();expect(bridge.load).toHaveBeenLastCalledWith("codex");expect(screen.getByText("Main & fork conversations")).toBeVisible();expect(screen.getByRole("button",{name:"Conversations 65"})).toBeVisible();expect(screen.getByText("63 confirmed sub Agents · 0 unresolved")).toBeVisible();expect(screen.queryByRole("button",{name:"View sample report"})).not.toBeInTheDocument();expect(screen.getByText("Partial inventory · measured home files")).toBeVisible();fireEvent.click(screen.getByRole("button",{name:/Conversations/}));expect(screen.getByRole("button",{name:"Review selection"})).toBeDisabled();for(const c of screen.getAllByRole("checkbox"))expect(c).toBeDisabled();expect(bridge.preview).not.toHaveBeenCalled();expect(bridge.report).not.toHaveBeenCalled();});
- it("bounds rows and navigates parent, subagent and fork links",async()=>{await start();await inspect();fireEvent.click(screen.getByRole("button",{name:/Conversations/}));expect(screen.getAllByRole("checkbox")).toHaveLength(50);fireEvent.click(screen.getByRole("button",{name:"Show 50 more"}));expect(screen.getAllByRole("checkbox")).toHaveLength(65);fireEvent.change(screen.getByRole("combobox",{name:"Filter conversations"}),{target:{value:"fork"}});fireEvent.click(screen.getByRole("button",{name:/Local synthetic 1/}));expect(screen.getByText("Read-only inspection")).toBeVisible();expect(screen.getByText("Fork lineage")).toBeVisible();fireEvent.click(screen.getAllByRole("button",{name:"synthetic-0"})[0]);const aside=screen.getByText("Relationship evidence").closest("aside")!;expect(within(aside).getByText("Local synthetic 0")).toBeVisible();expect(within(aside).getByRole("button",{name:"synthetic-2"})).toBeVisible();fireEvent.click(within(aside).getByRole("button",{name:"Keep this conversation"}));expect(within(aside).getByText("Protected · kept this session")).toBeVisible();});
- it("labels unmatched indexed bytes as unattributed rather than zero",async()=>{await start();const inventory=real();inventory.threads[0].files=[];inventory.threads[0].relation="unknown";inventory.threads[0].ownBytes=0;inventory.threads[0].inclusiveBytes=0;bridge.load.mockResolvedValueOnce(inventory);await inspect();fireEvent.click(screen.getByRole("button",{name:/Conversations/}));fireEvent.change(screen.getByRole("textbox",{name:"Search conversations"}),{target:{value:"Local synthetic 0"}});expect(screen.getByText("Unattributed")).toBeVisible();fireEvent.click(screen.getByRole("button",{name:/Local synthetic 0/}));expect(screen.getAllByText("Unknown / unattributed")).toHaveLength(2);});
- it("shows a source error without silently replacing real data with demo",async()=>{await start();bridge.load.mockRejectedValueOnce(new Error("Source inaccessible"));fireEvent.click(screen.getByRole("button",{name:"Inspect local Codex"}));expect(await screen.findByRole("alert")).toHaveTextContent("Source inaccessible");expect(screen.queryByText("Where the bytes live")).not.toBeInTheDocument();expect(screen.getByRole("button",{name:"Switch to demo"})).toBeEnabled();});
+import {afterEach,describe,expect,it,vi} from 'vitest';
+import {cleanup,fireEvent,render,screen,within} from '@testing-library/react';
+import {testInventory} from '../test-fixtures/inventory';
+const bridge=vi.hoisted(()=>({load:vi.fn()}));
+vi.mock('./bridge',()=>({sourceLabel:'Native Codex scanner',loadInventory:bridge.load,errorText:(e:Error)=>e.message}));
+import App from './App';
+afterEach(()=>{cleanup();vi.resetAllMocks();});
+describe('Codex relationships using synthetic metadata',()=>{
+ it('bounds rows and navigates fork, parent and child links',async()=>{
+  bridge.load.mockResolvedValue(testInventory(65));render(<App/>);await screen.findByText('Where the bytes live');
+  expect(screen.getByText('63 confirmed sub Agents · 0 unresolved')).toBeVisible();fireEvent.click(screen.getByRole('button',{name:'Conversations 65'}));
+  expect(screen.getAllByRole('button',{name:/Local synthetic/})).toHaveLength(50);fireEvent.click(screen.getByRole('button',{name:'Show 50 more'}));
+  expect(screen.getAllByRole('button',{name:/Local synthetic/})).toHaveLength(65);
+  fireEvent.change(screen.getByRole('combobox',{name:'Filter conversations'}),{target:{value:'fork'}});
+  fireEvent.click(screen.getByRole('button',{name:/Local synthetic 1/}));expect(screen.getByText('Fork lineage')).toBeVisible();
+  fireEvent.click(screen.getAllByRole('button',{name:'synthetic-0'})[0]);const aside=screen.getByText('Relationship evidence').closest('aside')!;
+  expect(within(aside).getByRole('button',{name:'synthetic-2'})).toBeVisible();expect(screen.getAllByText('Read-only inspection: cleanup eligibility is not evaluated')).toHaveLength(1);
+ });
+ it('labels unmatched indexed bytes as unattributed rather than zero',async()=>{
+  const inv=testInventory();inv.threads[0].files=[];inv.threads[0].relation='unknown';inv.threads[0].ownBytes=0;inv.threads[0].inclusiveBytes=0;bridge.load.mockResolvedValue(inv);
+  render(<App/>);await screen.findByText('Where the bytes live');fireEvent.click(screen.getByRole('button',{name:/Conversations/}));
+  fireEvent.change(screen.getByRole('textbox',{name:'Search conversations'}),{target:{value:'Local synthetic 0'}});expect(screen.getByText('Unattributed')).toBeVisible();
+  fireEvent.click(screen.getByRole('button',{name:/Local synthetic 0/}));expect(screen.getAllByText('Unknown / unattributed')).toHaveLength(2);
+ });
 });

@@ -32,9 +32,6 @@
     "targets": [
       "app"
     ],
-    "resources": {
-      "../../../fixtures/demo-store/": "demo-store/"
-    },
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -46,6 +43,6 @@
       "minimumSystemVersion": "13.0",
       "signingIdentity": "-"
     },
-    "shortDescription": "Read-only synthetic coding-agent storage prototype"
+    "shortDescription": "Read-only local Codex storage inventory"
   }
 }

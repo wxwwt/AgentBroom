@@ -13,9 +13,9 @@
     "test": "vitest run --config apps/desktop/vite.config.ts",
     "desktop:dev": "cd apps/desktop && tauri dev",
     "desktop:build": "cd apps/desktop && tauri build --bundles app",
-    "demo:generate": "node scripts/generate-catalog.mjs",
     "fixtures:generate": "node scripts/generate-demo.mjs",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "test:fixtures": "node scripts/generate-catalog.mjs"
   },
   "dependencies": {
     "react": "19.3.0",

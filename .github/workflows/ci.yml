@@ -14,6 +14,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: npm ci
       - run: cargo test --locked -p agentbroom-core -p agentbroom-cli
-      - run: npm run demo:generate
+      - run: npm run test:fixtures
       - run: npm test
       - run: npm run build

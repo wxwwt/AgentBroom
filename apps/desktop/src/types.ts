@@ -43,17 +43,6 @@ export interface Inventory {
   executionEnabled: false;
   partialCoverage?: boolean;
 }
-export interface Preview {
-  schemaVersion: number;
-  sourceKind: "demo" | "codex";
-  sourceFingerprint: string;
-  selectedIds: string[];
-  affectedIds: string[];
-  rows: Thread[];
-  logicalBytes: number;
-  executionEnabled: false;
-  notices: string[];
-}
 import type {MessageKey, MessageValues} from "./i18n";
 export interface ActivityEntry {
   id: number;

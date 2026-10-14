@@ -1,4 +1,8 @@
 export const zhMessages = {
+  "Local browser read-only scanner": "本机网页只读盘点器",
+  "Only a real read-only Codex inventory is accepted.": "只接受真实 Codex 的只读盘点结果。",
+  "Local Codex inspection requires the desktop app or a loopback development server.": "请使用桌面应用或本机开发服务查看 Codex 数据。",
+  "Local read-only inventory requests must originate from this application.": "本机只读盘点请求必须来自当前应用。",
   "Session files": "会话文件",
   "Archived sessions": "已归档会话",
   "History database": "历史数据库",

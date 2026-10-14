@@ -3,7 +3,7 @@ use clap::{Parser, Subcommand};
 #[derive(Parser)]
 #[command(
     name = "agentbroom",
-    about = "Inspect synthetic fixtures or local Codex metadata read-only. No mutation commands."
+    about = "Inspect local Codex metadata read-only. No mutation commands."
 )]
 struct Args {
     #[command(subcommand)]
@@ -11,17 +11,33 @@ struct Args {
 }
 #[derive(Subcommand)]
 enum Command {
+    /// Full real metadata for local inspection. Do not publish this output.
     Scan,
     /// Aggregate-only real inventory; never prints titles, IDs or paths.
     CodexSummary,
-    Plan {
-        ids: Vec<String>,
+    /// Development-only synthetic fixture commands; never used by the app.
+    #[command(hide = true)]
+    Fixtures {
+        #[command(subcommand)]
+        command: FixtureCommand,
     },
+}
+#[derive(Subcommand)]
+enum FixtureCommand {
+    Scan,
+    Plan { ids: Vec<String> },
     Verify,
     WebCatalog,
 }
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
+    if matches!(args.command, Command::Scan) {
+        println!(
+            "{}",
+            serde_json::to_string(&agentbroom_core::codex::scan_default()?)?
+        );
+        return Ok(());
+    }
     if matches!(args.command, Command::CodexSummary) {
         let inventory = agentbroom_core::codex::scan_default()?;
         println!(
@@ -34,24 +50,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
         return Ok(());
     }
+    let Command::Fixtures { command } = args.command else {
+        unreachable!()
+    };
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/demo-store");
     let inventory = scan_fixture_store(&root)?;
-    let json = match args.command {
-        Command::Verify => serde_json::to_string_pretty(&serde_json::json!({
+    let json = match command {
+        FixtureCommand::Verify => serde_json::to_string_pretty(&serde_json::json!({
             "sourceKind": "demo", "executionEnabled": false,
             "consistent": inventory.items.iter().map(|x| x.logical_bytes).sum::<u64>() == inventory.totals.iter().map(|x| x.logical_bytes).sum::<u64>(),
             "sourceFingerprint": inventory.source_fingerprint,
             "note": "Fixture measurement consistency only; not deletion verification."
         }))?,
-        Command::Scan => serde_json::to_string_pretty(&inventory)?,
-        Command::Plan { ids } => serde_json::to_string_pretty(&preview(
+        FixtureCommand::Scan => serde_json::to_string_pretty(&inventory)?,
+        FixtureCommand::Plan { ids } => serde_json::to_string_pretty(&preview(
             &inventory,
             &ids,
             &[],
             &inventory.source_fingerprint,
         )?)?,
-        Command::CodexSummary => unreachable!(),
-        Command::WebCatalog => serde_json::to_string_pretty(&web_catalog(inventory)?)?,
+        FixtureCommand::WebCatalog => serde_json::to_string_pretty(&web_catalog(inventory)?)?,
     };
     println!("{json}");
     Ok(())

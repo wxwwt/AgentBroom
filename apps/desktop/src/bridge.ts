@@ -1,85 +1,35 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
-import catalog from "./data/catalog.json";
-import type { Inventory, Preview } from "./types";
+import type { Inventory } from "./types";
 export const nativeRuntime = isTauri();
-export const sourceLabel = nativeRuntime
-  ? "Native demo scanner"
-  : "Browser fixture catalog";
-export async function loadInventory(source: "demo" | "codex" = "demo"): Promise<Inventory> {
-  if (source === "codex") {
-    if (!nativeRuntime) throw { code: "nativeOnly", message: "Real Codex inspection is available in the native desktop app only." };
-    return invoke<Inventory>("scan_codex");
+export const sourceLabel = nativeRuntime ? "Native Codex scanner" : "Local browser read-only scanner";
+let pending: Promise<Inventory> | null = null;
+/** Share an in-flight read: React StrictMode must not launch competing native scans. */
+export function loadInventory(): Promise<Inventory> {
+  if (!pending) {
+    pending = readInventory().finally(() => {pending = null;});
   }
-  return nativeRuntime
-    ? invoke<Inventory>("scan_demo")
-    : structuredClone(catalog.inventory as Inventory);
+  return pending;
 }
-export async function getPreview(
-  selectedIds: string[],
-  keptIds: string[],
-  sourceFingerprint: string,
-): Promise<Preview> {
-  if (nativeRuntime)
-    return invoke("preview_demo", { selectedIds, keptIds, sourceFingerprint });
-  if (sourceFingerprint !== catalog.inventory.sourceFingerprint)
-    throw {
-      code: "staleSnapshot",
-      message: "The sample snapshot changed. Rescan.",
-    };
-  const known = new Set(catalog.inventory.threads.map((t) => t.id));
-  for (const ids of [selectedIds, keptIds])
-    if (
-      ids.length > 32 ||
-      new Set(ids).size !== ids.length ||
-      ids.some((id) => !known.has(id))
-    )
-      throw {
-        code: "invalidSelection",
-        message: "Unknown or duplicate sample identity.",
-      };
-  if (selectedIds.some((id) => keptIds.includes(id)))
-    throw {
-      code: "invalidSelection",
-      message: "A kept record cannot be reviewed.",
-    };
-  const key = JSON.stringify([...selectedIds].sort());
-  const p = (catalog.previews as Record<string, Preview>)[key];
-  if (!p || p.affectedIds.some((id) => keptIds.includes(id)))
-    throw {
-      code: "invalidSelection",
-      message: "Protected sample records cannot be selected.",
-    };
-  return structuredClone(p);
+async function readInventory(): Promise<Inventory> {
+  const inventory = nativeRuntime
+    ? await invoke<Inventory>("scan_codex")
+    : await readLocalBrowser();
+  if (inventory.sourceKind !== "codex" || inventory.executionEnabled !== false)
+    throw new Error("Only a real read-only Codex inventory is accepted.");
+  return inventory;
 }
-export async function getReport(
-  selectedIds: string[],
-  keptIds: string[],
-  sourceFingerprint: string,
-): Promise<string> {
-  if (nativeRuntime)
-    return invoke("demo_report", { selectedIds, keptIds, sourceFingerprint });
-  const preview = await getPreview(selectedIds, keptIds, sourceFingerprint);
-  return JSON.stringify(
-    {
-      schemaVersion: 1,
-      sourceKind: "demo",
-      executionEnabled: false,
-      datasetLabel: catalog.inventory.datasetLabel,
-      totals: catalog.inventory.totals,
-      warnings: catalog.inventory.warnings,
-      preview,
-      limitations: [
-        "No real agent data inspected",
-        "No deletion or database maintenance",
-        "Keep choices are session-local",
-      ],
-    },
-    null,
-    2,
-  );
+async function readLocalBrowser(): Promise<Inventory> {
+  if (!['127.0.0.1','localhost'].includes(location.hostname))
+    throw new Error("Local Codex inspection requires the desktop app or a loopback development server.");
+  const response = await fetch('/__agentbroom/inventory', {
+    headers:{'X-AgentBroom-ReadOnly':'1'}, cache:'no-store', credentials:'same-origin',
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(()=>null);
+    throw new Error(typeof error?.message === 'string' ? error.message : "Local inspection failed.");
+  }
+  return response.json();
 }
 export function errorText(e: unknown): string {
-  return e && typeof e === "object" && "message" in e
-    ? String(e.message)
-    : "The demo could not be loaded. No agent data was accessed.";
+  return e && typeof e === "object" && "message" in e ? String(e.message) : "Local inspection failed.";
 }

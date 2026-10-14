@@ -291,7 +291,7 @@ svg {
 .button.secondary:hover {
   background: #f4f6ef;
 }
-.demo-banner {
+.inspection-banner {
   display: flex;
   align-items: center;
   gap: 11px;
@@ -304,7 +304,7 @@ svg {
   font-size: 11px;
   line-height: 1.5;
 }
-.demo-banner strong {
+.inspection-banner strong {
   font-weight: 600;
   color: #796538;
 }
@@ -313,7 +313,7 @@ svg {
   place-items: center;
   color: #be9344;
 }
-.demo-source {
+.scanner-source {
   margin-left: auto;
   flex-shrink: 0;
   color: #a7946f;
@@ -994,7 +994,7 @@ svg {
     padding: 12px;
     gap: 7px;
   }
-  .demo-source {
+  .scanner-source {
     display: none;
   }
   .overview-grid {
@@ -1014,3 +1014,5 @@ svg {
 .language-control select { font: inherit; color: #4f5d45; background: #fff; border: 1px solid #dfe3d9; border-radius: 6px; padding: 7px 9px; }
 .status { white-space: normal; line-height: 1.4; }
 .modal-language { display: flex; justify-content: flex-end; margin: 12px 0; }
+
+.table-head, .table-row { grid-template-columns: minmax(100px, 1fr) 90px 85px; }

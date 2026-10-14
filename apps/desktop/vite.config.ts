@@ -2,9 +2,10 @@ import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwind from "@tailwindcss/vite";
 import { fileURLToPath } from "node:url";
+import {localInventoryPlugin} from "./local-inventory.ts";
 export default defineConfig({
   root: fileURLToPath(new URL(".", import.meta.url)),
-  plugins: [react(), tailwind()],
+  plugins: [react(), tailwind(), ...(process.env.VITEST ? [] : [localInventoryPlugin(fileURLToPath(new URL("../..",import.meta.url)))])],
   server: { host: "127.0.0.1", port: 1420, strictPort: true },
   build: { outDir: "dist", emptyOutDir: true },
   test: {
