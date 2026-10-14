@@ -1,0 +1,19 @@
+{
+  "productName": "AgentBroom Native Test",
+  "identifier": "io.github.wxwwt.agentbroom.native-test",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "AgentBroom \u00b7 Synthetic native cleanup test",
+        "width": 1260,
+        "height": 860,
+        "minWidth": 1000,
+        "minHeight": 720
+      }
+    ]
+  },
+  "bundle": {
+    "shortDescription": "Generated-data-only native cleanup test"
+  }
+}

@@ -17,7 +17,8 @@
     "tauri": "tauri",
     "test:fixtures": "node scripts/generate-catalog.mjs",
     "test:native": "python3 scripts/native_codex_contract.py",
-    "test:native-helper": "python3 -m unittest discover -s scripts -p native_codex_contract_test.py"
+    "test:native-helper": "python3 -m unittest discover -s scripts -p native_codex_contract_test.py",
+    "desktop:test:build": "cd apps/desktop && tauri build --features native-cleanup-test --config src-tauri/tauri.native-test.conf.json --bundles app"
   },
   "dependencies": {
     "react": "19.3.0",

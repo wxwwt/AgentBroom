@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-cleanup-result"
+description = "Enables the cleanup_result command without any pre-configured scope."
+commands.allow = ["cleanup_result"]
+
+[[permission]]
+identifier = "deny-cleanup-result"
+description = "Denies the cleanup_result command without any pre-configured scope."
+commands.deny = ["cleanup_result"]

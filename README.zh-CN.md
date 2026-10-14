@@ -35,3 +35,16 @@ npm run desktop:dev
 开发者可用官方 Codex CLI 0.162.1 运行 `npm run test:native`，通过 `AGENTBROOM_TEST_CODEX_BIN` 指定受信任的官方测试可执行文件。测试只在自行生成的临时 HOME/CODEX_HOME、JSONL 和数据库中运行，不接收已有数据目录，也不回退到全局 CLI。Python 3 仅用于测试，不进入桌面运行时。
 
 `agentbroom cleanup-scope <逻辑ID>...` 提供共享 Rust 计划器的本地只读分析，输出可能含私有元数据，不应上传。原生/观测范围一致只是一项证据，真实删除仍锁定；这些合成测试不证明真实库活动状态、所有辅助数据库副作用、原子检查、中断恢复或磁盘回收安全。
+
+### 原生桌面合成测试
+
+日常桌面构建保持只读。开发者专用构建把预览、确认与结果界面连接到官方 Codex 0.162.1 原生删除，仅使用后端新生成的临时测试目录，不读取真实 Codex 数据，也不开放生产清理。
+
+```sh
+AGENTBROOM_TEST_CODEX_BIN=/absolute/path/to/official/codex cargo test --locked -p agentbroom-native-test -- --ignored --test-threads=1
+npm run desktop:test:build
+```
+
+以 `AGENTBROOM_TEST_CODEX_BIN` 指向可信官方可执行文件，启动 **AgentBroom Native Test**。运行时不随包分发、不从 PATH 自动发现。选择一个测试对话，预览子树和保留记录，勾选声明并输入 `DELETE` 后执行，查看验证结果；关闭结果会刷新盘点。响应不确定时可只读查询记录，不重复删除。记录仅保留在本次运行的测试会话中，并非备份。没有真实源根参数或浏览器写接口。
+
+上述真实数据只读边界适用于日常构建；专用原生合成测试构建通过官方进程操作新生成的测试文件与数据库，不读取真实数据。

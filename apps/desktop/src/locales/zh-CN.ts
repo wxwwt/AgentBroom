@@ -369,5 +369,36 @@ export const zhMessages = {
   "Unresolved sample record": "未解析样本记录",
   "Unresolved session file": "未解析会话文件",
   "history_base physical rollout ID resolved to its session_meta logical ID": "history_base 中的物理分段 ID 已映射到 session_meta 的逻辑 ID",
-  "identity validated": "ID 已验证"
+  "identity validated": "ID 已验证",
+  "Synthetic native cleanup test": "原生清理合成测试",
+  "This build only uses a newly generated test store. Real Agent data is never loaded or deleted.":
+    "此构建仅使用新生成的测试存储，不读取或删除本机真实 Agent 数据。",
+  "Select one main conversation or independent fork per native plan.":
+    "每个原生计划选择一个主对话或独立 fork。",
+  "Creating native preview…": "正在生成原生预览…",
+  "Native cleanup request failed. Create a fresh preview.":
+    "原生清理请求失败，请重新生成预览。",
+  "Plan expires after {seconds} seconds. Any file or state change requires a fresh preview.":
+    "计划将在 {seconds} 秒后过期。文件或状态变化后需重新预览。",
+  "Retained conversations": "保留的对话",
+  "Native deletion is verified against files, thread rows, spawn edges and deleted notifications. No reclaimed-space estimate is available.":
+    "原生删除会核对文件、对话记录、子 Agent 关联及删除通知，不估算回收空间。",
+  "Native synthetic cleanup verified": "原生合成清理验证通过",
+  "Official Codex deletion ran only against generated test data.":
+    "官方 Codex 删除仅作用于生成的测试数据。",
+  "Check execution result": "查询执行结果",
+  "No receipt is available yet. Do not repeat deletion.":
+    "暂未获取到执行记录，请勿重复删除。",
+  nativeScopeMismatch: "原生与观测范围不一致",
+  "Cleanup was rejected before deletion. Create a fresh preview.":
+    "删除前检查未通过，请重新生成预览。",
+  "Verified: deleted notifications, remaining file hashes, thread rows and spawn edges.":
+    "已核对：删除通知、剩余文件哈希、对话记录及子 Agent 关联。",
+  "Generated native test store loaded": "已加载生成的原生测试存储",
+  "{count} generated test files measured; no real Agent data accessed.": "已测量 {count} 个生成测试文件；未访问真实 Agent 数据。",
+  "Native deletion was not fully verified. Inspect the result before closing.": "原生删除未完全验证，请检查结果后再关闭。",
+  "The test runtime is stopped. Restart the test app to generate a new store.": "测试运行时已停止，请重启测试应用以生成新的测试存储。",
+  "Generated native test store": "生成的原生测试存储",
+  "Only generated data can be deleted in this test build.": "此测试构建仅可删除生成的数据。",
+  "The native test backend opens only its generated state database; real Agent data stays untouched.": "原生测试后端仅连接生成的状态数据库；不操作真实 Agent 数据。",
 } as const;

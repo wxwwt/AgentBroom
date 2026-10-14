@@ -15,6 +15,7 @@ jobs:
       - run: npm ci
       - run: cargo test --locked -p agentbroom-core -p agentbroom-cli
       - run: cargo test --locked -p agentbroom-core --features synthetic-cleanup
+      - run: cargo test --locked -p agentbroom-native-test
       - run: npm run test:fixtures
       - run: npm run test:native-helper
       - run: npm test
@@ -36,3 +37,26 @@ jobs:
         env:
           AGENTBROOM_TEST_CODEX_BIN: ${{ runner.temp }}/agentbroom-codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex
         run: python3 scripts/native_codex_contract.py
+      - name: Run desktop backend native contracts on generated data only
+        env:
+          AGENTBROOM_TEST_CODEX_BIN: ${{ runner.temp }}/agentbroom-codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex
+        run: cargo test --locked -p agentbroom-native-test -- --ignored --test-threads=1
+
+  desktop-build-isolation:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: dtolnay/rust-toolchain@stable
+      - run: npm ci
+      - run: npm run build
+      - run: cargo test --locked -p agentbroom-desktop --lib
+      - run: cargo test --locked -p agentbroom-desktop --lib --features native-cleanup-test
+      - run: npm run desktop:test:build
+      - name: Check ordinary desktop dependency boundary
+        run: |
+          cargo tree --locked -p agentbroom-desktop --edges normal > "$RUNNER_TEMP/ordinary-desktop-dependencies.txt"
+          if grep -Eq 'agentbroom-native-test|rusqlite|synthetic-cleanup' "$RUNNER_TEMP/ordinary-desktop-dependencies.txt"; then exit 1; fi

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import {
   loadInventory,
+  loadCleanupMode,
   errorText,
   sourceLabel,
 } from "./bridge";
@@ -30,6 +31,7 @@ import {
   type ActivityEntry,
 } from "./types";
 import CleanupPanel from "./CleanupPanel";
+import NativeCleanupPanel from "./NativeCleanupPanel";
 type Page = "overview" | "conversations" | "activity" | "cleanup";
 const categoryNames: Record<string, MessageKey> = {
   sessions: "Session files",
@@ -51,6 +53,7 @@ export default function App() { return <LocaleProvider><AppContent/></LocaleProv
 function AppContent() {
   const {locale, persistenceUnavailable, t, systemText} = useLocale();
   const displayBytes = (n: number | null) => systemText(bytes(n));
+  const [cleanupMode, setCleanupMode] = useState<"readOnly" | "syntheticNativeTest">("readOnly");
   const [inventory, setInventory] = useState<Inventory | null>(null),
     [page, setPage] = useState<Page>("overview"),
     [error, setError] = useState(""),
@@ -81,14 +84,15 @@ function AppContent() {
     setLoading(true);
     setError("");
     try {
-      const next = await loadInventory();
+      const [next, mode] = await Promise.all([loadInventory(), loadCleanupMode()]);
       if (seq !== scanSeq.current) return;
+      setCleanupMode(mode);
       setInventory(next);
       setKept([]);
       setDetailId(null);
       addActivity(
-        "Local Codex inspected read-only",
-        "{count} files measured; no source files written, no database opened.",
+        mode === "syntheticNativeTest" ? "Generated native test store loaded" : "Local Codex inspected read-only",
+        mode === "syntheticNativeTest" ? "{count} generated test files measured; no real Agent data accessed." : "{count} files measured; no source files written, no database opened.",
         {count: next.items.length},
       );
     } catch (e) {
@@ -182,7 +186,7 @@ function AppContent() {
         <div className="source-tile">
           <span className="source-dot" />
           <div>
-            {t("Local Codex home")}<small>{t("Metadata inspection only")}</small>
+            {t(cleanupMode === "syntheticNativeTest" ? "Generated native test store" : "Local Codex home")}<small>{t("Metadata inspection only")}</small>
           </div>
           <LockKeyhole size={14} />
         </div>
@@ -190,7 +194,7 @@ function AppContent() {
           <div className="safety-tile">
             <ShieldCheck size={22} />
             <strong>{t("Inspection comes first.")}</strong>
-            <p>{t("Preview local deletion scope. No sample mode, export or database connections.")}</p>
+            <p>{t(cleanupMode === "syntheticNativeTest" ? "Only generated data can be deleted in this test build." : "Preview local deletion scope. No sample mode, export or database connections.")}</p>
           </div>
           <div className="version">
             <span>{t("v0.1.0 · prototype")}</span>
@@ -199,6 +203,7 @@ function AppContent() {
         </div>
       </aside>
       <main className="main">
+        {cleanupMode === "syntheticNativeTest" && <p className="scope-banner">{t("Synthetic native cleanup test")} · {t("This build only uses a newly generated test store. Real Agent data is never loaded or deleted.")}</p>}
         <header className="topbar">
           <div className="breadcrumb">{t("Workspace")}<ChevronRight size={13} />{" "}
             <strong>
@@ -212,7 +217,7 @@ function AppContent() {
           <div className="topbar-controls">
             <LanguageSelector/>
           <span className="readonly-badge">
-            <ShieldCheck size={13} /> {t("Local Codex · read-only")}
+            <ShieldCheck size={13} /> {t(cleanupMode === "syntheticNativeTest" ? "Synthetic native cleanup test" : "Local Codex · read-only")}
           </span>
           </div>
         </header>
@@ -249,10 +254,10 @@ function AppContent() {
               <Sparkles size={17} />
             </span>
             <div>
-              <strong>{t("Your local Codex metadata. Inspection only.")}</strong>
+              <strong>{t(cleanupMode === "syntheticNativeTest" ? "Generated native test store" : "Your local Codex metadata. Inspection only.")}</strong>
               <span>
                 {" "}
-                {t("Databases are measured without opening them. Live status is unknown; every record remains protected.")}
+                {t(cleanupMode === "syntheticNativeTest" ? "The native test backend opens only its generated state database; real Agent data stays untouched." : "Databases are measured without opening them. Live status is unknown; every record remains protected.")}
               </span>
             </div>
             <span className="scanner-source">{systemText(sourceLabel)}</span>
@@ -431,7 +436,7 @@ function AppContent() {
                   </div>
                 </>
               )}
-              {page === "cleanup" && <CleanupPanel key={`${inventory.sourceFingerprint}:${kept.join(",")}`} inventory={inventory} kept={kept}/>}
+              {page === "cleanup" && (cleanupMode === "syntheticNativeTest" ? <NativeCleanupPanel key={`${inventory.sourceFingerprint}:${kept.join(",")}`} inventory={inventory} kept={kept} refresh={() => void rescan()}/> : <CleanupPanel key={`${inventory.sourceFingerprint}:${kept.join(",")}`} inventory={inventory} kept={kept}/>)}
               {page === "conversations" && (
                 <>
                   <div className="toolbar">

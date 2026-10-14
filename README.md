@@ -6,7 +6,7 @@
 
 AgentBroom is an early, local-first desktop inspection prototype for coding-agent storage. It makes physical files, logical conversations, spawned agents and independent forks easier to distinguish before anyone considers cleanup.
 
-> **Read-only local inventory.** Launch the app to inspect your real `CODEX_HOME` (or `$HOME/.codex`) immediately. There is no demo mode, sample plan or sample report in the application. Source failures are shown explicitly. Cleanup candidates, observed impact and a locked confirmation page are available. No real source write, deletion or database connection is available; all real records stay protected.
+> **Read-only local inventory.** Launch the regular app to inspect your real `CODEX_HOME` (or `$HOME/.codex`) immediately. There is no demo mode, sample plan or sample report in the regular application. Source failures are shown explicitly. Cleanup candidates, observed impact and a locked confirmation page are available. No real source write, deletion or database connection is available; all real records stay protected.
 
 ## Prototype features
 
@@ -41,7 +41,7 @@ npm run desktop:build
 cargo run -p agentbroom-cli -- codex-summary # real aggregate counts/sizes only
 ```
 
-The localhost development UI uses a loopback-only, same-origin endpoint backed by the same Rust CLI scanner. It does not fall back to synthetic data. The native application uses `scan_codex` IPC and does not host HTTP. Both automatically inspect real metadata on startup. Synthetic fixture generation is for tests only; fixtures are not bundled into the app.
+The localhost development UI uses a loopback-only, same-origin endpoint backed by the same Rust CLI scanner. It does not fall back to synthetic data. The native application uses `scan_codex` IPC and does not host HTTP. Both regular entry points automatically inspect real metadata on startup. Synthetic fixture generation is for tests only; fixtures are not bundled into the regular app.
 
 Choose either the browser or native development command; stop the browser development server before starting native development, as both use port 1420. Rust `cargo` must be available on PATH. Static web builds require the local read-only development bridge or the native app; there is no remote inventory service.
 
@@ -66,8 +66,19 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md). Please use synthetic data, keep read-on
 
 ## Security and privacy
 
-No account, telemetry, remote network service or LLM call in the application. The native Codex adapter reads only bounded session headers, title-index rows and desktop pinned IDs. Auth/config/database/asset contents are never opened. Session headers may contain instructions; unused fields are discarded, and conversation bodies are not parsed. The native product never writes source files, opens SQLite, runs maintenance or launches agent processes. `cleanup_execute` unconditionally rejects before source access. The browser development transport invokes only the fixed read-only scanner. Symlinks are never followed. macOS/Linux native inspection only; unsupported platforms report an error and do not fall back to demo. Report vulnerabilities using the repository's private reporting channel when enabled; otherwise contact the maintainer through GitHub before sharing sensitive reproduction material. See [SECURITY.md](SECURITY.md).
+No account, telemetry, remote network service or LLM call in the regular application. The native Codex adapter reads only bounded session headers, title-index rows and desktop pinned IDs. Auth/config/database/asset contents are never opened. Session headers may contain instructions; unused fields are discarded, and conversation bodies are not parsed. The regular native product never writes source files, opens SQLite, runs maintenance or launches agent processes. `cleanup_execute` unconditionally rejects before source access. The browser development transport invokes only the fixed read-only scanner. Symlinks are never followed. macOS/Linux native inspection only; unsupported platforms report an error and do not fall back to demo. Report vulnerabilities using the repository's private reporting channel when enabled; otherwise contact the maintainer through GitHub before sharing sensitive reproduction material. See [SECURITY.md](SECURITY.md).
 
 ## License
 
 MIT. Third-party dependencies retain their own licenses. This project is independent of OpenAI, Anthropic and other agent vendors.
+
+### Isolated native desktop test
+
+The regular desktop build remains read-only. A separate developer build connects the preview, confirmation and receipt UI to official Codex 0.162.1 deletion **only in a newly generated temporary test store**. It never loads your real Codex home. This does not enable production cleanup.
+
+```sh
+AGENTBROOM_TEST_CODEX_BIN=/absolute/path/to/official/codex cargo test --locked -p agentbroom-native-test -- --ignored --test-threads=1
+npm run desktop:test:build
+```
+
+Launch **AgentBroom Native Test** with `AGENTBROOM_TEST_CODEX_BIN` set to your trusted official executable; the binary is not bundled or discovered from PATH. Select one test conversation, preview its native subtree and retained records, acknowledge and type `DELETE`, then review the verified receipt. Closing the result refreshes the inventory. An uncertain response can query the saved receipt without retrying deletion. Receipts last only for this running test session; they are not backups. No live-root argument or browser write endpoint exists.

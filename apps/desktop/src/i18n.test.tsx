@@ -3,7 +3,7 @@ import {afterEach, describe, expect, it, vi} from "vitest";
 import {cleanup, fireEvent, render, screen, within} from "@testing-library/react";
 import {testInventory} from "../test-fixtures/inventory";
 const bridge=vi.hoisted(()=>({load:vi.fn()}));
-vi.mock("./bridge",()=>({sourceLabel:"Native Codex scanner",loadInventory:bridge.load,errorText:(e:Error)=>e.message}));
+vi.mock("./bridge",()=>({sourceLabel:"Native Codex scanner",loadInventory:bridge.load,loadCleanupMode:async()=>"readOnly",errorText:(e:Error)=>e.message}));
 import {readFileSync} from "node:fs";
 import App from "./App";
 import {chooseLocale, LANGUAGE_KEY, translate, translateSystem} from "./i18n";

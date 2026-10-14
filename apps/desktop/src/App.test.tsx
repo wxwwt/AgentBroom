@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { testInventory } from "../test-fixtures/inventory";
-const bridge = vi.hoisted(() => ({ load: vi.fn() }));
+const bridge = vi.hoisted(() => ({ load: vi.fn(), mode: vi.fn() }));
 vi.mock("./bridge", () => ({
   sourceLabel: "Native Codex scanner",
   loadInventory: bridge.load,
+  loadCleanupMode: bridge.mode,
   errorText: (e: Error) => e.message,
 }));
 import App from "./App";
@@ -12,7 +13,10 @@ afterEach(() => {
   cleanup();
   vi.resetAllMocks();
 });
-beforeEach(() => bridge.load.mockResolvedValue(testInventory()));
+beforeEach(() => {
+  bridge.load.mockResolvedValue(testInventory());
+  bridge.mode.mockResolvedValue("readOnly");
+});
 describe("live-only application", () => {
   it("loads real inventory automatically without demo or destructive controls", async () => {
     render(<App />);
@@ -76,4 +80,21 @@ it("keeps real inventory as the source of cleanup preview and revokes it on resc
   expect(
     screen.queryByRole("checkbox", { checked: true }),
   ).not.toBeInTheDocument();
+});
+
+it("native test chrome identifies generated state and opens the native cleanup page", async () => {
+  bridge.mode.mockResolvedValue("syntheticNativeTest");
+  render(<App />);
+  await screen.findAllByText("Generated native test store");
+  expect(
+    screen.queryByText(
+      "Databases are measured without opening them. Live status is unknown; every record remains protected.",
+    ),
+  ).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Cleanup preview" }));
+  expect(
+    screen.getByText(
+      "Select one main conversation or independent fork per native plan.",
+    ),
+  ).toBeVisible();
 });

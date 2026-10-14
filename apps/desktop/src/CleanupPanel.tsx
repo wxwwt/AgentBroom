@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useLocale } from "./i18n";
 import { bytes, type Inventory } from "./types";
@@ -16,14 +16,26 @@ export interface CleanupResult {
   freedBytes: null;
   error?: string;
 }
-/** Only synthetic tests inject an execution driver. The application never supplies it. */
+/** The normal app has no driver; the dedicated native test build uses backend-owned plans. */
 export function CleanupConfirmation({
   plan,
   close,
   testDriver,
+  nativeDriver,
 }: {
   plan: CleanupAnalysis;
   close: () => void;
+  nativeDriver?: {
+    planId: string;
+    testOnly: true;
+    executable: boolean;
+    execute: (confirmation: {
+      phrase: string;
+      acknowledged: boolean;
+      selectedIds: string[];
+    }) => Promise<CleanupResult>;
+    readReceipt: () => Promise<CleanupResult>;
+  };
   testDriver?: (confirmation: {
     phrase: string;
     acknowledged: boolean;
@@ -37,25 +49,70 @@ export function CleanupConfirmation({
     [result, setResult] = useState<CleanupResult | null>(null),
     [error, setError] = useState(""),
     [attempted, setAttempted] = useState(false);
+  const submitted = useRef(false);
   const allowed =
-    !!testDriver &&
-    plan.sourceKind === "synthetic" &&
-    !plan.blockedReasons.length;
+    (!!testDriver &&
+      plan.sourceKind === "synthetic" &&
+      !plan.blockedReasons.length) ||
+    (!!nativeDriver &&
+      nativeDriver.testOnly &&
+      nativeDriver.executable &&
+      !!nativeDriver.planId &&
+      plan.sourceKind === "codex");
   async function execute() {
-    if (!allowed || running || attempted || phrase !== "DELETE" || !ack) return;
+    if (
+      !allowed ||
+      submitted.current ||
+      running ||
+      attempted ||
+      phrase !== "DELETE" ||
+      !ack
+    )
+      return;
+    submitted.current = true;
     setAttempted(true);
     setRunning(true);
     setError("");
     try {
+      setError("");
       setResult(
-        await testDriver!({
+        await (nativeDriver?.execute ?? testDriver!)({
           phrase,
           acknowledged: ack,
           selectedIds: plan.selectedIds,
         }),
       );
+    } catch (e) {
+      const code =
+        e && typeof e === "object" && "code" in e ? String(e.code) : "";
+      setError(
+        t(
+          nativeDriver &&
+            [
+              "planExpired",
+              "staleSnapshot",
+              "planBlocked",
+              "invalidConfirmation",
+              "invalidPlan",
+              "cleanupBusy",
+              "runtimeStopped",
+            ].includes(code)
+            ? "Cleanup was rejected before deletion. Create a fresh preview."
+            : "Execution outcome is unknown. Do not automatically retry.",
+        ),
+      );
+    } finally {
+      setRunning(false);
+    }
+  }
+  async function readReceipt() {
+    if (!nativeDriver || running) return;
+    setRunning(true);
+    try {
+      setResult(await nativeDriver.readReceipt());
+      setError("");
     } catch {
-      setError(t("Execution outcome is unknown. Do not automatically retry."));
+      setError(t("No receipt is available yet. Do not repeat deletion."));
     } finally {
       setRunning(false);
     }
@@ -88,6 +145,13 @@ export function CleanupConfirmation({
                 : "Real Codex deletion is locked in this release; native effects are not fully verified.",
             )}
           </Dialog.Description>
+          {nativeDriver && (
+            <p className="scope-banner">
+              {t(
+                "This build only uses a newly generated test store. Real Agent data is never loaded or deleted.",
+              )}
+            </p>
+          )}
           {!allowed && (
             <p className="scope-banner">
               {t("Confirming here will not delete local Codex data.")}
@@ -148,7 +212,9 @@ export function CleanupConfirmation({
               <strong>
                 {t(
                   result.status === "verified"
-                    ? "Synthetic cleanup verified"
+                    ? nativeDriver
+                      ? "Native synthetic cleanup verified"
+                      : "Synthetic cleanup verified"
                     : result.status === "partialFailure"
                       ? "Cleanup partially failed"
                       : "Cleanup verification failed",
@@ -156,11 +222,22 @@ export function CleanupConfirmation({
               </strong>
               <p>
                 {t(
-                  result.removed.length
-                    ? "Synthetic files actually removed; this is not verification of native Codex deletion."
-                    : "No synthetic files were removed.",
+                  nativeDriver
+                    ? result.status === "verified"
+                      ? "Official Codex deletion ran only against generated test data."
+                      : "Native deletion was not fully verified. Inspect the result before closing."
+                    : result.removed.length
+                      ? "Synthetic files actually removed; this is not verification of native Codex deletion."
+                      : "No synthetic files were removed.",
                 )}
               </p>
+              {nativeDriver && result.status === "verified" && (
+                <p>
+                  {t(
+                    "Verified: deleted notifications, remaining file hashes, thread rows and spawn edges.",
+                  )}
+                </p>
+              )}
               {result.error && (
                 <p>{t("Verification error: {code}", { code: result.error })}</p>
               )}
@@ -191,6 +268,15 @@ export function CleanupConfirmation({
                 </details>
               )}
             </div>
+          )}
+          {nativeDriver && attempted && !result && (
+            <button
+              className="button secondary"
+              disabled={running}
+              onClick={() => void readReceipt()}
+            >
+              {t("Check execution result")}
+            </button>
           )}
           <div className="cleanup-actions">
             <button

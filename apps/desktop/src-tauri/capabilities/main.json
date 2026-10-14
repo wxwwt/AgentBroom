@@ -1,6 +1,6 @@
 {
   "identifier": "main",
-  "description": "Read-only Codex inspection and a cleanup request handler that always rejects real execution.",
+  "description": "Read-only default app; isolated native cleanup is available only in the dedicated synthetic test build.",
   "windows": [
     "main"
   ],
@@ -8,6 +8,9 @@
     "core:default",
     "allow-scan-codex",
     "core:window:allow-set-title",
-    "allow-cleanup-execute"
+    "allow-cleanup-execute",
+    "allow-cleanup-mode",
+    "allow-cleanup-preview",
+    "allow-cleanup-result"
   ]
 }

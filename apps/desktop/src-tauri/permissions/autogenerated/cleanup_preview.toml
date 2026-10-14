@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-cleanup-preview"
+description = "Enables the cleanup_preview command without any pre-configured scope."
+commands.allow = ["cleanup_preview"]
+
+[[permission]]
+identifier = "deny-cleanup-preview"
+description = "Denies the cleanup_preview command without any pre-configured scope."
+commands.deny = ["cleanup_preview"]
