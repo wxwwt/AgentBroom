@@ -15,9 +15,13 @@ async fn scan_codex() -> Result<Inventory, InspectError> {
         message: "Local inspection failed.".into(),
     })?
 }
+#[tauri::command]
+fn cleanup_execute() -> Result<(), InspectError> {
+    agentbroom_core::cleanup::reject_live_execution()
+}
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![scan_codex])
+        .invoke_handler(tauri::generate_handler![scan_codex, cleanup_execute])
         .run(tauri::generate_context!())
         .expect("Could not launch AgentBroom");
 }

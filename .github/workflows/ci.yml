@@ -1,4 +1,4 @@
-name: Read-only prototype checks
+name: Inventory and synthetic cleanup checks
 on: [push, pull_request]
 permissions:
   contents: read
@@ -14,6 +14,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: npm ci
       - run: cargo test --locked -p agentbroom-core -p agentbroom-cli
+      - run: cargo test --locked -p agentbroom-core --features synthetic-cleanup
       - run: npm run test:fixtures
       - run: npm test
       - run: npm run build

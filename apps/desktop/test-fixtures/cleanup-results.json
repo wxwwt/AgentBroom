@@ -1,0 +1,498 @@
+[
+  {
+    "expected": {
+      "blockedReasons": [
+        "nativeEffectsUnverified",
+        "realStoreLocked"
+      ],
+      "canExecute": false,
+      "completeness": "observedOnly",
+      "executableFiles": [],
+      "includedIds": [
+        "a",
+        "b",
+        "c"
+      ],
+      "observedFiles": [
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/a1.jsonl",
+          "logicalBytes": 31
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/a2.jsonl",
+          "logicalBytes": 37
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/b.jsonl",
+          "logicalBytes": 43
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/c.jsonl",
+          "logicalBytes": 47
+        }
+      ],
+      "observedLogicalBytes": 158,
+      "outsideDependents": [],
+      "retainedIds": [
+        "a",
+        "b",
+        "c"
+      ],
+      "schemaVersion": 1,
+      "selectedIds": [
+        "a"
+      ],
+      "snapshot": "synthetic-policy-vector",
+      "sourceKind": "codex"
+    },
+    "name": "tree"
+  },
+  {
+    "expected": {
+      "blockedReasons": [
+        "keptRecord",
+        "nativeEffectsUnverified",
+        "realStoreLocked"
+      ],
+      "canExecute": false,
+      "completeness": "observedOnly",
+      "executableFiles": [],
+      "includedIds": [
+        "a",
+        "b",
+        "c"
+      ],
+      "observedFiles": [
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/a1.jsonl",
+          "logicalBytes": 31
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/a2.jsonl",
+          "logicalBytes": 37
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/b.jsonl",
+          "logicalBytes": 43
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/c.jsonl",
+          "logicalBytes": 47
+        }
+      ],
+      "observedLogicalBytes": 158,
+      "outsideDependents": [],
+      "retainedIds": [
+        "a",
+        "b",
+        "c"
+      ],
+      "schemaVersion": 1,
+      "selectedIds": [
+        "a"
+      ],
+      "snapshot": "synthetic-policy-vector",
+      "sourceKind": "codex"
+    },
+    "name": "kept-child"
+  },
+  {
+    "expected": {
+      "blockedReasons": [
+        "nativeEffectsUnverified",
+        "outsideDependency",
+        "realStoreLocked"
+      ],
+      "canExecute": false,
+      "completeness": "observedOnly",
+      "executableFiles": [],
+      "includedIds": [
+        "a",
+        "b",
+        "c"
+      ],
+      "observedFiles": [
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/a1.jsonl",
+          "logicalBytes": 31
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/a2.jsonl",
+          "logicalBytes": 37
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/b.jsonl",
+          "logicalBytes": 43
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/c.jsonl",
+          "logicalBytes": 47
+        }
+      ],
+      "observedLogicalBytes": 158,
+      "outsideDependents": [
+        "d"
+      ],
+      "retainedIds": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "schemaVersion": 1,
+      "selectedIds": [
+        "a"
+      ],
+      "snapshot": "synthetic-policy-vector",
+      "sourceKind": "codex"
+    },
+    "name": "external-reference"
+  },
+  {
+    "expected": {
+      "blockedReasons": [
+        "nativeEffectsUnverified",
+        "outsideDependency",
+        "realStoreLocked"
+      ],
+      "canExecute": false,
+      "completeness": "observedOnly",
+      "executableFiles": [],
+      "includedIds": [
+        "a",
+        "b",
+        "c"
+      ],
+      "observedFiles": [
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/a1.jsonl",
+          "logicalBytes": 31
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/a2.jsonl",
+          "logicalBytes": 37
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/b.jsonl",
+          "logicalBytes": 43
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/c.jsonl",
+          "logicalBytes": 47
+        }
+      ],
+      "observedLogicalBytes": 158,
+      "outsideDependents": [
+        "d"
+      ],
+      "retainedIds": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "schemaVersion": 1,
+      "selectedIds": [
+        "a"
+      ],
+      "snapshot": "synthetic-policy-vector",
+      "sourceKind": "codex"
+    },
+    "name": "multi-source"
+  },
+  {
+    "expected": {
+      "blockedReasons": [
+        "graphUnresolved",
+        "nativeEffectsUnverified",
+        "realStoreLocked"
+      ],
+      "canExecute": false,
+      "completeness": "observedOnly",
+      "executableFiles": [],
+      "includedIds": [
+        "a",
+        "b",
+        "c"
+      ],
+      "observedFiles": [
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/a1.jsonl",
+          "logicalBytes": 31
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/a2.jsonl",
+          "logicalBytes": 37
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/b.jsonl",
+          "logicalBytes": 43
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/c.jsonl",
+          "logicalBytes": 47
+        }
+      ],
+      "observedLogicalBytes": 158,
+      "outsideDependents": [],
+      "retainedIds": [
+        "a",
+        "b",
+        "c"
+      ],
+      "schemaVersion": 1,
+      "selectedIds": [
+        "a"
+      ],
+      "snapshot": "synthetic-policy-vector",
+      "sourceKind": "codex"
+    },
+    "name": "unknown"
+  },
+  {
+    "expected": {
+      "blockedReasons": [
+        "graphUnresolved",
+        "nativeEffectsUnverified",
+        "realStoreLocked"
+      ],
+      "canExecute": false,
+      "completeness": "observedOnly",
+      "executableFiles": [],
+      "includedIds": [
+        "a"
+      ],
+      "observedFiles": [
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/a1.jsonl",
+          "logicalBytes": 31
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/a2.jsonl",
+          "logicalBytes": 37
+        }
+      ],
+      "observedLogicalBytes": 68,
+      "outsideDependents": [],
+      "retainedIds": [
+        "a"
+      ],
+      "schemaVersion": 1,
+      "selectedIds": [
+        "a"
+      ],
+      "snapshot": "synthetic-policy-vector",
+      "sourceKind": "codex"
+    },
+    "name": "cycle"
+  },
+  {
+    "expected": {
+      "blockedReasons": [
+        "nativeEffectsUnverified",
+        "partialCoverage",
+        "realStoreLocked"
+      ],
+      "canExecute": false,
+      "completeness": "observedOnly",
+      "executableFiles": [],
+      "includedIds": [
+        "a",
+        "b",
+        "c"
+      ],
+      "observedFiles": [
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/a1.jsonl",
+          "logicalBytes": 31
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/a2.jsonl",
+          "logicalBytes": 37
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/b.jsonl",
+          "logicalBytes": 43
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/c.jsonl",
+          "logicalBytes": 47
+        }
+      ],
+      "observedLogicalBytes": 158,
+      "outsideDependents": [],
+      "retainedIds": [
+        "a",
+        "b",
+        "c"
+      ],
+      "schemaVersion": 1,
+      "selectedIds": [
+        "a"
+      ],
+      "snapshot": "synthetic-policy-vector",
+      "sourceKind": "codex"
+    },
+    "name": "partial"
+  },
+  {
+    "expected": {
+      "blockedReasons": [
+        "fileOwnershipUnverified",
+        "nativeEffectsUnverified",
+        "realStoreLocked"
+      ],
+      "canExecute": false,
+      "completeness": "observedOnly",
+      "executableFiles": [],
+      "includedIds": [
+        "a",
+        "b",
+        "c"
+      ],
+      "observedFiles": [
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/a1.jsonl",
+          "logicalBytes": 31
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/a2.jsonl",
+          "logicalBytes": 37
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/b.jsonl",
+          "logicalBytes": 43
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/c.jsonl",
+          "logicalBytes": 47
+        }
+      ],
+      "observedLogicalBytes": 158,
+      "outsideDependents": [],
+      "retainedIds": [
+        "a",
+        "b",
+        "c"
+      ],
+      "schemaVersion": 1,
+      "selectedIds": [
+        "a"
+      ],
+      "snapshot": "synthetic-policy-vector",
+      "sourceKind": "codex"
+    },
+    "name": "duplicate-file"
+  },
+  {
+    "expected": {
+      "blockedReasons": [
+        "fileOwnershipUnverified",
+        "nativeEffectsUnverified",
+        "realStoreLocked"
+      ],
+      "canExecute": false,
+      "completeness": "observedOnly",
+      "executableFiles": [],
+      "includedIds": [
+        "a",
+        "b",
+        "c"
+      ],
+      "observedFiles": [
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/a2.jsonl",
+          "logicalBytes": 37
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/b.jsonl",
+          "logicalBytes": 43
+        },
+        {
+          "allocatedBytes": null,
+          "category": "sessions",
+          "key": "sessions/c.jsonl",
+          "logicalBytes": 47
+        }
+      ],
+      "observedLogicalBytes": 127,
+      "outsideDependents": [],
+      "retainedIds": [
+        "a",
+        "b",
+        "c"
+      ],
+      "schemaVersion": 1,
+      "selectedIds": [
+        "a"
+      ],
+      "snapshot": "synthetic-policy-vector",
+      "sourceKind": "codex"
+    },
+    "name": "missing-file"
+  }
+]

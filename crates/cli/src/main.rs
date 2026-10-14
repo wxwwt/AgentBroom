@@ -28,6 +28,7 @@ enum FixtureCommand {
     Plan { ids: Vec<String> },
     Verify,
     WebCatalog,
+    CleanupCatalog,
 }
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
@@ -53,6 +54,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let Command::Fixtures { command } = args.command else {
         unreachable!()
     };
+    if matches!(command, FixtureCommand::CleanupCatalog) {
+        let cases: serde_json::Value =
+            serde_json::from_str(include_str!("../../../fixtures/cleanup-cases.json"))?;
+        let mut result = Vec::new();
+        for c in cases.as_array().ok_or("Invalid test cases")? {
+            let inventory: agentbroom_core::Inventory =
+                serde_json::from_value(c["inventory"].clone())?;
+            let selected: Vec<String> = serde_json::from_value(c["selected"].clone())?;
+            let kept: Vec<String> = serde_json::from_value(c["kept"].clone())?;
+            result.push(serde_json::json!({"name":c["name"],"expected":agentbroom_core::cleanup::plan(&inventory,&selected,&kept)?}));
+        }
+        println!("{}", serde_json::to_string_pretty(&result)?);
+        return Ok(());
+    }
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/demo-store");
     let inventory = scan_fixture_store(&root)?;
     let json = match command {
@@ -69,6 +84,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             &[],
             &inventory.source_fingerprint,
         )?)?,
+        FixtureCommand::CleanupCatalog => unreachable!(),
         FixtureCommand::WebCatalog => serde_json::to_string_pretty(&web_catalog(inventory)?)?,
     };
     println!("{json}");

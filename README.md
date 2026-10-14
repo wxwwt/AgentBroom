@@ -6,7 +6,7 @@
 
 AgentBroom is an early, local-first desktop inspection prototype for coding-agent storage. It makes physical files, logical conversations, spawned agents and independent forks easier to distinguish before anyone considers cleanup.
 
-> **Read-only local inventory.** Launch the app to inspect your real `CODEX_HOME` (or `$HOME/.codex`) immediately. There is no demo mode, sample plan or sample report in the application. Source failures are shown explicitly. No source write, deletion or database connection is available; all real records stay protected.
+> **Read-only local inventory.** Launch the app to inspect your real `CODEX_HOME` (or `$HOME/.codex`) immediately. There is no demo mode, sample plan or sample report in the application. Source failures are shown explicitly. Cleanup candidates, observed impact and a locked confirmation page are available. No real source write, deletion or database connection is available; all real records stay protected.
 
 ## Prototype features
 
@@ -15,10 +15,10 @@ AgentBroom is an early, local-first desktop inspection prototype for coding-agen
 - Explicit protection reasons for pins, references, missing parents, conflicts, unsupported headers and unknown runtime activity.
 - English / Simplified Chinese switching, with saved language preference and system-language defaults.
 - Search, filters, details and session-local keep choices.
-- View-only records and session-local keep marks; no cleanup selection, plan or report UI.
+- Cleanup review candidates, observed main/spawn scope, retained records, outside dependencies and explicit blocking reasons.
 - Tauri desktop and an internal CLI sharing one Rust core.
 
-Database reclamation, deletion, compression and recovery are **not implemented**. See the [roadmap](docs/roadmap.md) for the gates those capabilities would need.
+Real Codex deletion, database reclamation, compression and recovery are **not implemented**. A feature-gated developer harness really deletes backend-generated synthetic files, updates synthetic JSON state, and verifies removed and preserved objects; it has no path/real-store constructor and is absent from default desktop builds. See the [roadmap](docs/roadmap.md) for the gates those capabilities would need.
 
 ## Development
 
@@ -26,7 +26,8 @@ Requires Node.js 24+, a stable Rust toolchain and the platform prerequisites for
 
 ```sh
 npm install
-cargo test -p agentbroom-core -p agentbroom-cli
+cargo test --locked -p agentbroom-core -p agentbroom-cli
+cargo test --locked -p agentbroom-core --features synthetic-cleanup # private generated data only
 npm run test:fixtures
 npm run dev              # real read-only local web app on 127.0.0.1:1420
 npm run desktop:dev      # native Tauri app
@@ -45,6 +46,7 @@ Choose either the browser or native development command; stop the browser develo
 
 ## Design
 
+- [Cleanup detailed design](docs/cleanup-design.md), [two Cursor design reviews](docs/cleanup-review.md), [synthetic test plan](docs/cleanup-test-plan.md)
 - [Live-only startup and verification](docs/live-use.md)
 - [Codex read-only adapter design and limits](docs/codex-readonly-design.md)
 - [Original demo detailed design and IPC boundaries](docs/detail-design.md)
@@ -60,7 +62,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md). Please use synthetic data, keep read-on
 
 ## Security and privacy
 
-No account, telemetry, remote network service or LLM call in the application. The native Codex adapter reads only bounded session headers, title-index rows and desktop pinned IDs. Auth/config/database/asset contents are never opened. Session headers may contain instructions; unused fields are discarded, and conversation bodies are not parsed. No source file write, SQLite connection, maintenance operation or subprocess exists. Symlinks are never followed. macOS/Linux native inspection only; other platforms retain demo mode. Report vulnerabilities using the repository's private reporting channel when enabled; otherwise contact the maintainer through GitHub before sharing sensitive reproduction material. See [SECURITY.md](SECURITY.md).
+No account, telemetry, remote network service or LLM call in the application. The native Codex adapter reads only bounded session headers, title-index rows and desktop pinned IDs. Auth/config/database/asset contents are never opened. Session headers may contain instructions; unused fields are discarded, and conversation bodies are not parsed. The native product never writes source files, opens SQLite, runs maintenance or launches agent processes. `cleanup_execute` unconditionally rejects before source access. The browser development transport invokes only the fixed read-only scanner. Symlinks are never followed. macOS/Linux native inspection only; unsupported platforms report an error and do not fall back to demo. Report vulnerabilities using the repository's private reporting channel when enabled; otherwise contact the maintainer through GitHub before sharing sensitive reproduction material. See [SECURITY.md](SECURITY.md).
 
 ## License
 

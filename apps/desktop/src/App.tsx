@@ -29,7 +29,8 @@ import {
   type Thread,
   type ActivityEntry,
 } from "./types";
-type Page = "overview" | "conversations" | "activity";
+import CleanupPanel from "./CleanupPanel";
+type Page = "overview" | "conversations" | "activity" | "cleanup";
 const categoryNames: Record<string, MessageKey> = {
   sessions: "Session files",
   archives: "Archived sessions",
@@ -158,6 +159,7 @@ function AppContent() {
             [
               { id: "overview", label: "Overview", Icon: LayoutDashboard },
               { id: "conversations", label: "Conversations", Icon: Layers3 },
+              { id: "cleanup", label: "Cleanup preview", Icon: Broom },
               { id: "activity", label: "Activity", Icon: Clock3 },
             ] as const
           ).map(({ id, label, Icon }) => (
@@ -188,7 +190,7 @@ function AppContent() {
           <div className="safety-tile">
             <ShieldCheck size={22} />
             <strong>{t("Inspection comes first.")}</strong>
-            <p>{t("Metadata stays in this window. No cleanup, export or database connections.")}</p>
+            <p>{t("Preview local deletion scope. No sample mode, export or database connections.")}</p>
           </div>
           <div className="version">
             <span>{t("v0.1.0 · prototype")}</span>
@@ -204,7 +206,7 @@ function AppContent() {
                 ? t("Overview")
                 : page === "conversations"
                   ? t("Conversations")
-                  : t("Activity")}
+                  : page === "cleanup" ? t("Cleanup preview") : t("Activity")}
             </strong>
           </div>
           <div className="topbar-controls">
@@ -223,14 +225,14 @@ function AppContent() {
                   ? (t("See your local Codex files."))
                   : page === "conversations"
                     ? t("A clearer view of your history.")
-                    : t("Inspection, with a paper trail.")}
+                    : page === "cleanup" ? t("Review cleanup before any deletion.") : t("Inspection, with a paper trail.")}
               </h1>
               <p>
                 {page === "overview"
-                  ? (t("Read-only inventory. Every record stays protected; no cleanup or export."))
+                  ? (t("Read-only inventory and cleanup preview. Real deletion remains locked."))
                   : page === "conversations"
                     ? t("Segments, spawned agents and independent forks — kept distinct.")
-                    : t("This session’s inspection events. These are not backups or deletion receipts.")}
+                    : page === "cleanup" ? t("Review candidates; no automatic selection.") : t("This session’s inspection events. These are not backups or deletion receipts.")}
               </p>
             </div>
             <button
@@ -424,11 +426,12 @@ function AppContent() {
                   </section>
                   <div className="bottom-note">
                     <ShieldCheck size={15} />
-                    {t("Only local metadata is displayed. All real records are protected; no cleanup or export is available.")}
+                    {t("All real records remain protected. Cleanup previews do not authorize deletion.")}
 
                   </div>
                 </>
               )}
+              {page === "cleanup" && <CleanupPanel key={`${inventory.sourceFingerprint}:${kept.join(",")}`} inventory={inventory} kept={kept}/>}
               {page === "conversations" && (
                 <>
                   <div className="toolbar">

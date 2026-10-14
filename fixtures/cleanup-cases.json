@@ -1,0 +1,1562 @@
+[
+  {
+    "name": "tree",
+    "inventory": {
+      "schemaVersion": 1,
+      "sourceKind": "codex",
+      "datasetLabel": "Synthetic cleanup vectors",
+      "sourceFingerprint": "synthetic-policy-vector",
+      "items": [
+        {
+          "key": "sessions/a1.jsonl",
+          "category": "sessions",
+          "logicalBytes": 31,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/a2.jsonl",
+          "category": "sessions",
+          "logicalBytes": 37,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/b.jsonl",
+          "category": "sessions",
+          "logicalBytes": 43,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/c.jsonl",
+          "category": "sessions",
+          "logicalBytes": 47,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/d.jsonl",
+          "category": "sessions",
+          "logicalBytes": 53,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/e.jsonl",
+          "category": "sessions",
+          "logicalBytes": 59,
+          "allocatedBytes": null
+        }
+      ],
+      "threads": [
+        {
+          "id": "a",
+          "title": "Synthetic a",
+          "project": "Synthetic",
+          "relation": "root",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/a1.jsonl",
+            "sessions/a2.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 68,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "b",
+          "title": "Synthetic b",
+          "project": "Synthetic",
+          "relation": "spawned",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": "a",
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/b.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 43,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "c",
+          "title": "Synthetic c",
+          "project": "Synthetic",
+          "relation": "spawned",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": "b",
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/c.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 47,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "d",
+          "title": "Synthetic d",
+          "project": "Synthetic",
+          "relation": "fork",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/d.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 53,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "e",
+          "title": "Synthetic e",
+          "project": "Synthetic",
+          "relation": "root",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/e.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 59,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        }
+      ],
+      "totals": [],
+      "warnings": [],
+      "executionEnabled": false,
+      "partialCoverage": false
+    },
+    "selected": [
+      "a"
+    ],
+    "kept": []
+  },
+  {
+    "name": "kept-child",
+    "inventory": {
+      "schemaVersion": 1,
+      "sourceKind": "codex",
+      "datasetLabel": "Synthetic cleanup vectors",
+      "sourceFingerprint": "synthetic-policy-vector",
+      "items": [
+        {
+          "key": "sessions/a1.jsonl",
+          "category": "sessions",
+          "logicalBytes": 31,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/a2.jsonl",
+          "category": "sessions",
+          "logicalBytes": 37,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/b.jsonl",
+          "category": "sessions",
+          "logicalBytes": 43,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/c.jsonl",
+          "category": "sessions",
+          "logicalBytes": 47,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/d.jsonl",
+          "category": "sessions",
+          "logicalBytes": 53,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/e.jsonl",
+          "category": "sessions",
+          "logicalBytes": 59,
+          "allocatedBytes": null
+        }
+      ],
+      "threads": [
+        {
+          "id": "a",
+          "title": "Synthetic a",
+          "project": "Synthetic",
+          "relation": "root",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/a1.jsonl",
+            "sessions/a2.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 68,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "b",
+          "title": "Synthetic b",
+          "project": "Synthetic",
+          "relation": "spawned",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": "a",
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/b.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 43,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "c",
+          "title": "Synthetic c",
+          "project": "Synthetic",
+          "relation": "spawned",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": "b",
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/c.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 47,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "d",
+          "title": "Synthetic d",
+          "project": "Synthetic",
+          "relation": "fork",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/d.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 53,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "e",
+          "title": "Synthetic e",
+          "project": "Synthetic",
+          "relation": "root",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/e.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 59,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        }
+      ],
+      "totals": [],
+      "warnings": [],
+      "executionEnabled": false,
+      "partialCoverage": false
+    },
+    "selected": [
+      "a"
+    ],
+    "kept": [
+      "c"
+    ]
+  },
+  {
+    "name": "external-reference",
+    "inventory": {
+      "schemaVersion": 1,
+      "sourceKind": "codex",
+      "datasetLabel": "Synthetic cleanup vectors",
+      "sourceFingerprint": "synthetic-policy-vector",
+      "items": [
+        {
+          "key": "sessions/a1.jsonl",
+          "category": "sessions",
+          "logicalBytes": 31,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/a2.jsonl",
+          "category": "sessions",
+          "logicalBytes": 37,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/b.jsonl",
+          "category": "sessions",
+          "logicalBytes": 43,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/c.jsonl",
+          "category": "sessions",
+          "logicalBytes": 47,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/d.jsonl",
+          "category": "sessions",
+          "logicalBytes": 53,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/e.jsonl",
+          "category": "sessions",
+          "logicalBytes": 59,
+          "allocatedBytes": null
+        }
+      ],
+      "threads": [
+        {
+          "id": "a",
+          "title": "Synthetic a",
+          "project": "Synthetic",
+          "relation": "root",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/a1.jsonl",
+            "sessions/a2.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 68,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "b",
+          "title": "Synthetic b",
+          "project": "Synthetic",
+          "relation": "spawned",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": "a",
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/b.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 43,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "c",
+          "title": "Synthetic c",
+          "project": "Synthetic",
+          "relation": "spawned",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": "b",
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/c.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 47,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "d",
+          "title": "Synthetic d",
+          "project": "Synthetic",
+          "relation": "fork",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/d.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 53,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [
+            "b"
+          ],
+          "relationEvidence": []
+        },
+        {
+          "id": "e",
+          "title": "Synthetic e",
+          "project": "Synthetic",
+          "relation": "root",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/e.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 59,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        }
+      ],
+      "totals": [],
+      "warnings": [],
+      "executionEnabled": false,
+      "partialCoverage": false
+    },
+    "selected": [
+      "a"
+    ],
+    "kept": []
+  },
+  {
+    "name": "multi-source",
+    "inventory": {
+      "schemaVersion": 1,
+      "sourceKind": "codex",
+      "datasetLabel": "Synthetic cleanup vectors",
+      "sourceFingerprint": "synthetic-policy-vector",
+      "items": [
+        {
+          "key": "sessions/a1.jsonl",
+          "category": "sessions",
+          "logicalBytes": 31,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/a2.jsonl",
+          "category": "sessions",
+          "logicalBytes": 37,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/b.jsonl",
+          "category": "sessions",
+          "logicalBytes": 43,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/c.jsonl",
+          "category": "sessions",
+          "logicalBytes": 47,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/d.jsonl",
+          "category": "sessions",
+          "logicalBytes": 53,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/e.jsonl",
+          "category": "sessions",
+          "logicalBytes": 59,
+          "allocatedBytes": null
+        }
+      ],
+      "threads": [
+        {
+          "id": "a",
+          "title": "Synthetic a",
+          "project": "Synthetic",
+          "relation": "root",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/a1.jsonl",
+            "sessions/a2.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 68,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "b",
+          "title": "Synthetic b",
+          "project": "Synthetic",
+          "relation": "spawned",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": "a",
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/b.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 43,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "c",
+          "title": "Synthetic c",
+          "project": "Synthetic",
+          "relation": "spawned",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": "b",
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/c.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 47,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "d",
+          "title": "Synthetic d",
+          "project": "Synthetic",
+          "relation": "fork",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/d.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 53,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [
+            "a"
+          ],
+          "historySources": [
+            "e",
+            "c"
+          ],
+          "relationEvidence": []
+        },
+        {
+          "id": "e",
+          "title": "Synthetic e",
+          "project": "Synthetic",
+          "relation": "root",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/e.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 59,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        }
+      ],
+      "totals": [],
+      "warnings": [],
+      "executionEnabled": false,
+      "partialCoverage": false
+    },
+    "selected": [
+      "a"
+    ],
+    "kept": []
+  },
+  {
+    "name": "unknown",
+    "inventory": {
+      "schemaVersion": 1,
+      "sourceKind": "codex",
+      "datasetLabel": "Synthetic cleanup vectors",
+      "sourceFingerprint": "synthetic-policy-vector",
+      "items": [
+        {
+          "key": "sessions/a1.jsonl",
+          "category": "sessions",
+          "logicalBytes": 31,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/a2.jsonl",
+          "category": "sessions",
+          "logicalBytes": 37,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/b.jsonl",
+          "category": "sessions",
+          "logicalBytes": 43,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/c.jsonl",
+          "category": "sessions",
+          "logicalBytes": 47,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/d.jsonl",
+          "category": "sessions",
+          "logicalBytes": 53,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/e.jsonl",
+          "category": "sessions",
+          "logicalBytes": 59,
+          "allocatedBytes": null
+        }
+      ],
+      "threads": [
+        {
+          "id": "a",
+          "title": "Synthetic a",
+          "project": "Synthetic",
+          "relation": "root",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/a1.jsonl",
+            "sessions/a2.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 68,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "b",
+          "title": "Synthetic b",
+          "project": "Synthetic",
+          "relation": "spawned",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": "a",
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/b.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 43,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "c",
+          "title": "Synthetic c",
+          "project": "Synthetic",
+          "relation": "spawned",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": "b",
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/c.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 47,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "d",
+          "title": "Synthetic d",
+          "project": "Synthetic",
+          "relation": "fork",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/d.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 53,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "e",
+          "title": "Synthetic e",
+          "project": "Synthetic",
+          "relation": "unknown",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/e.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 59,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        }
+      ],
+      "totals": [],
+      "warnings": [],
+      "executionEnabled": false,
+      "partialCoverage": false
+    },
+    "selected": [
+      "a"
+    ],
+    "kept": []
+  },
+  {
+    "name": "cycle",
+    "inventory": {
+      "schemaVersion": 1,
+      "sourceKind": "codex",
+      "datasetLabel": "Synthetic cleanup vectors",
+      "sourceFingerprint": "synthetic-policy-vector",
+      "items": [
+        {
+          "key": "sessions/a1.jsonl",
+          "category": "sessions",
+          "logicalBytes": 31,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/a2.jsonl",
+          "category": "sessions",
+          "logicalBytes": 37,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/b.jsonl",
+          "category": "sessions",
+          "logicalBytes": 43,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/c.jsonl",
+          "category": "sessions",
+          "logicalBytes": 47,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/d.jsonl",
+          "category": "sessions",
+          "logicalBytes": 53,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/e.jsonl",
+          "category": "sessions",
+          "logicalBytes": 59,
+          "allocatedBytes": null
+        }
+      ],
+      "threads": [
+        {
+          "id": "a",
+          "title": "Synthetic a",
+          "project": "Synthetic",
+          "relation": "root",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/a1.jsonl",
+            "sessions/a2.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 68,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "b",
+          "title": "Synthetic b",
+          "project": "Synthetic",
+          "relation": "spawned",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": "c",
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/b.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 43,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "c",
+          "title": "Synthetic c",
+          "project": "Synthetic",
+          "relation": "spawned",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": "b",
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/c.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 47,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "d",
+          "title": "Synthetic d",
+          "project": "Synthetic",
+          "relation": "fork",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/d.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 53,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "e",
+          "title": "Synthetic e",
+          "project": "Synthetic",
+          "relation": "root",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/e.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 59,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        }
+      ],
+      "totals": [],
+      "warnings": [],
+      "executionEnabled": false,
+      "partialCoverage": false
+    },
+    "selected": [
+      "a"
+    ],
+    "kept": []
+  },
+  {
+    "name": "partial",
+    "inventory": {
+      "schemaVersion": 1,
+      "sourceKind": "codex",
+      "datasetLabel": "Synthetic cleanup vectors",
+      "sourceFingerprint": "synthetic-policy-vector",
+      "items": [
+        {
+          "key": "sessions/a1.jsonl",
+          "category": "sessions",
+          "logicalBytes": 31,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/a2.jsonl",
+          "category": "sessions",
+          "logicalBytes": 37,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/b.jsonl",
+          "category": "sessions",
+          "logicalBytes": 43,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/c.jsonl",
+          "category": "sessions",
+          "logicalBytes": 47,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/d.jsonl",
+          "category": "sessions",
+          "logicalBytes": 53,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/e.jsonl",
+          "category": "sessions",
+          "logicalBytes": 59,
+          "allocatedBytes": null
+        }
+      ],
+      "threads": [
+        {
+          "id": "a",
+          "title": "Synthetic a",
+          "project": "Synthetic",
+          "relation": "root",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/a1.jsonl",
+            "sessions/a2.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 68,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "b",
+          "title": "Synthetic b",
+          "project": "Synthetic",
+          "relation": "spawned",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": "a",
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/b.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 43,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "c",
+          "title": "Synthetic c",
+          "project": "Synthetic",
+          "relation": "spawned",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": "b",
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/c.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 47,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "d",
+          "title": "Synthetic d",
+          "project": "Synthetic",
+          "relation": "fork",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/d.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 53,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "e",
+          "title": "Synthetic e",
+          "project": "Synthetic",
+          "relation": "root",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/e.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 59,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        }
+      ],
+      "totals": [],
+      "warnings": [],
+      "executionEnabled": false,
+      "partialCoverage": true
+    },
+    "selected": [
+      "a"
+    ],
+    "kept": []
+  },
+  {
+    "name": "duplicate-file",
+    "inventory": {
+      "schemaVersion": 1,
+      "sourceKind": "codex",
+      "datasetLabel": "Synthetic cleanup vectors",
+      "sourceFingerprint": "synthetic-policy-vector",
+      "items": [
+        {
+          "key": "sessions/a1.jsonl",
+          "category": "sessions",
+          "logicalBytes": 31,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/a2.jsonl",
+          "category": "sessions",
+          "logicalBytes": 37,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/b.jsonl",
+          "category": "sessions",
+          "logicalBytes": 43,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/c.jsonl",
+          "category": "sessions",
+          "logicalBytes": 47,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/d.jsonl",
+          "category": "sessions",
+          "logicalBytes": 53,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/e.jsonl",
+          "category": "sessions",
+          "logicalBytes": 59,
+          "allocatedBytes": null
+        }
+      ],
+      "threads": [
+        {
+          "id": "a",
+          "title": "Synthetic a",
+          "project": "Synthetic",
+          "relation": "root",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/a1.jsonl",
+            "sessions/a2.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 68,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "b",
+          "title": "Synthetic b",
+          "project": "Synthetic",
+          "relation": "spawned",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": "a",
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/b.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 43,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "c",
+          "title": "Synthetic c",
+          "project": "Synthetic",
+          "relation": "spawned",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": "b",
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/c.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 47,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "d",
+          "title": "Synthetic d",
+          "project": "Synthetic",
+          "relation": "fork",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/d.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 53,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "e",
+          "title": "Synthetic e",
+          "project": "Synthetic",
+          "relation": "root",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/a1.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 59,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        }
+      ],
+      "totals": [],
+      "warnings": [],
+      "executionEnabled": false,
+      "partialCoverage": false
+    },
+    "selected": [
+      "a"
+    ],
+    "kept": []
+  },
+  {
+    "name": "missing-file",
+    "inventory": {
+      "schemaVersion": 1,
+      "sourceKind": "codex",
+      "datasetLabel": "Synthetic cleanup vectors",
+      "sourceFingerprint": "synthetic-policy-vector",
+      "items": [
+        {
+          "key": "sessions/a2.jsonl",
+          "category": "sessions",
+          "logicalBytes": 37,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/b.jsonl",
+          "category": "sessions",
+          "logicalBytes": 43,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/c.jsonl",
+          "category": "sessions",
+          "logicalBytes": 47,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/d.jsonl",
+          "category": "sessions",
+          "logicalBytes": 53,
+          "allocatedBytes": null
+        },
+        {
+          "key": "sessions/e.jsonl",
+          "category": "sessions",
+          "logicalBytes": 59,
+          "allocatedBytes": null
+        }
+      ],
+      "threads": [
+        {
+          "id": "a",
+          "title": "Synthetic a",
+          "project": "Synthetic",
+          "relation": "root",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/a1.jsonl",
+            "sessions/a2.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 68,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "b",
+          "title": "Synthetic b",
+          "project": "Synthetic",
+          "relation": "spawned",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": "a",
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/b.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 43,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "c",
+          "title": "Synthetic c",
+          "project": "Synthetic",
+          "relation": "spawned",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": "b",
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/c.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 47,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "d",
+          "title": "Synthetic d",
+          "project": "Synthetic",
+          "relation": "fork",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/d.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 53,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        },
+        {
+          "id": "e",
+          "title": "Synthetic e",
+          "project": "Synthetic",
+          "relation": "root",
+          "activity": "completed",
+          "updatedAt": "2026-01-01T00:00:00Z",
+          "parentId": null,
+          "sharedHistoryFrom": null,
+          "files": [
+            "sessions/e.jsonl"
+          ],
+          "segmentIds": [],
+          "ownBytes": 59,
+          "inclusiveBytes": 0,
+          "ownedDescendantIds": [],
+          "protectionReasons": [],
+          "sourceType": "synthetic",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
+        }
+      ],
+      "totals": [],
+      "warnings": [],
+      "executionEnabled": false,
+      "partialCoverage": false
+    },
+    "selected": [
+      "a"
+    ],
+    "kept": []
+  }
+]

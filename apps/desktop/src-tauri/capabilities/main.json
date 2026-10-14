@@ -1,12 +1,13 @@
 {
   "identifier": "main",
-  "description": "Only real read-only Codex inventory for the local main window.",
+  "description": "Read-only Codex inspection and a cleanup request handler that always rejects real execution.",
   "windows": [
     "main"
   ],
   "permissions": [
     "core:default",
     "allow-scan-codex",
-    "core:window:allow-set-title"
+    "core:window:allow-set-title",
+    "allow-cleanup-execute"
   ]
 }
