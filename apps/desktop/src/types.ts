@@ -14,6 +14,11 @@ export interface Thread {
   inclusiveBytes: number;
   ownedDescendantIds: string[];
   protectionReasons: string[];
+  sourceType?: string;
+  forkedFromId?: string | null;
+  forkSources?: string[];
+  historySources?: string[];
+  relationEvidence?: string[];
 }
 export interface Total {
   category: string;
@@ -23,7 +28,7 @@ export interface Total {
 }
 export interface Inventory {
   schemaVersion: number;
-  sourceKind: "demo";
+  sourceKind: "demo" | "codex";
   datasetLabel: string;
   sourceFingerprint: string;
   items: {
@@ -36,10 +41,11 @@ export interface Inventory {
   totals: Total[];
   warnings: string[];
   executionEnabled: false;
+  partialCoverage?: boolean;
 }
 export interface Preview {
   schemaVersion: number;
-  sourceKind: "demo";
+  sourceKind: "demo" | "codex";
   sourceFingerprint: string;
   selectedIds: string[];
   affectedIds: string[];

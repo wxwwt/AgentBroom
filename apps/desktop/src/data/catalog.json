@@ -109,7 +109,12 @@
         ],
         "protectionReasons": [
           "Referenced by an independent fork"
-        ]
+        ],
+        "sourceType": "demo",
+        "forkedFromId": null,
+        "forkSources": [],
+        "historySources": [],
+        "relationEvidence": []
       },
       {
         "id": "demo-atlas-fork",
@@ -129,7 +134,12 @@
         "ownBytes": 63023,
         "inclusiveBytes": 63023,
         "ownedDescendantIds": [],
-        "protectionReasons": []
+        "protectionReasons": [],
+        "sourceType": "demo",
+        "forkedFromId": null,
+        "forkSources": [],
+        "historySources": [],
+        "relationEvidence": []
       },
       {
         "id": "demo-atlas-helper",
@@ -149,7 +159,12 @@
         "ownBytes": 28829,
         "inclusiveBytes": 28829,
         "ownedDescendantIds": [],
-        "protectionReasons": []
+        "protectionReasons": [],
+        "sourceType": "demo",
+        "forkedFromId": null,
+        "forkSources": [],
+        "historySources": [],
+        "relationEvidence": []
       },
       {
         "id": "demo-notebook",
@@ -169,7 +184,12 @@
         "ownBytes": 34512,
         "inclusiveBytes": 34512,
         "ownedDescendantIds": [],
-        "protectionReasons": []
+        "protectionReasons": [],
+        "sourceType": "demo",
+        "forkedFromId": null,
+        "forkSources": [],
+        "historySources": [],
+        "relationEvidence": []
       },
       {
         "id": "demo-orbit",
@@ -191,7 +211,12 @@
         "ownedDescendantIds": [
           "demo-orbit-tests"
         ],
-        "protectionReasons": []
+        "protectionReasons": [],
+        "sourceType": "demo",
+        "forkedFromId": null,
+        "forkSources": [],
+        "historySources": [],
+        "relationEvidence": []
       },
       {
         "id": "demo-orbit-tests",
@@ -211,7 +236,12 @@
         "ownBytes": 37373,
         "inclusiveBytes": 37373,
         "ownedDescendantIds": [],
-        "protectionReasons": []
+        "protectionReasons": [],
+        "sourceType": "demo",
+        "forkedFromId": null,
+        "forkSources": [],
+        "historySources": [],
+        "relationEvidence": []
       },
       {
         "id": "demo-sprout",
@@ -233,7 +263,12 @@
         "ownedDescendantIds": [],
         "protectionReasons": [
           "Active conversation"
-        ]
+        ],
+        "sourceType": "demo",
+        "forkedFromId": null,
+        "forkSources": [],
+        "historySources": [],
+        "relationEvidence": []
       },
       {
         "id": "unknown:archives/compressed.jsonl.zst",
@@ -254,7 +289,12 @@
         "protectionReasons": [
           "Compressed sample content was not inspected.",
           "Incomplete relationship metadata"
-        ]
+        ],
+        "sourceType": "unknown",
+        "forkedFromId": null,
+        "forkSources": [],
+        "historySources": [],
+        "relationEvidence": []
       },
       {
         "id": "unknown:sessions/oversized-header.jsonl",
@@ -275,7 +315,12 @@
         "protectionReasons": [
           "Header exceeds the bounded metadata budget.",
           "Incomplete relationship metadata"
-        ]
+        ],
+        "sourceType": "unknown",
+        "forkedFromId": null,
+        "forkSources": [],
+        "historySources": [],
+        "relationEvidence": []
       }
     ],
     "totals": [
@@ -314,7 +359,8 @@
       "sessions/oversized-header.jsonl: Header exceeds the bounded metadata budget.",
       "archives/compressed.jsonl.zst: Compressed sample content was not inspected."
     ],
-    "executionEnabled": false
+    "executionEnabled": false,
+    "partialCoverage": false
   },
   "previews": {
     "[\"demo-atlas-fork\",\"demo-notebook\",\"demo-orbit\"]": {
@@ -351,7 +397,12 @@
           "ownBytes": 63023,
           "inclusiveBytes": 63023,
           "ownedDescendantIds": [],
-          "protectionReasons": []
+          "protectionReasons": [],
+          "sourceType": "demo",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
         },
         {
           "id": "demo-notebook",
@@ -371,7 +422,12 @@
           "ownBytes": 34512,
           "inclusiveBytes": 34512,
           "ownedDescendantIds": [],
-          "protectionReasons": []
+          "protectionReasons": [],
+          "sourceType": "demo",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
         },
         {
           "id": "demo-orbit",
@@ -393,7 +449,12 @@
           "ownedDescendantIds": [
             "demo-orbit-tests"
           ],
-          "protectionReasons": []
+          "protectionReasons": [],
+          "sourceType": "demo",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
         },
         {
           "id": "demo-orbit-tests",
@@ -413,7 +474,12 @@
           "ownBytes": 37373,
           "inclusiveBytes": 37373,
           "ownedDescendantIds": [],
-          "protectionReasons": []
+          "protectionReasons": [],
+          "sourceType": "demo",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
         }
       ],
       "logicalBytes": 220706,
@@ -454,7 +520,12 @@
           "ownBytes": 63023,
           "inclusiveBytes": 63023,
           "ownedDescendantIds": [],
-          "protectionReasons": []
+          "protectionReasons": [],
+          "sourceType": "demo",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
         },
         {
           "id": "demo-notebook",
@@ -474,7 +545,12 @@
           "ownBytes": 34512,
           "inclusiveBytes": 34512,
           "ownedDescendantIds": [],
-          "protectionReasons": []
+          "protectionReasons": [],
+          "sourceType": "demo",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
         }
       ],
       "logicalBytes": 97535,
@@ -516,7 +592,12 @@
           "ownBytes": 63023,
           "inclusiveBytes": 63023,
           "ownedDescendantIds": [],
-          "protectionReasons": []
+          "protectionReasons": [],
+          "sourceType": "demo",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
         },
         {
           "id": "demo-orbit",
@@ -538,7 +619,12 @@
           "ownedDescendantIds": [
             "demo-orbit-tests"
           ],
-          "protectionReasons": []
+          "protectionReasons": [],
+          "sourceType": "demo",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
         },
         {
           "id": "demo-orbit-tests",
@@ -558,7 +644,12 @@
           "ownBytes": 37373,
           "inclusiveBytes": 37373,
           "ownedDescendantIds": [],
-          "protectionReasons": []
+          "protectionReasons": [],
+          "sourceType": "demo",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
         }
       ],
       "logicalBytes": 186194,
@@ -597,7 +688,12 @@
           "ownBytes": 63023,
           "inclusiveBytes": 63023,
           "ownedDescendantIds": [],
-          "protectionReasons": []
+          "protectionReasons": [],
+          "sourceType": "demo",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
         }
       ],
       "logicalBytes": 63023,
@@ -639,7 +735,12 @@
           "ownBytes": 34512,
           "inclusiveBytes": 34512,
           "ownedDescendantIds": [],
-          "protectionReasons": []
+          "protectionReasons": [],
+          "sourceType": "demo",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
         },
         {
           "id": "demo-orbit",
@@ -661,7 +762,12 @@
           "ownedDescendantIds": [
             "demo-orbit-tests"
           ],
-          "protectionReasons": []
+          "protectionReasons": [],
+          "sourceType": "demo",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
         },
         {
           "id": "demo-orbit-tests",
@@ -681,7 +787,12 @@
           "ownBytes": 37373,
           "inclusiveBytes": 37373,
           "ownedDescendantIds": [],
-          "protectionReasons": []
+          "protectionReasons": [],
+          "sourceType": "demo",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
         }
       ],
       "logicalBytes": 157683,
@@ -720,7 +831,12 @@
           "ownBytes": 34512,
           "inclusiveBytes": 34512,
           "ownedDescendantIds": [],
-          "protectionReasons": []
+          "protectionReasons": [],
+          "sourceType": "demo",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
         }
       ],
       "logicalBytes": 34512,
@@ -762,7 +878,12 @@
           "ownedDescendantIds": [
             "demo-orbit-tests"
           ],
-          "protectionReasons": []
+          "protectionReasons": [],
+          "sourceType": "demo",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
         },
         {
           "id": "demo-orbit-tests",
@@ -782,7 +903,12 @@
           "ownBytes": 37373,
           "inclusiveBytes": 37373,
           "ownedDescendantIds": [],
-          "protectionReasons": []
+          "protectionReasons": [],
+          "sourceType": "demo",
+          "forkedFromId": null,
+          "forkSources": [],
+          "historySources": [],
+          "relationEvidence": []
         }
       ],
       "logicalBytes": 123171,

@@ -26,6 +26,7 @@ import {
   getReport,
   errorText,
   sourceLabel,
+  nativeRuntime,
 } from "./bridge";
 import {
   bytes,
@@ -41,6 +42,7 @@ const categoryNames: Record<string, string> = {
   history: "History database",
   logs: "Logs & WAL",
   assets: "Generated assets",
+  worktrees: "Worktrees", cache: "Tools & cache", other: "Other local files",
 };
 const categoryColors: Record<string, string> = {
   sessions: "#d49a35",
@@ -48,6 +50,7 @@ const categoryColors: Record<string, string> = {
   history: "#8999ba",
   logs: "#b5a1b2",
   assets: "#b7b3a5",
+  worktrees: "#7499a6", cache: "#9a8b70", other: "#787878",
 };
 function Modal({
   open,
@@ -95,6 +98,9 @@ export default function App() {
     [report, setReport] = useState<string | null>(null),
     [busy, setBusy] = useState(false),
     [activity, setActivity] = useState<ActivityEntry[]>([]);
+  const [source, setSource] = useState<"demo" | "codex">("demo");
+  const [visibleLimit, setVisibleLimit] = useState(50);
+  const isReal = inventory?.sourceKind === "codex";
   const scanSeq = useRef(0),
     reviewSeq = useRef(0),
     entryId = useRef(0);
@@ -119,21 +125,22 @@ export default function App() {
     setReport(null);
     setBusy(false);
   };
-  async function rescan() {
+  async function rescan(nextSource: "demo" | "codex" = source) {
+    setSource(nextSource);
     const seq = ++scanSeq.current;
     invalidate();
     setLoading(true);
     setError("");
     try {
-      const next = await loadInventory();
+      const next = await loadInventory(nextSource);
       if (seq !== scanSeq.current) return;
       setInventory(next);
       setSelected([]);
       setKept([]);
       setDetailId(null);
       addActivity(
-        "Demo inventory inspected",
-        `${next.items.length} bundled synthetic files. No real agent data accessed.`,
+        next.sourceKind === "codex" ? "Local Codex inspected read-only" : "Demo inventory inspected",
+        next.sourceKind === "codex" ? `${next.items.length} files measured; no source files written, no database opened.` : `${next.items.length} bundled synthetic files. No real agent data accessed.`,
       );
     } catch (e) {
       if (seq === scanSeq.current) {
@@ -154,16 +161,19 @@ export default function App() {
   const roots =
     inventory?.threads.filter((t) => t.relation !== "spawned") ?? [];
   const total = inventory?.totals.reduce((n, c) => n + c.logicalBytes, 0) ?? 0;
-  const protectedCount = roots.filter(
+  const protectedCount = (isReal ? inventory!.threads : roots).filter(
     (t) => t.protectionReasons.length > 0 || kept.includes(t.id),
   ).length;
   const reviewable = roots.filter(
     (t) => !t.protectionReasons.length && !kept.includes(t.id),
   );
-  const sorted = [...roots].sort(
+  const records = isReal ? (inventory?.threads ?? []) : roots;
+  const allocatedTotal = inventory?.totals.every((t) => t.allocatedBytes !== null) ? inventory.totals.reduce((n,t) => n + t.allocatedBytes!, 0) : null;
+  useEffect(() => {setVisibleLimit(50);}, [search, filter, inventory]);
+  const sorted = [...records].sort(
     (a, b) => b.inclusiveBytes - a.inclusiveBytes || a.id.localeCompare(b.id),
   );
-  const shown = sorted.filter(
+  const matches = sorted.filter(
     (t) =>
       `${t.title} ${t.project} ${t.id}`
         .toLowerCase()
@@ -174,8 +184,10 @@ export default function App() {
         (filter === "reviewable" &&
           !t.protectionReasons.length &&
           !kept.includes(t.id)) ||
-        (filter === "kept" && kept.includes(t.id))),
+        (filter === "kept" && kept.includes(t.id)) ||
+        (["root", "spawned", "fork", "unknown"].includes(filter) && t.relation === filter)),
   );
+  const shown = matches.slice(0, visibleLimit);
   const detail = inventory?.threads.find((t) => t.id === detailId);
   function toggleSelection(id: string) {
     invalidate();
@@ -195,7 +207,7 @@ export default function App() {
     );
   }
   async function review(asReport = false) {
-    if (!inventory) return;
+    if (!inventory || inventory.sourceKind !== "demo") return;
     const seq = ++reviewSeq.current;
     setBusy(true);
     setError("");
@@ -260,7 +272,7 @@ export default function App() {
               <Icon size={18} />
               {label}
               {id === "conversations" && inventory && (
-                <span className="nav-count">{roots.length}</span>
+                <span className="nav-count">{records.length}</span>
               )}
             </button>
           ))}
@@ -270,15 +282,19 @@ export default function App() {
         <div className="source-tile">
           <span className="source-dot" />
           <div>
-            Codex sample store<small>Bundled synthetic fixtures</small>
+            {source === "codex" ? "Local Codex home" : "Codex sample store"}<small>{source === "codex" ? "Metadata inspection only" : "Bundled synthetic fixtures"}</small>
           </div>
           <LockKeyhole size={14} />
         </div>
+        <button className="button secondary source-switch" disabled={loading || !nativeRuntime} onClick={() => void rescan(source === "demo" ? "codex" : "demo")}>
+          {source === "demo" ? "Inspect local Codex" : "Switch to demo"}
+        </button>
+        {!nativeRuntime && <p className="tiny-note source-switch">Local inspection requires the desktop app.</p>}
         <div className="sidebar-bottom">
           <div className="safety-tile">
             <ShieldCheck size={22} />
             <strong>Inspection comes first.</strong>
-            <p>This prototype has no access to your real agent history.</p>
+            <p>{source === "codex" ? "Metadata stays in this window. No cleanup, export or database connections." : "Demo mode inspects bundled synthetic data only."}</p>
           </div>
           <div className="version">
             <span>v0.1.0 · prototype</span>
@@ -299,7 +315,7 @@ export default function App() {
             </strong>
           </div>
           <span className="readonly-badge">
-            <ShieldCheck size={13} /> Demo dataset · read-only
+            <ShieldCheck size={13} /> {source === "codex" ? "Local Codex · read-only" : "Demo dataset · read-only"}
           </span>
         </header>
         <div className="content">
@@ -308,14 +324,14 @@ export default function App() {
               <div className="eyebrow">LOCAL STORAGE INSPECTION</div>
               <h1>
                 {page === "overview"
-                  ? "Know what’s taking up space."
+                  ? (isReal ? "See your local Codex files." : "Know what’s taking up space.")
                   : page === "conversations"
                     ? "A clearer view of your history."
                     : "Inspection, with a paper trail."}
               </h1>
               <p>
                 {page === "overview"
-                  ? "Understand the footprint. Keep the context. Make an informed decision."
+                  ? (isReal ? "Read-only inventory. Every record stays protected; no cleanup or export." : "Understand the footprint. Keep the context. Make an informed decision.")
                   : page === "conversations"
                     ? "Segments, spawned agents and independent forks — kept distinct."
                     : "This session’s inspection events. These are not backups or deletion receipts."}
@@ -327,7 +343,7 @@ export default function App() {
               disabled={loading}
             >
               <RefreshCw size={15} className={loading ? "spin" : ""} />
-              {loading ? "Inspecting…" : "Rescan demo"}
+              {loading ? "Inspecting…" : source === "codex" ? "Rescan Codex" : "Rescan demo"}
             </button>
           </div>
           <div className="demo-banner">
@@ -335,14 +351,13 @@ export default function App() {
               <Sparkles size={17} />
             </span>
             <div>
-              <strong>You’re exploring a sample dataset.</strong>
+              <strong>{source === "codex" ? "Your local Codex metadata. Inspection only." : "You’re exploring a sample dataset."}</strong>
               <span>
                 {" "}
-                Only bundled synthetic files are inspected. No cleanup is
-                available.
+                {source === "codex" ? "Databases are measured without opening them. Live status is unknown; every record remains protected." : "Only bundled synthetic files are inspected. No cleanup is available."}
               </span>
             </div>
-            <span className="demo-source">{sourceLabel}</span>
+            <span className="demo-source">{source === "codex" ? "Native Codex scanner" : sourceLabel}</span>
           </div>
           {error && (
             <div role="alert" className="error-banner">
@@ -352,46 +367,51 @@ export default function App() {
           {loading ? (
             <div className="empty-state">
               <RefreshCw className="spin" />
-              Loading the bundled demo inventory…
+              {source === "codex" ? "Inspecting local file metadata…" : "Loading the bundled demo inventory…"}
             </div>
           ) : !inventory ? (
             <div className="empty-state">
               <ShieldCheck />
-              Demo unavailable. No fallback to a real agent store.
+              {source === "codex" ? "Local inspection unavailable. No data was changed." : "Demo unavailable. No fallback to a real agent store."}
               <button
                 className="button secondary"
                 onClick={() => void rescan()}
               >
-                Retry demo
+                Retry inspection
               </button>
             </div>
           ) : (
             <>
+              {isReal && <div className="scope-banner" role="note">
+                <strong>{inventory.partialCoverage ? "Partial inventory · measured home files" : "Measured home files only"}</strong>
+                <p>Only the configured Codex home is measured. External sqlite_home, symlink targets, directory metadata and inaccessible entries are excluded. Allocated blocks are not reclaimable space; shared hardlink blocks are credited to the first lexical path.</p>
+              </div>}
+              {isReal && <details className="scan-notes"><summary>Scope and measurement limits ({inventory.warnings.length})</summary>{inventory.warnings.map(w => <p key={w}>{w}</p>)}</details>}
               {page === "overview" && (
                 <>
                   <section className="metrics" aria-label="Inventory summary">
                     <Metric
-                      label="Sample storage"
+                      label={isReal ? "Measured file lengths" : "Sample storage"}
                       value={bytes(total)}
-                      detail={`${inventory.items.length} fixture files measured`}
+                      detail={`${inventory.items.length} ${isReal ? "local" : "fixture"} files measured`}
                       Icon={Folder}
                     />
                     <Metric
-                      label="Conversations"
-                      value={String(roots.length)}
-                      detail={`${inventory.threads.filter((t) => t.relation === "spawned").length} spawned records, counted separately`}
+                      label={isReal ? "Main & fork conversations" : "Conversations"}
+                      value={String(isReal ? inventory.threads.filter(t => t.relation === "root" || t.relation === "fork").length : roots.length)}
+                      detail={isReal ? `${inventory.threads.filter(t => t.relation === "spawned").length} confirmed sub Agents · ${inventory.threads.filter(t => t.relation === "unknown").length} unresolved` : `${inventory.threads.filter((t) => t.relation === "spawned").length} spawned records, counted separately`}
                       Icon={Layers3}
                     />
                     <Metric
                       label="Protected"
                       value={String(protectedCount)}
-                      detail="Active, referenced or incomplete"
+                      detail={isReal ? "All real records remain protected" : "Active, referenced or incomplete"}
                       Icon={ShieldCheck}
                     />
                     <Metric
-                      label="Reviewable"
-                      value={String(reviewable.length)}
-                      detail="Metadata checks passed in the demo"
+                      label={isReal ? "Allocated blocks" : "Reviewable"}
+                      value={isReal ? bytes(allocatedTotal) : String(reviewable.length)}
+                      detail={isReal ? "Filesystem accounting; not reclaimable space" : "Metadata checks passed in the demo"}
                       Icon={CircleCheck}
                     />
                   </section>
@@ -401,7 +421,7 @@ export default function App() {
                         <div>
                           <h2>Where the bytes live</h2>
                           <p>
-                            Measured sample file sizes, grouped by category.
+                            {isReal ? "File lengths and allocated blocks, grouped by category." : "Measured sample file sizes, grouped by category."}
                           </p>
                         </div>
                         <span className="quiet-chip">Logical size</span>
@@ -411,7 +431,7 @@ export default function App() {
                           <span
                             key={c.category}
                             style={{
-                              width: `${(c.logicalBytes / total) * 100}%`,
+                              width: `${(c.logicalBytes / (total || 1)) * 100}%`,
                               background: categoryColors[c.category],
                             }}
                             title={`${categoryNames[c.category]}: ${bytes(c.logicalBytes)}`}
@@ -429,13 +449,12 @@ export default function App() {
                               {categoryNames[c.category]}
                               <small>{c.files} files</small>
                             </span>
-                            <strong>{bytes(c.logicalBytes)}</strong>
+                            <strong>{bytes(c.logicalBytes)}{isReal && <small>{bytes(c.allocatedBytes)} allocated</small>}</strong>
                           </div>
                         ))}
                       </div>
                       <div className="panel-footnote">
-                        Database and WAL placeholders are measured only. They
-                        are never opened as databases.
+                        {isReal ? "Databases, WAL and SHM are stat-only. Shared database bytes are not attributed to individual conversations." : "Database and WAL placeholders are measured only. They are never opened as databases."}
                       </div>
                     </section>
                     <section className="panel protection-panel">
@@ -456,8 +475,8 @@ export default function App() {
                       <div className="protection-item">
                         <Clock3 size={19} />
                         <div>
-                          <strong>Active conversations</strong>
-                          <p>A completed reply is not task acceptance.</p>
+                          <strong>{isReal ? "Unverified live status" : "Active conversations"}</strong>
+                          <p>{isReal ? "Pinned, referenced and incomplete records carry explicit reasons. Runtime activity is not queried." : "A completed reply is not task acceptance."}</p>
                         </div>
                       </div>
                       <div className="protection-item">
@@ -507,8 +526,8 @@ export default function App() {
                               {t.files.length !== 1 ? "s" : ""}
                             </small>
                           </span>
-                          <Status thread={t} kept={kept.includes(t.id)} />
-                          <strong>{bytes(t.inclusiveBytes)}</strong>
+                          <Status thread={t} kept={kept.includes(t.id)} real={isReal} />
+                          <strong>{isReal && !t.files.length ? "Unattributed" : bytes(t.inclusiveBytes)}</strong>
                           <ChevronRight size={16} />
                         </button>
                       ))}
@@ -516,14 +535,13 @@ export default function App() {
                   </section>
                   <div className="bottom-note">
                     <ShieldCheck size={15} />
-                    No disk-free-space query, real agent discovery or deletion
-                    was performed.
-                    <button
+                    {isReal ? "Only local metadata is displayed. All real records are protected; no cleanup or export is available." : "No disk-free-space query, real agent discovery or deletion was performed."}
+                    {!isReal && <button
                       className="text-button"
                       onClick={() => void review(true)}
                     >
                       View sample report <FileText size={14} />
-                    </button>
+                    </button>}
                   </div>
                 </>
               )}
@@ -545,12 +563,13 @@ export default function App() {
                       onChange={(e) => setFilter(e.target.value)}
                     >
                       <option value="all">All conversations</option>
-                      <option value="reviewable">Reviewable</option>
+                      {!isReal && <option value="reviewable">Reviewable</option>}
+                      {isReal && <><option value="root">Main conversations</option><option value="spawned">Sub Agents</option><option value="fork">Independent forks</option><option value="unknown">Unresolved</option></>}
                       <option value="protected">Protected</option>
                       <option value="kept">Kept this session</option>
                     </select>
                     <span className="results-count">
-                      {shown.length} records
+                      {matches.length} records · showing {shown.length}
                     </span>
                   </div>
                   <div
@@ -585,16 +604,16 @@ export default function App() {
                             >
                               <strong>{t.title}</strong>
                               <span>
-                                {t.project} · {t.files.length} segment
+                                {isReal ? `${t.relation} · ${t.sourceType || "unknown"} · ` : ""}{t.project} · {t.files.length} segment
                                 {t.files.length !== 1 ? "s" : ""}
                                 {t.ownedDescendantIds.length
                                   ? ` · ${t.ownedDescendantIds.length} spawned`
                                   : ""}
                               </span>
                             </button>
-                            <Status thread={t} kept={kept.includes(t.id)} />
+                            <Status thread={t} kept={kept.includes(t.id)} real={isReal} />
                             <strong className="row-size">
-                              {bytes(t.inclusiveBytes)}
+                              {isReal && !t.files.length ? "Unattributed" : bytes(t.inclusiveBytes)}
                             </strong>
                           </div>
                         ))
@@ -603,6 +622,7 @@ export default function App() {
                           No conversations match this view.
                         </div>
                       )}
+                      {matches.length > shown.length && <button className="button secondary" onClick={() => setVisibleLimit(v => v + 50)}>Show 50 more</button>}
                       <div className="table-footer">
                         <span>
                           {selected.length} selected · inspection only
@@ -633,23 +653,24 @@ export default function App() {
                         <Status
                           thread={detail}
                           kept={kept.includes(detail.id)}
+                          real={isReal}
                         />
                         <div className="detail-facts">
                           <span>
                             Project<strong>{detail.project}</strong>
                           </span>
                           <span>
-                            Own files<strong>{bytes(detail.ownBytes)}</strong>
+                            Own files<strong>{isReal && !detail.files.length ? "Unknown / unattributed" : bytes(detail.ownBytes)}</strong>
                           </span>
                           <span>
                             With spawned records
-                            <strong>{bytes(detail.inclusiveBytes)}</strong>
+                            <strong>{isReal && !detail.files.length ? "Unknown / unattributed" : bytes(detail.inclusiveBytes)}</strong>
                           </span>
                           <span>
                             Relation<strong>{detail.relation}</strong>
                           </span>
                           <span>
-                            Recorded activity
+                            {isReal ? "Index / header timestamp" : "Recorded activity"}
                             <strong>
                               {detail.updatedAt
                                 ? detail.updatedAt.slice(0, 10)
@@ -668,7 +689,14 @@ export default function App() {
                             </div>
                           </div>
                         )}
-                        <h3>Owned sample files</h3>
+                        {isReal && <>
+                          <h3>Relationship evidence</h3>
+                          {(detail.relationEvidence ?? []).map(e => <p className="tiny-note" key={e}>{e}</p>)}
+                          {detail.parentId && <p>Parent <button className="text-button" disabled={!inventory.threads.some(t => t.id === detail.parentId)} onClick={() => setDetailId(detail.parentId)}>{detail.parentId}</button></p>}
+                          {(detail.forkSources ?? []).map(id => <p key={id}>Fork lineage <button className="text-button" disabled={!inventory.threads.some(t => t.id === id)} onClick={() => setDetailId(id)}>{id}</button></p>)}
+                          {(detail.historySources ?? []).map(id => <p key={id}>Shared history <button className="text-button" disabled={!inventory.threads.some(t => t.id === id)} onClick={() => setDetailId(id)}>{id}</button></p>)}
+                        </>}
+                        <h3>{isReal ? "Attributed rollout files" : "Owned sample files"}</h3>
                         <ul className="file-list">
                           {detail.files.map((f) => (
                             <li key={f}>
@@ -684,13 +712,13 @@ export default function App() {
                               {detail.ownedDescendantIds.map((id) => (
                                 <li key={id}>
                                   <Layers3 size={13} />
-                                  {id}
+                                  <button className="text-button" onClick={() => setDetailId(id)}>{id}</button>
                                 </li>
                               ))}
                             </ul>
                           </>
                         )}
-                        {detail.sharedHistoryFrom && (
+                        {!isReal && detail.sharedHistoryFrom && (
                           <div className="fork-note">
                             <GitBranch size={15} />
                             Independent fork referencing{" "}
@@ -716,8 +744,7 @@ export default function App() {
                   </div>
                   <div className="bottom-note">
                     <LockKeyhole size={15} />
-                    Reviewable means demo metadata checks passed. It does not
-                    mean safe to delete.
+                    {isReal ? "Sizes include attributed rollout files only. Shared databases, fork histories and unresolved children are not added to a conversation’s footprint." : "Reviewable means demo metadata checks passed. It does not mean safe to delete."}
                   </div>
                 </>
               )}
@@ -856,7 +883,8 @@ function Metric({
     </div>
   );
 }
-function Status({ thread, kept }: { thread: Thread; kept: boolean }) {
+function Status({ thread, kept, real = false }: { thread: Thread; kept: boolean; real?: boolean }) {
+  if (real) return <span className="status protected"><ShieldCheck size={12}/>Protected{kept ? " · kept this session" : ""}</span>;
   return (
     <span
       className={`status ${kept ? "kept" : thread.protectionReasons.length ? "protected" : "reviewable"}`}

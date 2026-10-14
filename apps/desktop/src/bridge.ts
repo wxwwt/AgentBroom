@@ -5,7 +5,11 @@ export const nativeRuntime = isTauri();
 export const sourceLabel = nativeRuntime
   ? "Native demo scanner"
   : "Browser fixture catalog";
-export async function loadInventory(): Promise<Inventory> {
+export async function loadInventory(source: "demo" | "codex" = "demo"): Promise<Inventory> {
+  if (source === "codex") {
+    if (!nativeRuntime) throw { code: "nativeOnly", message: "Real Codex inspection is available in the native desktop app only." };
+    return invoke<Inventory>("scan_codex");
+  }
   return nativeRuntime
     ? invoke<Inventory>("scan_demo")
     : structuredClone(catalog.inventory as Inventory);

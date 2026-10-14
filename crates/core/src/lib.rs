@@ -1,4 +1,5 @@
-//! Synthetic fixture inspection only. No home discovery, SQLite or mutation API.
+//! Read-only inventory. The demo and Codex adapters expose no mutation API.
+pub mod codex;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
@@ -41,6 +42,9 @@ pub enum Category {
     History,
     Logs,
     Assets,
+    Worktrees,
+    Cache,
+    Other,
 }
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
@@ -112,6 +116,16 @@ pub struct Thread {
     pub inclusive_bytes: u64,
     pub owned_descendant_ids: Vec<String>,
     pub protection_reasons: Vec<String>,
+    #[serde(default)]
+    pub source_type: String,
+    #[serde(default)]
+    pub forked_from_id: Option<String>,
+    #[serde(default)]
+    pub fork_sources: Vec<String>,
+    #[serde(default)]
+    pub history_sources: Vec<String>,
+    #[serde(default)]
+    pub relation_evidence: Vec<String>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -133,6 +147,8 @@ pub struct Inventory {
     pub totals: Vec<CategoryTotal>,
     pub warnings: Vec<String>,
     pub execution_enabled: bool,
+    #[serde(default)]
+    pub partial_coverage: bool,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -286,6 +302,11 @@ fn unknown(key: &str, size: u64, reason: &str) -> Thread {
         inclusive_bytes: size,
         owned_descendant_ids: vec![],
         protection_reasons: vec![reason.into()],
+        source_type: "unknown".into(),
+        forked_from_id: None,
+        fork_sources: vec![],
+        history_sources: vec![],
+        relation_evidence: vec![],
     }
 }
 
@@ -397,6 +418,11 @@ pub fn scan_fixture_store(root: &Path) -> Result<Inventory, InspectError> {
                         inclusive_bytes: 0,
                         owned_descendant_ids: vec![],
                         protection_reasons: vec![],
+                        source_type: "demo".into(),
+                        forked_from_id: None,
+                        fork_sources: vec![],
+                        history_sources: vec![],
+                        relation_evidence: vec![],
                     });
                 if t.title != h.title
                     || t.project != h.project
@@ -512,6 +538,7 @@ pub fn scan_fixture_store(root: &Path) -> Result<Inventory, InspectError> {
         totals,
         warnings,
         execution_enabled: false,
+        partial_coverage: false,
     })
 }
 
@@ -521,6 +548,12 @@ pub fn preview(
     kept: &[String],
     expected_fingerprint: &str,
 ) -> Result<Preview, InspectError> {
+    if inventory.source_kind != "demo" {
+        return Err(err(
+            "inspectionOnly",
+            "Real Codex data supports inspection only; no plan or report export.",
+        ));
+    }
     if inventory.source_fingerprint != expected_fingerprint {
         return Err(err(
             "staleSnapshot",

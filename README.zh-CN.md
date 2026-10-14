@@ -1,12 +1,12 @@
 # AgentBroom
 
-本地 Agent 存储，清晰可见。
+Codex 本地存储，清晰可见。
 
-**当前是只读桌面原型，只检查仓库自带的合成样本。不会发现、扫描或修改真实 Agent 历史，也没有删除、数据库回收或恢复功能。**
+**当前是只读桌面原型，默认进入合成样本模式。原生桌面点击「Inspect local Codex」可盘点真实 `CODEX_HOME`（未设置则使用 `$HOME/.codex`），不会写入或删除任何源文件，不建立 SQLite 连接，也没有数据库回收或恢复功能。所有真实记录都保持受保护。**
 
 ![原生 macOS 只读原型](assets/screenshot.png)
 
-已实现：分类占用、分段合并、子 Agent 与独立 fork 区分、受保护记录、搜索筛选、仅本次会话有效的保留选择、不可执行的预览和样本 JSON 报告。原生桌面与内部 CLI 共用 Rust 核心；网页预览使用该核心生成的样本目录。
+已实现：真实文件长度与分配块统计、逻辑对话与物理分段归并、主对话/子 Agent/独立 fork 的关联证据、共享历史引用、置顶与未知状态等保护原因、搜索筛选和分批列表。保留选择只存在内存中；选择预览与 JSON 报告仅对合成样本提供。真实元数据仅在应用窗口查看，不导出。原生桌面与内部 CLI 共用 Rust 核心；网页预览使用该核心生成的样本目录。
 
 技术栈为 Tauri 2、Rust、React/TypeScript 与 Vite。首个原生目标是 macOS Apple silicon。
 
@@ -23,4 +23,8 @@ npm run desktop:dev
 
 [详细设计](docs/detail-design.md) · [验证结果](docs/verification.md) · [路线图](docs/roadmap.md) · [贡献说明](CONTRIBUTING.md)
 
-欢迎贡献界面、无障碍、文档和合成测试。请勿在公开 issue 中上传真实对话、路径或凭据。MIT 开源；未来真实数据访问及清理能力需要独立验证。
+欢迎贡献界面、无障碍、文档和合成测试。请勿在公开 issue 中上传真实对话、路径或凭据。MIT 开源；未来清理能力需要独立设计和验证。
+
+真实模式只解析有界 session_meta 首行、session_index 标题和桌面置顶 ID。首行可能含指令等字段，未使用字段会被丢弃；不解析对话正文。数据库/WAL/SHM、凭据、配置、图片和其他文件只统计大小。外置 sqlite_home 和远端数据不包含在内。
+
+[只读适配器设计与限制](docs/codex-readonly-design.md)。文件长度和分配块都不等于可回收空间。
