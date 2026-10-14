@@ -1,12 +1,15 @@
 {
   "identifier": "main",
   "description": "Only read-only demo and Codex inventory commands for the local main window.",
-  "windows": ["main"],
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "core:default",
     "allow-scan-demo",
     "allow-scan-codex",
     "allow-preview-demo",
-    "allow-demo-report"
+    "allow-demo-report",
+    "core:window:allow-set-title"
   ]
 }

@@ -54,10 +54,12 @@ export interface Preview {
   executionEnabled: false;
   notices: string[];
 }
+import type {MessageKey, MessageValues} from "./i18n";
 export interface ActivityEntry {
   id: number;
-  title: string;
-  description: string;
+  title: MessageKey;
+  description: MessageKey;
+  values?: MessageValues;
   time: string;
 }
 export function bytes(n: number | null): string {

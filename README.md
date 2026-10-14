@@ -17,6 +17,7 @@ Screenshot: native macOS app, synthetic sample data only.
 - Native Codex storage overview with file lengths and allocated blocks, plus a separate synthetic demo.
 - Logical conversations grouped across physical segments; parent, spawned agent, fork lineage and shared-history evidence stay distinct.
 - Explicit protection reasons for pins, references, missing parents, conflicts, unsupported headers and unknown runtime activity.
+- English / Simplified Chinese switching, with saved language preference and system-language defaults.
 - Search, filters, details and session-local keep choices.
 - Demo-only selection previews and JSON reports. Real metadata stays in the app window; no real report export.
 - Tauri desktop and an internal CLI sharing one Rust core.
@@ -52,6 +53,8 @@ Choose either the browser or native development command; stop the browser develo
 - [Original demo detailed design and IPC boundaries](docs/detail-design.md)
 - [Verification plan](docs/test-plan.md)
 - [Observed verification](docs/verification.md)
+- [Language settings and validation](docs/i18n.md)
+- [Public search evidence for additional languages](docs/language-search-research.md)
 - [Roadmap](docs/roadmap.md)
 
 ## Contributing
