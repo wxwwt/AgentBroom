@@ -2,14 +2,12 @@
 //! Only the dedicated test build links this crate. This is not a live deletion permit.
 #[cfg(not(unix))]
 compile_error!("Native cleanup test currently supports macOS and Linux only");
-mod rpc;
 use agentbroom_core::{
-    Activity, Inventory,
-    cleanup::{self, CleanupAnalysis},
+    Activity, Inventory, cleanup,
     native_scope::{self, NativeScopeEvidence},
 };
+use agentbroom_native::rpc;
 use rusqlite::{Connection, OpenFlags, types::ValueRef};
-use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::{
@@ -35,43 +33,7 @@ pub const CHILD: &str = "00000000-0000-4000-8000-000000000002";
 pub const FORK: &str = "00000000-0000-4000-8000-000000000004";
 pub const KEEP: &str = "00000000-0000-4000-8000-000000000005";
 const TTL: Duration = Duration::from_secs(120);
-#[derive(Clone, Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct NativePlan {
-    pub plan_id: String,
-    pub test_only: bool,
-    pub analysis: CleanupAnalysis,
-    pub native_ids: Vec<String>,
-    pub retained_ids: Vec<String>,
-    pub blocked_reasons: Vec<String>,
-    pub executable: bool,
-    pub expires_in_seconds: u64,
-}
-#[derive(Clone, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct Confirmation {
-    pub plan_id: String,
-    pub selected_ids: Vec<String>,
-    pub phrase: String,
-    pub acknowledged: bool,
-}
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Receipt {
-    pub plan_id: String,
-    pub selected_ids: Vec<String>,
-    pub test_only: bool,
-    pub status: String,
-    pub removed: Vec<String>,
-    pub remaining: Vec<String>,
-    pub observed_removed_logical_bytes: u64,
-    pub freed_bytes: Option<u64>,
-    pub error: Option<String>,
-    pub native_notifications_verified: bool,
-    pub native_deleted_ids: Vec<String>,
-    pub files_verified: bool,
-    pub state_verified: bool,
-}
+pub use agentbroom_native::{Confirmation, NativePlan, Receipt};
 #[derive(Clone, PartialEq, Debug)]
 struct Snapshot {
     files: BTreeMap<String, (String, u64)>,
@@ -92,6 +54,7 @@ pub struct NativeSandbox {
     corpus: PathBuf,
     binary: PathBuf,
     runtime_hash: String,
+    runtime_version: String,
     pending: Option<StoredPlan>,
     receipts: BTreeMap<String, Receipt>,
     delete_requests: usize,
@@ -127,9 +90,12 @@ impl NativeSandbox {
         ))?;
         let mut version = command(&binary, &root);
         version.arg("--version");
-        if rpc::Rpc::version(version)?.trim()
-            != format!("codex-cli {}", native_scope::VERIFIED_NATIVE_VERSION)
-        {
+        let actual_version = rpc::Rpc::version(version)?;
+        let actual_version = actual_version
+            .trim()
+            .strip_prefix("codex-cli ")
+            .ok_or_else(|| fail("runtimeVersion"))?;
+        if !native_scope::supported_version(actual_version) {
             return Err(fail("runtimeVersion"));
         }
         write_rollout(&home, &root, ROOT, None, None, None)?;
@@ -158,6 +124,7 @@ impl NativeSandbox {
             corpus,
             binary,
             runtime_hash,
+            runtime_version: actual_version.to_owned(),
             pending: None,
             receipts: BTreeMap::new(),
             delete_requests: 0,
@@ -177,6 +144,14 @@ impl NativeSandbox {
         }
         sandbox.inventory()?;
         Ok(sandbox)
+    }
+    pub fn invalidate(&mut self) {
+        self.pending = None;
+    }
+    pub fn cancel(&mut self, id: &str) {
+        if self.pending.as_ref().is_some_and(|p| p.view.plan_id == id) {
+            self.pending = None;
+        }
     }
     pub fn inventory(&mut self) -> Result<Inventory, Error> {
         // Only generated rollout data is copied; runtime arg0 links elsewhere never weaken the scanner.
@@ -224,7 +199,7 @@ impl NativeSandbox {
         let before = self.snapshot()?;
         let native_ids = subtree(&before, &selected[0])?;
         let scope = native_scope::assess(&NativeScopeEvidence {
-            runtime_version: native_scope::VERIFIED_NATIVE_VERSION.into(),
+            runtime_version: self.runtime_version.clone(),
             root_id: selected[0].clone(),
             observed_ids: analysis.included_ids.clone(),
             native_ids: native_ids.clone(),
@@ -274,6 +249,9 @@ impl NativeSandbox {
             runtime_hash: self.runtime_hash.clone(),
         });
         Ok(view)
+    }
+    pub fn history(&self) -> Result<Vec<Receipt>, Error> {
+        Ok(self.receipts.values().take(20).cloned().collect())
     }
     pub fn receipt(&self, id: &str) -> Result<Receipt, Error> {
         if id.len() > 128 {
@@ -420,6 +398,9 @@ impl NativeSandbox {
             observed_removed_logical_bytes: removed_bytes,
             freed_bytes: None,
             error: (!errors.is_empty()).then(|| errors.join(",")),
+            concurrent_changes: vec![],
+            source_id: String::new(),
+            expected_ids: plan.view.native_ids.clone(),
             native_notifications_verified: notifications_verified,
             native_deleted_ids,
             files_verified,

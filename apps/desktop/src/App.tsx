@@ -53,7 +53,7 @@ export default function App() { return <LocaleProvider><AppContent/></LocaleProv
 function AppContent() {
   const {locale, persistenceUnavailable, t, systemText} = useLocale();
   const displayBytes = (n: number | null) => systemText(bytes(n));
-  const [cleanupMode, setCleanupMode] = useState<"readOnly" | "syntheticNativeTest">("readOnly");
+  const [cleanupMode, setCleanupMode] = useState<"readOnly" | "syntheticNativeTest" | "native">("readOnly");
   const [inventory, setInventory] = useState<Inventory | null>(null),
     [page, setPage] = useState<Page>("overview"),
     [error, setError] = useState(""),
@@ -217,7 +217,7 @@ function AppContent() {
           <div className="topbar-controls">
             <LanguageSelector/>
           <span className="readonly-badge">
-            <ShieldCheck size={13} /> {t(cleanupMode === "syntheticNativeTest" ? "Synthetic native cleanup test" : "Local Codex · read-only")}
+            <ShieldCheck size={13} /> {t(cleanupMode === "syntheticNativeTest" ? "Synthetic native cleanup test" : cleanupMode === "native" ? "Real data · manual cleanup" : "Local Codex · read-only")}
           </span>
           </div>
         </header>
@@ -234,7 +234,7 @@ function AppContent() {
               </h1>
               <p>
                 {page === "overview"
-                  ? (t("Read-only inventory and cleanup preview. Real deletion remains locked."))
+                  ? (t(cleanupMode === "native" ? "Inspect real data; deletion requires your selection, preview and confirmation." : "Read-only inventory and cleanup preview. Real deletion remains locked."))
                   : page === "conversations"
                     ? t("Segments, spawned agents and independent forks — kept distinct.")
                     : page === "cleanup" ? t("Review candidates; no automatic selection.") : t("This session’s inspection events. These are not backups or deletion receipts.")}
@@ -257,7 +257,7 @@ function AppContent() {
               <strong>{t(cleanupMode === "syntheticNativeTest" ? "Generated native test store" : "Your local Codex metadata. Inspection only.")}</strong>
               <span>
                 {" "}
-                {t(cleanupMode === "syntheticNativeTest" ? "The native test backend opens only its generated state database; real Agent data stays untouched." : "Databases are measured without opening them. Live status is unknown; every record remains protected.")}
+                {t(cleanupMode === "syntheticNativeTest" ? "The native test backend opens only its generated state database; real Agent data stays untouched." : cleanupMode === "native" ? "Inventory is read-only. Cleanup previews check native state; execution requires explicit confirmation." : "Databases are measured without opening them. Live status is unknown; every record remains protected.")}
               </span>
             </div>
             <span className="scanner-source">{systemText(sourceLabel)}</span>
@@ -307,7 +307,7 @@ function AppContent() {
                     <Metric
                       label={t("Protected")}
                       value={String(protectedCount)}
-                      detail={t("All real records remain protected")}
+                      detail={t(cleanupMode === "native" ? "Cleanup eligibility is checked for each preview." : "All real records remain protected")}
                       Icon={ShieldCheck}
                     />
                     <Metric
@@ -431,12 +431,12 @@ function AppContent() {
                   </section>
                   <div className="bottom-note">
                     <ShieldCheck size={15} />
-                    {t("All real records remain protected. Cleanup previews do not authorize deletion.")}
+                    {t(cleanupMode === "native" ? "Inventory does not authorize deletion. Review native cleanup before confirming execution." : "All real records remain protected. Cleanup previews do not authorize deletion.")}
 
                   </div>
                 </>
               )}
-              {page === "cleanup" && (cleanupMode === "syntheticNativeTest" ? <NativeCleanupPanel key={`${inventory.sourceFingerprint}:${kept.join(",")}`} inventory={inventory} kept={kept} refresh={() => void rescan()}/> : <CleanupPanel key={`${inventory.sourceFingerprint}:${kept.join(",")}`} inventory={inventory} kept={kept}/>)}
+              {page === "cleanup" && (cleanupMode !== "readOnly" ? <NativeCleanupPanel key={`${inventory.sourceFingerprint}:${kept.join(",")}`} inventory={inventory} kept={kept} testOnly={cleanupMode === "syntheticNativeTest"} refresh={() => void rescan()}/> : <CleanupPanel key={`${inventory.sourceFingerprint}:${kept.join(",")}`} inventory={inventory} kept={kept}/>)}
               {page === "conversations" && (
                 <>
                   <div className="toolbar">

@@ -216,6 +216,17 @@ mod unix {
             _ => Category::Other,
         }
     }
+    struct Counted<R> {
+        inner: R,
+        bytes: std::rc::Rc<std::cell::Cell<usize>>,
+    }
+    impl<R: Read> Read for Counted<R> {
+        fn read(&mut self, out: &mut [u8]) -> std::io::Result<usize> {
+            let n = self.inner.read(out)?;
+            self.bytes.set(self.bytes.get().saturating_add(n));
+            Ok(n)
+        }
+    }
     fn bounded(
         s: &mut State,
         dir: &File,
@@ -243,15 +254,39 @@ mod unix {
             return Err(err("sourceChanged", "File changed while opening."));
         }
         let mut bytes = vec![];
-        let mut reader = BufReader::with_capacity(4096, file.take((limit + 1) as u64));
-        if line {
+        let compressed = line && name.to_bytes().ends_with(b".jsonl.zst");
+        let consumed = std::rc::Rc::new(std::cell::Cell::new(0usize));
+        let input: Box<dyn Read> = if compressed {
+            // Bound compressed input, decoder memory/window, and expanded header independently.
+            let mut decoder = zstd::stream::read::Decoder::with_buffer(BufReader::with_capacity(
+                4096,
+                Counted {
+                    inner: file.take(2 * 1024 * 1024),
+                    bytes: consumed.clone(),
+                },
+            ))
+            .map_err(|_| err("metadataUnavailable", "Compressed header invalid."))?;
+            decoder.window_log_max(24).map_err(|_| {
+                err(
+                    "metadataUnavailable",
+                    "Compressed header window unsupported.",
+                )
+            })?;
+            Box::new(decoder.take((limit + 1) as u64))
+        } else {
+            Box::new(file.take((limit + 1) as u64))
+        };
+        let mut reader = BufReader::with_capacity(4096, input);
+        let result = if line {
             reader.read_until(b'\n', &mut bytes)
         } else {
             reader.read_to_end(&mut bytes)
-        }
-        .map_err(|_| err("metadataUnavailable", "Read failed."))?;
-        s.read += bytes.len() + 4096; // account for bounded read-ahead
-        if bytes.len() > limit {
+        };
+        s.read = s
+            .read
+            .saturating_add(bytes.len().max(consumed.get()) + 4096);
+        result.map_err(|_| err("metadataUnavailable", "Read failed."))?;
+        if s.read > BUDGET || bytes.len() > limit {
             return Err(err("metadataLimit", "Metadata exceeds the per-file limit."));
         }
         s.fingerprint.update(&bytes);
@@ -355,7 +390,10 @@ mod unix {
             .rsplit('/')
             .next()
             .and_then(|n| n.strip_prefix("rollout-"))
-            .and_then(|n| n.strip_suffix(".jsonl"))
+            .and_then(|n| {
+                n.strip_suffix(".jsonl")
+                    .or_else(|| n.strip_suffix(".jsonl.zst"))
+            })
             .and_then(|n| n.get(n.len().saturating_sub(36)..))
             .filter(|id| id_ok(id))
             .map(String::from);
@@ -617,7 +655,7 @@ mod unix {
                     ),
                 }
             } else if matches!(category, Category::Sessions | Category::Archives) {
-                let data = if key.ends_with(".jsonl") {
+                let data = if key.ends_with(".jsonl") || key.ends_with(".jsonl.zst") {
                     bounded(s, dir, name, &st, HEADER, true)
                 } else {
                     Err(err(
@@ -861,7 +899,7 @@ mod unix {
         );
         warning(
             &mut s,
-            "Only bounded session_meta headers, session_index titles and pinned IDs are parsed. Transcript bodies are not parsed; unread/compressed headers remain unknown. No activity or cleanup safety is inferred.",
+            "Only bounded session_meta headers, session_index titles and pinned IDs are parsed. Transcript bodies are not parsed; unread or unsupported headers remain unknown. No activity or cleanup safety is inferred.",
         );
         let mut measured: Vec<_> = std::mem::take(&mut s.items)
             .into_iter()

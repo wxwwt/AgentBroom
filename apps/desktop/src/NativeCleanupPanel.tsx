@@ -1,12 +1,15 @@
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale } from "./i18n";
 import { bytes, type Inventory } from "./types";
 import { selectable, cleanupReasons } from "./cleanup";
 import { CleanupConfirmation } from "./CleanupPanel";
 import {
   previewNative,
+  cancelNative,
   executeNative,
   readNativeReceipt,
+  readNativeHistory,
+  type NativeReceipt,
   type NativePlan,
 } from "./nativeCleanup";
 /** Only displayed after the native backend identifies its isolated test build. */
@@ -14,7 +17,9 @@ export default function NativeCleanupPanel({
   inventory,
   kept,
   refresh,
+  testOnly = true,
 }: {
+  testOnly?: boolean;
   inventory: Inventory;
   kept: string[];
   refresh: () => void;
@@ -27,6 +32,42 @@ export default function NativeCleanupPanel({
   const [error, setError] = useState("");
   const [stopped, setStopped] = useState(false);
   const generation = useRef(0);
+  const [history, setHistory] = useState<NativeReceipt[]>([]);
+  const [historyError, setHistoryError] = useState("");
+  useEffect(() => {
+    if (!testOnly)
+      void readNativeHistory()
+        .then(setHistory)
+        .catch(() => setHistoryError(t("Cleanup history could not be read.")));
+  }, [testOnly]);
+  async function inspectReceipt(id: string) {
+    try {
+      const latest = await readNativeReceipt(id);
+      setHistory((items) =>
+        items.map((item) => (item.planId === id ? latest : item)),
+      );
+    } catch {
+      setHistoryError(
+        t("No receipt is available yet. Do not repeat deletion."),
+      );
+    }
+  }
+
+  const latestPlan = useRef<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [limit, setLimit] = useState(50);
+  const [retainedLimit, setRetainedLimit] = useState(50);
+  const recordsById = useMemo(
+    () => new Map(inventory.threads.map((thread) => [thread.id, thread])),
+    [inventory],
+  );
+  useEffect(
+    () => () => {
+      if (latestPlan.current)
+        void cancelNative(latestPlan.current).catch(() => {});
+    },
+    [],
+  );
   async function preview() {
     const current = ++generation.current;
     setBusy(true);
@@ -35,7 +76,9 @@ export default function NativeCleanupPanel({
     try {
       const next = await previewNative(selected, kept);
       if (current === generation.current) {
-        if (next.testOnly !== true || !next.planId) throw Error("invalidPlan");
+        if (next.testOnly !== testOnly || !next.planId)
+          throw Error("invalidPlan");
+        latestPlan.current = next.planId;
         setPlan(next);
       }
     } catch (e) {
@@ -47,26 +90,39 @@ export default function NativeCleanupPanel({
       if (current === generation.current) {
         if (runtimeStopped) setStopped(true);
         setError(
-          t(
-            runtimeStopped
-              ? "The test runtime is stopped. Restart the test app to generate a new store."
-              : "Native cleanup request failed. Create a fresh preview.",
-          ),
+          runtimeStopped
+            ? t(
+                testOnly
+                  ? "The test runtime is stopped. Restart the test app to generate a new store."
+                  : "The native cleanup process stopped. Inspect the receipt before creating another plan.",
+              )
+            : systemText(
+                e && typeof e === "object" && "code" in e
+                  ? String(e.code)
+                  : "Native cleanup request failed. Create a fresh preview.",
+              ),
         );
       }
     } finally {
       if (current === generation.current) setBusy(false);
     }
   }
-  const title = (id: string) =>
-    inventory.threads.find((thread) => thread.id === id)?.title ?? id;
+  const title = (id: string) => recordsById.get(id)?.title ?? id;
   return (
     <section className="cleanup-page">
       <div className="scope-banner">
-        <strong>{t("Synthetic native cleanup test")}</strong>
+        <strong>
+          {t(
+            testOnly
+              ? "Synthetic native cleanup test"
+              : "Real data · manual cleanup",
+          )}
+        </strong>
         <p>
           {t(
-            "This build only uses a newly generated test store. Real Agent data is never loaded or deleted.",
+            testOnly
+              ? "This build only uses a newly generated test store. Real Agent data is never loaded or deleted."
+              : "Nothing is selected automatically. Review the complete subtree and retained conversations before permanent deletion.",
           )}
         </p>
       </div>
@@ -77,30 +133,58 @@ export default function NativeCleanupPanel({
             "Select one main conversation or independent fork per native plan.",
           )}
         </p>
-        {inventory.threads.filter(selectable).map((thread) => (
-          <label className="cleanup-candidate" key={thread.id}>
-            <input
-              type="radio"
-              name="native-candidate"
-              aria-label={t("Select {title}", { title: thread.title })}
-              checked={selected[0] === thread.id}
-              disabled={busy || confirm}
-              onChange={() => {
-                generation.current++;
-                setSelected([thread.id]);
-                setPlan(null);
-                setError("");
-              }}
-            />
-            <span>
-              <strong>{thread.title}</strong>
-              <small>
-                {thread.id} · {systemText(thread.relation)}
-              </small>
-            </span>
-            <span>{systemText(bytes(thread.inclusiveBytes))}</span>
-          </label>
-        ))}
+        <label className="search">
+          <input
+            value={search}
+            aria-label={t("Search cleanup candidates")}
+            placeholder={t("Search cleanup candidates")}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setLimit(50);
+            }}
+          />
+        </label>
+        {inventory.threads
+          .filter(selectable)
+          .filter((thread) =>
+            `${thread.title} ${thread.id}`
+              .toLowerCase()
+              .includes(search.toLowerCase()),
+          )
+          .sort((a, b) => b.inclusiveBytes - a.inclusiveBytes)
+          .slice(0, limit)
+          .map((thread) => (
+            <label className="cleanup-candidate" key={thread.id}>
+              <input
+                type="radio"
+                name="native-candidate"
+                aria-label={t("Select {title}", { title: thread.title })}
+                checked={selected[0] === thread.id}
+                disabled={busy || confirm}
+                onChange={() => {
+                  generation.current++;
+                  setSelected([thread.id]);
+                  setPlan(null);
+                  setError("");
+                }}
+              />
+              <span>
+                <strong>{thread.title}</strong>
+                <small>
+                  {thread.id} · {systemText(thread.relation)}
+                </small>
+              </span>
+              <span>{systemText(bytes(thread.inclusiveBytes))}</span>
+            </label>
+          ))}
+        {inventory.threads.filter(selectable).length > limit && (
+          <button
+            className="text-button"
+            onClick={() => setLimit((n) => n + 50)}
+          >
+            {t("Show 50 more")}
+          </button>
+        )}
       </section>
       <div className="cleanup-actions">
         <button
@@ -136,14 +220,24 @@ export default function NativeCleanupPanel({
               </li>
             ))}
           </ul>
-          <h3>{t("Retained conversations")}</h3>
+          <h3>
+            {t("Retained conversations")} ({plan.retainedIds.length})
+          </h3>
           <ul>
-            {plan.retainedIds.map((id) => (
+            {plan.retainedIds.slice(0, retainedLimit).map((id) => (
               <li key={id}>
                 {title(id)} · {id}
               </li>
             ))}
           </ul>
+          {plan.retainedIds.length > retainedLimit && (
+            <button
+              className="text-button"
+              onClick={() => setRetainedLimit((n) => n + 50)}
+            >
+              {t("Show 50 more")}
+            </button>
+          )}
           <p>{t("Independent forks are never automatically selected.")}</p>
           <details>
             <summary>
@@ -183,10 +277,49 @@ export default function NativeCleanupPanel({
           </button>
         </section>
       )}
+      {!testOnly && (
+        <details className="panel">
+          <summary>
+            {t("Recent cleanup results ({count})", { count: history.length })}
+          </summary>
+          {historyError && <p role="alert">{historyError}</p>}
+          {history.map((receipt) => (
+            <section key={receipt.planId}>
+              <strong>
+                {t(
+                  receipt.status === "verified"
+                    ? "Native cleanup verified"
+                    : receipt.status === "unknown"
+                      ? "Cleanup outcome is unknown. Do not repeat deletion."
+                      : receipt.status === "partialFailure"
+                        ? "Cleanup partially failed"
+                        : "Cleanup verification failed",
+                )}
+              </strong>
+              <p>{receipt.selectedIds.join(", ")}</p>
+              <p>
+                {t("{removed} removed · {remaining} remaining", {
+                  removed: receipt.removed.length,
+                  remaining: receipt.remaining.length,
+                })}
+              </p>
+              {receipt.error && <p>{receipt.error}</p>}
+              <button
+                className="button secondary"
+                onClick={() => void inspectReceipt(receipt.planId)}
+              >
+                {t("Check execution result")}
+              </button>
+            </section>
+          ))}
+        </details>
+      )}
       {confirm && plan && (
         <CleanupConfirmation
           plan={plan.analysis}
           close={() => {
+            void cancelNative(plan.planId).catch(() => {});
+            latestPlan.current = null;
             setConfirm(false);
             setPlan(null);
             setSelected([]);
@@ -196,7 +329,8 @@ export default function NativeCleanupPanel({
             planId: plan.planId,
             testOnly: plan.testOnly,
             executable: plan.executable,
-            execute: (confirmation) => executeNative(plan.planId, confirmation),
+            execute: (confirmation) =>
+              executeNative(plan.planId, confirmation, kept),
             readReceipt: () => readNativeReceipt(plan.planId),
           }}
         />

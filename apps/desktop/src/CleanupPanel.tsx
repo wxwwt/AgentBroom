@@ -9,12 +9,13 @@ import {
   type CleanupAnalysis,
 } from "./cleanup";
 export interface CleanupResult {
-  status: "verified" | "partialFailure" | "verificationFailed";
+  status: "verified" | "partialFailure" | "verificationFailed" | "unknown";
   removed: string[];
   remaining: string[];
   observedRemovedLogicalBytes: number;
   freedBytes: null;
   error?: string;
+  concurrentChanges?: string[];
 }
 /** The normal app has no driver; the dedicated native test build uses backend-owned plans. */
 export function CleanupConfirmation({
@@ -27,7 +28,7 @@ export function CleanupConfirmation({
   close: () => void;
   nativeDriver?: {
     planId: string;
-    testOnly: true;
+    testOnly: boolean;
     executable: boolean;
     execute: (confirmation: {
       phrase: string;
@@ -55,7 +56,6 @@ export function CleanupConfirmation({
       plan.sourceKind === "synthetic" &&
       !plan.blockedReasons.length) ||
     (!!nativeDriver &&
-      nativeDriver.testOnly &&
       nativeDriver.executable &&
       !!nativeDriver.planId &&
       plan.sourceKind === "codex");
@@ -148,7 +148,9 @@ export function CleanupConfirmation({
           {nativeDriver && (
             <p className="scope-banner">
               {t(
-                "This build only uses a newly generated test store. Real Agent data is never loaded or deleted.",
+                nativeDriver.testOnly
+                  ? "This build only uses a newly generated test store. Real Agent data is never loaded or deleted."
+                  : "This operation permanently deletes real conversations and their native metadata. A receipt is not a backup.",
               )}
             </p>
           )}
@@ -213,18 +215,24 @@ export function CleanupConfirmation({
                 {t(
                   result.status === "verified"
                     ? nativeDriver
-                      ? "Native synthetic cleanup verified"
+                      ? nativeDriver.testOnly
+                        ? "Native synthetic cleanup verified"
+                        : "Native cleanup verified"
                       : "Synthetic cleanup verified"
-                    : result.status === "partialFailure"
-                      ? "Cleanup partially failed"
-                      : "Cleanup verification failed",
+                    : result.status === "unknown"
+                      ? "Cleanup outcome is unknown. Do not repeat deletion."
+                      : result.status === "partialFailure"
+                        ? "Cleanup partially failed"
+                        : "Cleanup verification failed",
                 )}
               </strong>
               <p>
                 {t(
                   nativeDriver
                     ? result.status === "verified"
-                      ? "Official Codex deletion ran only against generated test data."
+                      ? nativeDriver.testOnly
+                        ? "Official Codex deletion ran only against generated test data."
+                        : "Official native cleanup completed for the confirmed scope."
                       : "Native deletion was not fully verified. Inspect the result before closing."
                     : result.removed.length
                       ? "Synthetic files actually removed; this is not verification of native Codex deletion."
@@ -234,9 +242,23 @@ export function CleanupConfirmation({
               {nativeDriver && result.status === "verified" && (
                 <p>
                   {t(
-                    "Verified: deleted notifications, remaining file hashes, thread rows and spawn edges.",
+                    nativeDriver.testOnly
+                      ? "Verified: deleted notifications, remaining file hashes, thread rows and spawn edges."
+                      : "Verified: deletion scope, native state and retained files; concurrent additions are tracked separately.",
                   )}
                 </p>
+              )}
+              {!!result.concurrentChanges?.length && (
+                <details>
+                  <summary>
+                    {t("Concurrent changes detected ({count})", {
+                      count: result.concurrentChanges.length,
+                    })}
+                  </summary>
+                  {result.concurrentChanges.map((path, i) => (
+                    <p key={i}>{path}</p>
+                  ))}
+                </details>
               )}
               {result.error && (
                 <p>{t("Verification error: {code}", { code: result.error })}</p>

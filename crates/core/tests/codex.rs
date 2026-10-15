@@ -354,3 +354,56 @@ fn cross_category_hardlink_allocation_is_deterministic_and_coverage_is_explicit(
             > 0
     );
 }
+
+#[test]
+fn compressed_metadata_groups_with_plain_children_without_exporting_body() {
+    let dir = store();
+    let root = dir.path();
+    let bytes = format!(
+        "{}\n{}\n",
+        meta(ROOT, json!("cli")),
+        json!({"type":"response_item","payload":"PRIVATE_BODY_SENTINEL"})
+    );
+    write(
+        root,
+        &format!("sessions/rollout-2026-01-01T00-00-00-{ROOT}.jsonl.zst"),
+        &zstd::stream::encode_all(bytes.as_bytes(), 3).unwrap(),
+    );
+    session(
+        root,
+        &format!("sessions/rollout-2026-01-01T00-00-00-{CHILD}.jsonl"),
+        child(CHILD, ROOT),
+    );
+    let inv = scan_store(root).unwrap();
+    assert_eq!(inv.threads.len(), 2);
+    assert_eq!(
+        inv.threads
+            .iter()
+            .find(|t| t.id == ROOT)
+            .unwrap()
+            .owned_descendant_ids,
+        vec![CHILD]
+    );
+    assert!(
+        !serde_json::to_string(&inv)
+            .unwrap()
+            .contains("PRIVATE_BODY_SENTINEL")
+    );
+}
+#[test]
+fn compressed_oversized_and_bad_headers_remain_unknown() {
+    for payload in [
+        b"not a zstd frame".to_vec(),
+        zstd::stream::encode_all(format!("{}\n", "x".repeat(512 * 1024)).as_bytes(), 3).unwrap(),
+    ] {
+        let dir = store();
+        write(
+            dir.path(),
+            &format!("sessions/rollout-2026-01-01T00-00-00-{ROOT}.jsonl.zst"),
+            &payload,
+        );
+        let inv = scan_store(dir.path()).unwrap();
+        assert_eq!(inv.threads[0].relation, Relation::Unknown);
+        assert!(!inv.execution_enabled);
+    }
+}

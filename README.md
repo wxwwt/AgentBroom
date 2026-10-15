@@ -1,84 +1,61 @@
 # AgentBroom
 
-**Codex local storage, clearly.**
+**Codex local storage, clearly.** · [简体中文](README.zh-CN.md)
 
-[简体中文](README.zh-CN.md)
+AgentBroom is an early desktop tool for inspecting local Codex storage and explicitly confirmed native conversation cleanup. It distinguishes logical conversations, physical segments, spawned Agents, independent forks and shared-history references.
 
-AgentBroom is an early, local-first desktop inspection prototype for coding-agent storage. It makes physical files, logical conversations, spawned agents and independent forks easier to distinguish before anyone considers cleanup.
+## Use
 
-> **Read-only local inventory.** Launch the regular app to inspect your real `CODEX_HOME` (or `$HOME/.codex`) immediately. There is no demo mode, sample plan or sample report in the regular application. Source failures are shown explicitly. Cleanup candidates, observed impact and a locked confirmation page are available. No real source write, deletion or database connection is available; all real records stay protected.
+The desktop opens your configured `CODEX_HOME` (otherwise `$HOME/.codex`) for read-only inventory. Nothing is selected or deleted automatically. English and Simplified Chinese are available.
 
-## Prototype features
+Open **Cleanup preview**, select one main conversation or independent fork, and review its complete spawned subtree, measured files, retained records and blocking reasons. Keep choices, pins, recent writes, unresolved selected relationships, external references, linked files, unsupported runtimes/databases and changed plans block execution. Independent forks are never automatically selected.
 
-- Codex storage overview with file lengths and allocated blocks.
-- Logical conversations grouped across physical segments; parent, spawned agent, fork lineage and shared-history evidence stay distinct.
-- Explicit protection reasons for pins, references, missing parents, conflicts, unsupported headers and unknown runtime activity.
-- English / Simplified Chinese switching, with saved language preference and system-language defaults.
-- Search, filters, details and session-local keep choices.
-- Cleanup review candidates, observed main/spawn scope, retained records, outside dependencies and explicit blocking reasons.
-- Tauri desktop and an internal CLI sharing one Rust core.
+If the backend can validate the plan, review the permanent-deletion warning, acknowledge the scope and type `DELETE`. Only this confirmation starts official native `thread/delete`. It can also update Codex indexes and remove native metadata belonging to those conversations. Receipts are **not backups**. Deletion cannot be undone through AgentBroom.
 
-Real Codex deletion, database reclamation, compression and recovery are **not implemented**. A feature-gated developer harness really deletes backend-generated synthetic files, updates synthetic JSON state, and verifies removed and preserved objects; it has no path/real-store constructor and is absent from default desktop builds.
+The backend checks native/observed scopes, file content/identity, source identity, runtime and database compatibility again before execution. It verifies deleted notifications, selected files/state and retained records afterwards. Partial failure, unknown outcomes and concurrent changes are reported. File lengths and allocated blocks are accounting, **not reclaimed-space estimates**. No vacuum, compression, cache cleanup or project/worktree removal is implemented.
 
-## Development
+## Runtime and safety boundaries
 
-Requires Node.js 24+, a stable Rust toolchain and the platform prerequisites for [Tauri 2](https://v2.tauri.app/start/prerequisites/). The initial native target is macOS Apple silicon.
+The initial native target is macOS Apple silicon; metadata inspection also supports Linux. Supported native versions are exactly `0.162.0-alpha.17.2` and `0.162.1`, tested on newly generated stores. On macOS the bundled official Codex executable is discovered inside ChatGPT/Codex. A developer can explicitly set `AGENTBROOM_CODEX_BIN` to a trusted official executable. AgentBroom does not upgrade Codex or migrate existing databases; incompatible native schemas remain blocked. Source roots and executable paths cannot be supplied by the renderer.
 
-```sh
-npm install
-cargo test --locked -p agentbroom-core -p agentbroom-cli
-cargo test --locked -p agentbroom-core --features synthetic-cleanup # private generated data only
-npm run test:fixtures
-npm run dev              # real read-only local web app on 127.0.0.1:1420
-npm run desktop:dev      # native Tauri app
-```
+Inventory remains metadata-only, including bounded Zstandard session headers. Cleanup previews additionally read native state and hash the selected files; bodies are never displayed or exported. Actual deletion is delegated to the official native store, including its writer/reference checks. This is not an atomic snapshot of a concurrently running Codex instance. Recently modified records are additionally blocked; age alone never authorizes deletion.
+
+Execution intent and results are atomically persisted under `~/.agentbroom/cleanup-receipts/`, without transcript bodies. Unknown operations cannot automatically retry, including after restart. Other instances are serialized by an application lock. Graceful exit waits for an ongoing operation. Forced OS termination is not recovery; inspect the saved receipt and current data before taking further action.
+
+The loopback development browser remains **read-only**, with no write HTTP endpoint or fixture fallback. Native cleanup requires the desktop app.
+
+## Development and tests
+
+Requires Node.js 24+, stable Rust and [Tauri 2 prerequisites](https://v2.tauri.app/start/prerequisites/).
 
 ```sh
-npm test
-npm run test:native-helper
-npm run build
+npm ci
+npm run desktop:dev
 npm run desktop:build
-cargo run -p agentbroom-cli -- codex-summary # real aggregate counts/sizes only
+npm test
+cargo test --locked -p agentbroom-core -p agentbroom-cli -p agentbroom-native
+cargo test --locked -p agentbroom-core --features synthetic-cleanup
 ```
 
-The localhost development UI uses a loopback-only, same-origin endpoint backed by the same Rust CLI scanner. It does not fall back to synthetic data. The native application uses `scan_codex` IPC and does not host HTTP. Both regular entry points automatically inspect real metadata on startup. Synthetic fixture generation is for tests only; fixtures are not bundled into the regular app.
-
-Choose either the browser or native development command; stop the browser development server before starting native development, as both use port 1420. Rust `cargo` must be available on PATH. Static web builds require the local read-only development bridge or the native app; there is no remote inventory service.
-
-## Native contract tests
-
-Developer-only native integration tests use the official Codex CLI 0.162.1 executable. They create a fresh private HOME/CODEX_HOME and synthetic rollouts/database, then test native deletion, spawned descendants, independent/copied forks, external shared history, multiple segments, writer conflicts and mismatched scopes. They never accept an existing data root and never fall back to your global CLI. Python 3 is needed only for these tests; it is not part of the desktop runtime.
+All automated mutation tests use newly generated data. Do not use real conversations as fixtures. Native integration tests require an explicitly selected trusted executable; no global CLI fallback:
 
 ```sh
+AGENTBROOM_TEST_CODEX_BIN=/absolute/path/to/official/codex cargo test --locked -p agentbroom-native -- --ignored --test-threads=1
+AGENTBROOM_TEST_CODEX_BIN=/absolute/path/to/official/codex cargo test --locked -p agentbroom-native-test -- --ignored --test-threads=1
 cargo build --locked -p agentbroom-cli
-AGENTBROOM_TEST_CODEX_BIN=/path/to/official-0.162.1/codex npm run test:native
+AGENTBROOM_TEST_CODEX_BIN=/absolute/path/to/official-0.162.1/codex npm run test:native
+npm run test:native-helper
+npm run test:fixtures
 ```
 
-The `cleanup-scope <logical-id>...` CLI command is a local, read-only analysis using the shared Rust planner; its output can contain private metadata and must not be published. Comparing observed/native logical-ID sets is evidence only, never permission to delete. Production `cleanup_execute` remains locked. These tests do not establish safety for a live store, complete auxiliary-database effects, atomic scope checks, recovery or reclaimed disk space.
+`native-cleanup-test` is a separate developer-only desktop build (`npm run desktop:test:build`). It generates its own store, never imports real data and shares the transport and confirmation DTOs with the independently constructed live owner. It is not enabled in the regular app. Python is only a test dependency.
 
-## Documentation
+## Privacy and documentation
 
-Public usage, development and security guidance is kept in this README, [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md). Internal designs, research, review reports and verification notes are local-only under `docs/`, excluded from Git and not distributed with this repository.
+No AgentBroom account, cloud inventory, telemetry or LLM call. Native deletion runs locally with isolated non-source runtime directories and an offline model provider. Headers are treated as untrusted data, never instructions. No transcript export is provided. Local CLI `scan`/`cleanup-scope` output can contain private metadata; do not publish it.
 
-## Contributing
-
-Read [CONTRIBUTING.md](CONTRIBUTING.md). Please use synthetic data, keep read-only boundaries intact, and avoid uploading real transcripts, paths, screenshots or credentials. This prototype does not accept real agent data as a debugging fixture.
-
-## Security and privacy
-
-No account, telemetry, remote network service or LLM call in the regular application. The native Codex adapter reads only bounded session headers, title-index rows and desktop pinned IDs. Auth/config/database/asset contents are never opened. Session headers may contain instructions; unused fields are discarded, and conversation bodies are not parsed. The regular native product never writes source files, opens SQLite, runs maintenance or launches agent processes. `cleanup_execute` unconditionally rejects before source access. The browser development transport invokes only the fixed read-only scanner. Symlinks are never followed. macOS/Linux native inspection only; unsupported platforms report an error and do not fall back to demo. Report vulnerabilities using the repository's private reporting channel when enabled; otherwise contact the maintainer through GitHub before sharing sensitive reproduction material. See [SECURITY.md](SECURITY.md).
+Internal designs, research, review reports and verification logs stay in local Git-ignored `docs/`. Only code, generated test assets and necessary public guidance are distributed. See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 
 ## License
 
-MIT. Third-party dependencies retain their own licenses. This project is independent of OpenAI, Anthropic and other agent vendors.
-
-### Isolated native desktop test
-
-The regular desktop build remains read-only. A separate developer build connects the preview, confirmation and receipt UI to official Codex 0.162.1 deletion **only in a newly generated temporary test store**. It never loads your real Codex home. This does not enable production cleanup.
-
-```sh
-AGENTBROOM_TEST_CODEX_BIN=/absolute/path/to/official/codex cargo test --locked -p agentbroom-native-test -- --ignored --test-threads=1
-npm run desktop:test:build
-```
-
-Launch **AgentBroom Native Test** with `AGENTBROOM_TEST_CODEX_BIN` set to your trusted official executable; the binary is not bundled or discovered from PATH. Select one test conversation, preview its native subtree and retained records, acknowledge and type `DELETE`, then review the verified receipt. Closing the result refreshes the inventory. An uncertain response can query the saved receipt without retrying deletion. Receipts last only for this running test session; they are not backups. No live-root argument or browser write endpoint exists.
+MIT. This project is independent of OpenAI and other agent vendors. Dependencies retain their own licenses.

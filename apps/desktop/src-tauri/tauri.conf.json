@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "AgentBroom \u00b7 Read-only prototype",
+        "title": "AgentBroom \u00b7 Local storage",
         "width": 1260,
         "height": 860,
         "minWidth": 1000,
@@ -43,6 +43,6 @@
       "minimumSystemVersion": "13.0",
       "signingIdentity": "-"
     },
-    "shortDescription": "Read-only local Codex storage inventory"
+    "shortDescription": "Local Codex inventory and confirmed native cleanup"
   }
 }

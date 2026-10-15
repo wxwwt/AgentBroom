@@ -6,6 +6,8 @@ fn main() {
             "cleanup_preview",
             "cleanup_execute",
             "cleanup_result",
+            "cleanup_cancel",
+            "cleanup_history",
         ]),
     ))
     .expect("Tauri manifest build failed");

@@ -14,6 +14,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = [] }
 agentbroom-core = { path = "../../../crates/core" }
+agentbroom-native = { path = "../../../crates/native" }
 serde_json.workspace = true
 
 serde.workspace = true
@@ -22,3 +23,6 @@ agentbroom-native-test = { path = "../../../crates/native-test", optional = true
 [features]
 default = []
 native-cleanup-test = ["dep:agentbroom-native-test"]
+
+[dev-dependencies]
+tauri = { version = "2", features = ["test"] }

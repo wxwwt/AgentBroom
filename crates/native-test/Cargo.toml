@@ -12,3 +12,5 @@ sha2.workspace = true
 tempfile = "3"
 rusqlite = { version = "0.38", features = ["bundled"] }
 libc = "0.2"
+
+agentbroom-native = { path = "../native" }

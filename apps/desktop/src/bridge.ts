@@ -34,4 +34,4 @@ export function errorText(e: unknown): string {
   return e && typeof e === "object" && "message" in e ? String(e.message) : "Local inspection failed.";
 }
 
-export const loadCleanupMode = (): Promise<"readOnly" | "syntheticNativeTest"> => nativeRuntime ? invoke("cleanup_mode") : Promise.resolve("readOnly");
+export const loadCleanupMode = (): Promise<"readOnly" | "syntheticNativeTest" | "native"> => nativeRuntime ? invoke("cleanup_mode") : Promise.resolve("readOnly");

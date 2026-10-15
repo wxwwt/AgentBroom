@@ -13,8 +13,8 @@ use std::{
     time::{Duration, Instant},
 };
 const BUDGET: usize = 4 * 1024 * 1024;
-const TIMEOUT: Duration = Duration::from_secs(20);
-pub(crate) struct Rpc {
+const TIMEOUT: Duration = Duration::from_secs(90);
+pub struct Rpc {
     child: Child,
     input: Option<ChildStdin>,
     frames: mpsc::Receiver<Result<Value, Error>>,
@@ -85,7 +85,7 @@ impl Rpc {
             counter: 0,
             notifications: vec![],
         };
-        rpc.request("initialize", json!({"clientInfo":{"name":"agentbroom_native_test","version":"1"},"capabilities":{"experimentalApi":true}}))?;
+        rpc.request("initialize", json!({"clientInfo":{"name":"agentbroom_cleanup","version":"1"},"capabilities":{"experimentalApi":true}}))?;
         rpc.send(&json!({"method":"initialized"}))?;
         Ok(rpc)
     }
@@ -248,7 +248,7 @@ fn stop(child: &mut Child) {
 impl Drop for Rpc {
     fn drop(&mut self) {
         self.input.take();
-        let deadline = Instant::now() + Duration::from_secs(2);
+        let deadline = Instant::now() + Duration::from_secs(10);
         while Instant::now() < deadline {
             if matches!(self.child.try_wait(), Ok(Some(_))) {
                 break;

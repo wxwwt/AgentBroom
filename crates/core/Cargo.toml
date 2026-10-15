@@ -9,6 +9,7 @@ serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
 libc = "0.2"
+zstd = "0.13"
 tempfile = { version = "3", optional = true }
 
 [features]

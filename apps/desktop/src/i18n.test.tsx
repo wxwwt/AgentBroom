@@ -22,7 +22,7 @@ describe("language selection",()=>{
  it("preserves search and details without rescanning on a language switch",async()=>{
   await start();fireEvent.click(screen.getByRole("button",{name:/Conversations/}));fireEvent.change(screen.getByRole("textbox",{name:"Search conversations"}),{target:{value:"Local synthetic 0"}});
   fireEvent.click(screen.getByRole("button",{name:/Local synthetic 0/}));chinese();expect(screen.getByRole("textbox",{name:"搜索对话"})).toHaveValue("Local synthetic 0");
-  expect(screen.getByText("关联依据")).toBeVisible();expect(document.title).toBe("AgentBroom · 只读原型");expect(bridge.load).toHaveBeenCalledTimes(1);
+  expect(screen.getByText("关联依据")).toBeVisible();expect(document.title).toBe("AgentBroom · 本地存储");expect(bridge.load).toHaveBeenCalledTimes(1);
   fireEvent.change(screen.getByRole("combobox",{name:"语言"}),{target:{value:"en"}});expect(screen.getByText("Relationship evidence")).toBeVisible();
  });
  it("restores the language after remount without persisting any inventory",async()=>{

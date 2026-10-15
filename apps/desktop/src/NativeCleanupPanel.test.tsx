@@ -9,11 +9,15 @@ const api = vi.hoisted(() => ({
   preview: vi.fn(),
   execute: vi.fn(),
   receipt: vi.fn(),
+  cancel: vi.fn(),
+  history: vi.fn(),
 }));
 vi.mock("./nativeCleanup", () => ({
   previewNative: api.preview,
   executeNative: api.execute,
+  cancelNative: api.cancel,
   readNativeReceipt: api.receipt,
+  readNativeHistory: api.history,
 }));
 const inventory = structuredClone(vectors[0].inventory) as Inventory;
 function plan() {
@@ -41,6 +45,8 @@ afterEach(() => {
 });
 beforeEach(() => {
   localStorage.setItem("agentbroom.language", "en");
+  api.cancel.mockResolvedValue(undefined);
+  api.history.mockResolvedValue([]);
   api.preview.mockResolvedValue(plan());
   api.execute.mockResolvedValue(receipt);
   api.receipt.mockResolvedValue(receipt);
@@ -75,17 +81,21 @@ describe("native desktop test flow", () => {
     ).toBeDisabled();
     await review();
     expect(api.preview).toHaveBeenCalledWith(["a"], []);
-    expect(screen.getByText("Retained conversations")).toBeVisible();
+    expect(screen.getByText(/^Retained conversations/)).toBeVisible();
     expect(
       screen.getByRole("button", { name: "Confirm execution" }),
     ).toBeDisabled();
     execute();
     await screen.findByText("Native synthetic cleanup verified");
-    expect(api.execute).toHaveBeenCalledExactlyOnceWith("backend-owned", {
-      selectedIds: ["a"],
-      phrase: "DELETE",
-      acknowledged: true,
-    });
+    expect(api.execute).toHaveBeenCalledExactlyOnceWith(
+      "backend-owned",
+      {
+        selectedIds: ["a"],
+        phrase: "DELETE",
+        acknowledged: true,
+      },
+      [],
+    );
     expect(
       screen.getByRole("button", { name: "Confirm execution" }),
     ).toBeDisabled();
@@ -197,5 +207,86 @@ describe("native desktop test flow", () => {
     expect(api.execute).toHaveBeenCalledOnce();
     done(receipt);
     await screen.findByText("Native synthetic cleanup verified");
+  });
+  it("real mode uses real confirmation wording and passes current Keep choices", async () => {
+    api.preview.mockResolvedValue({ ...plan(), testOnly: false });
+    render(
+      <LocaleProvider>
+        <NativeCleanupPanel
+          inventory={inventory}
+          kept={["e"]}
+          testOnly={false}
+          refresh={() => {}}
+        />
+      </LocaleProvider>,
+    );
+    await review();
+    expect(
+      screen.getByText(
+        "This operation permanently deletes real conversations and their native metadata. A receipt is not a backup.",
+      ),
+    ).toBeVisible();
+    execute();
+    await screen.findByText("Native cleanup verified");
+    expect(api.execute).toHaveBeenCalledWith(
+      "backend-owned",
+      expect.objectContaining({ selectedIds: ["a"] }),
+      ["e"],
+    );
+    expect(
+      screen.queryByText(
+        "Official Codex deletion ran only against generated test data.",
+      ),
+    ).not.toBeInTheDocument();
+  });
+  it("unknown persisted result is never displayed as success", async () => {
+    api.preview.mockResolvedValue({ ...plan(), testOnly: false });
+    api.execute.mockResolvedValue({ ...receipt, status: "unknown" });
+    render(
+      <LocaleProvider>
+        <NativeCleanupPanel
+          inventory={inventory}
+          kept={[]}
+          testOnly={false}
+          refresh={() => {}}
+        />
+      </LocaleProvider>,
+    );
+    await review();
+    execute();
+    await screen.findByText(
+      "Cleanup outcome is unknown. Do not repeat deletion.",
+    );
+    expect(
+      screen.queryByText("Native cleanup verified"),
+    ).not.toBeInTheDocument();
+  });
+  it("saved unknown history can be inspected without invoking deletion", async () => {
+    api.history.mockResolvedValue([
+      { ...receipt, planId: "saved-op", selectedIds: ["a"], status: "unknown" },
+    ]);
+    api.receipt.mockResolvedValue({
+      ...receipt,
+      planId: "saved-op",
+      selectedIds: ["a"],
+      status: "unknown",
+    });
+    render(
+      <LocaleProvider>
+        <NativeCleanupPanel
+          inventory={inventory}
+          kept={[]}
+          testOnly={false}
+          refresh={() => {}}
+        />
+      </LocaleProvider>,
+    );
+    await screen.findByText("Recent cleanup results (1)");
+    fireEvent.click(screen.getByText("Recent cleanup results (1)"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Check execution result" }),
+    );
+    expect(api.receipt).toHaveBeenCalledWith("saved-op");
+    expect(api.execute).not.toHaveBeenCalled();
   });
 });

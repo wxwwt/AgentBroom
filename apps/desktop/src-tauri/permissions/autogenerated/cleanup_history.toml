@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-cleanup-history"
+description = "Enables the cleanup_history command without any pre-configured scope."
+commands.allow = ["cleanup_history"]
+
+[[permission]]
+identifier = "deny-cleanup-history"
+description = "Denies the cleanup_history command without any pre-configured scope."
+commands.deny = ["cleanup_history"]

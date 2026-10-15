@@ -49,7 +49,7 @@ export function LocaleProvider({children}: {children: ReactNode}) {
   }
   useEffect(() => {
     document.documentElement.lang = locale;
-    const title = translate(locale,"AgentBroom · Read-only prototype");
+    const title = translate(locale,"AgentBroom · Local storage");
     document.title = title;
     if (isTauri()) void getCurrentWindow().setTitle(title).catch(() => { /* The page remains localized if a platform cannot update its title. */ });
   },[locale]);

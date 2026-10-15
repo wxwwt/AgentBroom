@@ -1,6 +1,6 @@
 {
   "identifier": "main",
-  "description": "Read-only default app; isolated native cleanup is available only in the dedicated synthetic test build.",
+  "description": "Local inventory and explicitly confirmed native conversation cleanup; no renderer-supplied source paths.",
   "windows": [
     "main"
   ],
@@ -11,6 +11,8 @@
     "allow-cleanup-execute",
     "allow-cleanup-mode",
     "allow-cleanup-preview",
-    "allow-cleanup-result"
+    "allow-cleanup-result",
+    "allow-cleanup-cancel",
+    "allow-cleanup-history"
   ]
 }

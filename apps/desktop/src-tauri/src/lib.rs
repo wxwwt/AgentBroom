@@ -5,20 +5,20 @@ fn error(code: &str) -> InspectError {
         message: code.into(),
     }
 }
-#[cfg(feature = "native-cleanup-test")]
-mod native_test {
+mod native_session {
     use super::*;
-    use agentbroom_native_test::{Confirmation, NativePlan, NativeSandbox, Receipt};
-    use std::{
-        path::Path,
-        sync::{
-            Arc, Mutex,
-            atomic::{AtomicU8, Ordering},
-        },
+    use agentbroom_native::{Confirmation, NativePlan, Receipt};
+    #[cfg(feature = "native-cleanup-test")]
+    type Store = agentbroom_native_test::NativeSandbox;
+    #[cfg(not(feature = "native-cleanup-test"))]
+    type Store = agentbroom_native::LiveCleanup;
+    use std::sync::{
+        Arc, Mutex,
+        atomic::{AtomicU8, Ordering},
     };
     #[derive(Clone, Default)]
     pub struct Session {
-        sandbox: Arc<Mutex<Option<NativeSandbox>>>,
+        sandbox: Arc<Mutex<Option<Store>>>,
         // 0=running, 1=waiting for the current worker and cleanup, 2=ready to exit.
         shutdown: Arc<AtomicU8>,
     }
@@ -66,18 +66,25 @@ mod native_test {
             _ => {}
         }
     }
-    async fn with_sandbox<T: Send + 'static>(
+    async fn with_store<T: Send + 'static>(
         state: Session,
-        action: impl FnOnce(&mut NativeSandbox) -> Result<T, InspectError> + Send + 'static,
+        action: impl FnOnce(&mut Store) -> Result<T, InspectError> + Send + 'static,
     ) -> Result<T, InspectError> {
         tauri::async_runtime::spawn_blocking(move || {
             state.running()?;
             let mut guard = state.sandbox.try_lock().map_err(|_| error("cleanupBusy"))?;
             state.running()?;
             if guard.is_none() {
-                let binary = std::env::var_os("AGENTBROOM_TEST_CODEX_BIN")
-                    .ok_or_else(|| error("testRuntimeRequired"))?;
-                *guard = Some(NativeSandbox::generate(Path::new(&binary))?);
+                #[cfg(feature = "native-cleanup-test")]
+                {
+                    let binary = std::env::var_os("AGENTBROOM_TEST_CODEX_BIN")
+                        .ok_or_else(|| error("testRuntimeRequired"))?;
+                    *guard = Some(Store::generate(std::path::Path::new(&binary))?);
+                }
+                #[cfg(not(feature = "native-cleanup-test"))]
+                {
+                    *guard = Some(Store::discover()?);
+                }
             }
             action(guard.as_mut().unwrap())
         })
@@ -86,7 +93,31 @@ mod native_test {
     }
     #[tauri::command]
     pub async fn scan_codex(state: tauri::State<'_, Session>) -> Result<Inventory, InspectError> {
-        with_sandbox(state.inner().clone(), |s| s.inventory()).await
+        #[cfg(feature = "native-cleanup-test")]
+        {
+            with_store(state.inner().clone(), |s| {
+                s.invalidate();
+                s.inventory()
+            })
+            .await
+        }
+        #[cfg(not(feature = "native-cleanup-test"))]
+        {
+            let session = state.inner().clone();
+            tauri::async_runtime::spawn_blocking(move || {
+                session.running()?;
+                let mut store = session
+                    .sandbox
+                    .try_lock()
+                    .map_err(|_| error("cleanupBusy"))?;
+                if let Some(store) = store.as_mut() {
+                    store.invalidate();
+                }
+                agentbroom_core::codex::scan_default()
+            })
+            .await
+            .map_err(|_| error("scanFailed"))?
+        }
     }
     #[tauri::command]
     pub async fn cleanup_preview(
@@ -94,7 +125,7 @@ mod native_test {
         selected_ids: Vec<String>,
         kept: Vec<String>,
     ) -> Result<NativePlan, InspectError> {
-        with_sandbox(state.inner().clone(), move |s| {
+        with_store(state.inner().clone(), move |s| {
             s.preview(&selected_ids, &kept)
         })
         .await
@@ -104,14 +135,34 @@ mod native_test {
         state: tauri::State<'_, Session>,
         confirmation: Confirmation,
     ) -> Result<Receipt, InspectError> {
-        with_sandbox(state.inner().clone(), move |s| s.execute(confirmation)).await
+        with_store(state.inner().clone(), move |s| s.execute(confirmation)).await
     }
     #[tauri::command]
     pub async fn cleanup_result(
         state: tauri::State<'_, Session>,
         plan_id: String,
     ) -> Result<Receipt, InspectError> {
-        with_sandbox(state.inner().clone(), move |s| s.receipt(&plan_id)).await
+        with_store(state.inner().clone(), move |s| s.receipt(&plan_id)).await
+    }
+    #[tauri::command]
+    pub async fn cleanup_cancel(
+        state: tauri::State<'_, Session>,
+        plan_id: String,
+    ) -> Result<(), InspectError> {
+        if plan_id.len() > 128 {
+            return Err(error("invalidPlan"));
+        }
+        with_store(state.inner().clone(), move |s| {
+            s.cancel(&plan_id);
+            Ok(())
+        })
+        .await
+    }
+    #[tauri::command]
+    pub async fn cleanup_history(
+        state: tauri::State<'_, Session>,
+    ) -> Result<Vec<Receipt>, InspectError> {
+        with_store(state.inner().clone(), |s| s.history()).await
     }
     #[cfg(test)]
     mod tests {
@@ -153,74 +204,86 @@ mod native_test {
         }
     }
 }
-#[cfg(feature = "native-cleanup-test")]
-use native_test::{cleanup_execute, cleanup_preview, cleanup_result, scan_codex};
+use native_session::{
+    cleanup_cancel, cleanup_execute, cleanup_history, cleanup_preview, cleanup_result, scan_codex,
+};
 #[tauri::command]
 fn cleanup_mode() -> &'static str {
     if cfg!(feature = "native-cleanup-test") {
         "syntheticNativeTest"
     } else {
-        "readOnly"
+        "native"
     }
-}
-#[cfg(not(feature = "native-cleanup-test"))]
-#[tauri::command]
-async fn scan_codex() -> Result<Inventory, InspectError> {
-    static SCAN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-    if SCAN.swap(true, std::sync::atomic::Ordering::SeqCst) {
-        return Err(error("scanBusy"));
-    }
-    let result = tauri::async_runtime::spawn_blocking(agentbroom_core::codex::scan_default).await;
-    SCAN.store(false, std::sync::atomic::Ordering::SeqCst);
-    result.map_err(|_| error("scanFailed"))?
-}
-#[cfg(not(feature = "native-cleanup-test"))]
-#[tauri::command]
-fn cleanup_execute() -> Result<(), InspectError> {
-    agentbroom_core::cleanup::reject_live_execution()
-}
-#[cfg(not(feature = "native-cleanup-test"))]
-#[tauri::command]
-fn cleanup_preview() -> Result<(), InspectError> {
-    agentbroom_core::cleanup::reject_live_execution()
-}
-#[cfg(not(feature = "native-cleanup-test"))]
-#[tauri::command]
-fn cleanup_result() -> Result<(), InspectError> {
-    agentbroom_core::cleanup::reject_live_execution()
 }
 pub fn run() {
     let builder = tauri::Builder::default();
-    #[cfg(feature = "native-cleanup-test")]
-    let builder = builder.manage(native_test::Session::default());
+    let builder = builder.manage(native_session::Session::default());
     builder
         .invoke_handler(tauri::generate_handler![
             scan_codex,
             cleanup_mode,
             cleanup_preview,
             cleanup_execute,
-            cleanup_result
+            cleanup_result,
+            cleanup_cancel,
+            cleanup_history
         ])
         .build(tauri::generate_context!())
         .expect("Could not launch AgentBroom")
         .run(|app, event| {
-            #[cfg(feature = "native-cleanup-test")]
-            native_test::on_event(app, event);
-            #[cfg(not(feature = "native-cleanup-test"))]
-            let _ = (app, event);
+            native_session::on_event(app, event);
         });
 }
-#[cfg(test)]
-mod tests {
-    #[cfg(not(feature = "native-cleanup-test"))]
+
+#[cfg(all(test, not(feature = "native-cleanup-test")))]
+mod ipc_contract_tests {
+    use super::*;
+    fn request(cmd: &str, body: serde_json::Value) -> tauri::webview::InvokeRequest {
+        tauri::webview::InvokeRequest {
+            cmd: cmd.into(),
+            callback: tauri::ipc::CallbackFn(0),
+            error: tauri::ipc::CallbackFn(1),
+            url: "tauri://localhost".parse().unwrap(),
+            body: tauri::ipc::InvokeBody::Json(body),
+            headers: Default::default(),
+            invoke_key: tauri::test::INVOKE_KEY.into(),
+        }
+    }
     #[test]
-    fn normal_desktop_cannot_execute_or_issue_write_plans() {
-        assert_eq!(super::cleanup_mode(), "readOnly");
-        assert_eq!(
-            super::cleanup_execute().unwrap_err().code,
-            "realStoreLocked"
+    fn real_mode_and_invalid_mutation_payloads_use_actual_ipc_without_a_source() {
+        let session = native_session::Session::default();
+        let app = tauri::test::mock_builder()
+            .manage(session)
+            .invoke_handler(tauri::generate_handler![
+                cleanup_mode,
+                cleanup_execute,
+                cleanup_cancel
+            ])
+            .build(tauri::test::mock_context(tauri::test::noop_assets()))
+            .unwrap();
+        let window = tauri::WebviewWindowBuilder::new(&app, "main", Default::default())
+            .build()
+            .unwrap();
+        tauri::test::assert_ipc_response(
+            &window,
+            request("cleanup_mode", serde_json::json!({})),
+            Ok::<_, String>("native".to_string()),
         );
-        assert!(super::cleanup_preview().is_err());
-        assert!(super::cleanup_result().is_err());
+        let result = tauri::test::get_ipc_response(
+            &window,
+            request(
+                "cleanup_execute",
+                serde_json::json!({"confirmation":{"planId":"never-issued","selectedIds":[],"phrase":"DELETE","acknowledged":true,"root":"/not-accepted"}}),
+            ),
+        );
+        assert!(result.is_err());
+        let result = tauri::test::get_ipc_response(
+            &window,
+            request(
+                "cleanup_cancel",
+                serde_json::json!({"planId":"x".repeat(129)}),
+            ),
+        );
+        assert!(result.is_err());
     }
 }

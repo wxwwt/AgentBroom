@@ -3,6 +3,10 @@
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 pub const VERIFIED_NATIVE_VERSION: &str = "0.162.1";
+pub const BUNDLED_NATIVE_VERSION: &str = "0.162.0-alpha.17.2";
+pub fn supported_version(version: &str) -> bool {
+    matches!(version, VERIFIED_NATIVE_VERSION | BUNDLED_NATIVE_VERSION)
+}
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct NativeScopeEvidence {
@@ -46,7 +50,7 @@ fn identifiers(values: &[String]) -> Option<BTreeSet<String>> {
 }
 pub fn assess(evidence: &NativeScopeEvidence) -> NativeScopeAssessment {
     let mut reasons = Vec::new();
-    if evidence.runtime_version != VERIFIED_NATIVE_VERSION {
+    if !supported_version(&evidence.runtime_version) {
         reasons.push("nativeVersionUnsupported".into());
     }
     if !evidence.observed_complete || !evidence.native_complete {

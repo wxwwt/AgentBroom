@@ -10,6 +10,7 @@ fn confirm(p: &NativePlan) -> Confirmation {
         selected_ids: p.analysis.selected_ids.clone(),
         phrase: "DELETE".into(),
         acknowledged: true,
+        kept: vec![],
     }
 }
 #[test]
