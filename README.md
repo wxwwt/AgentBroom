@@ -6,9 +6,11 @@ AgentBroom is an early desktop tool for inspecting local Codex storage and expli
 
 ## Use
 
-The desktop opens your configured `CODEX_HOME` (otherwise `$HOME/.codex`) for read-only inventory. Nothing is selected or deleted automatically. English and Simplified Chinese are available.
+The desktop opens your configured `CODEX_HOME` (otherwise `$HOME/.codex`) for read-only inventory and native identity lookup. Nothing is selected or deleted automatically. English and Simplified Chinese are available.
 
-Open **Cleanup preview**, select one main conversation or independent fork, and review its complete spawned subtree, measured files, retained records and blocking reasons. Keep choices, pins, recent writes, unresolved selected relationships, external references, linked files, unsupported runtimes/databases and changed plans block execution. Independent forks are never automatically selected.
+Conversations are **unlocked by default**. In conversation details, choose **Lock conversation** to prevent deletion, or **Unlock conversation** to allow it again. Locks are saved locally, survive rescans/restarts, and are enforced by the backend. A locked parent protects its native spawned descendants; a locked descendant blocks a plan containing it. Codex pins are separate from AgentBroom locks.
+
+Open **Cleanup preview**, select a conversation (including a native-indexed sub Agent or orphan), and review its native spawned subtree, measured files, retained records and notices. Age, recent writes and fork/history references do not automatically lock records. Independent forks are never automatically included. Linked files, unidentified paths, unsupported runtimes/databases and changed plans can still prevent execution; these are execution errors, not manual protection.
 
 If the backend can validate the plan, review the permanent-deletion warning, acknowledge the scope and type `DELETE`. Only this confirmation starts official native `thread/delete`. It can also update Codex indexes and remove native metadata belonging to those conversations. Receipts are **not backups**. Deletion cannot be undone through AgentBroom.
 
@@ -18,9 +20,9 @@ The backend checks native/observed scopes, file content/identity, source identit
 
 The initial native target is macOS Apple silicon; metadata inspection also supports Linux. Supported native versions are exactly `0.162.0-alpha.17.2` and `0.162.1`, tested on newly generated stores. On macOS the bundled official Codex executable is discovered inside ChatGPT/Codex. A developer can explicitly set `AGENTBROOM_CODEX_BIN` to a trusted official executable. AgentBroom does not upgrade Codex or migrate existing databases; incompatible native schemas remain blocked. Source roots and executable paths cannot be supplied by the renderer.
 
-Inventory remains metadata-only, including bounded Zstandard session headers. Cleanup previews additionally read native state and hash the selected files; bodies are never displayed or exported. Actual deletion is delegated to the official native store, including its writer/reference checks. This is not an atomic snapshot of a concurrently running Codex instance. Recently modified records are additionally blocked; age alone never authorizes deletion.
+Inventory uses bounded Zstandard session headers and read-only native identities/spawn edges, recovering indexed identities when header scanning is incomplete. Cleanup previews additionally hash the selected files; bodies are never displayed or exported. Actual deletion is delegated to the official native store, including its writer/reference checks. This is not an atomic snapshot of a concurrently running Codex instance. Recent writes are shown as notices. Official native writer/reference checks can still reject a requested deletion.
 
-Execution intent and results are atomically persisted under `~/.agentbroom/cleanup-receipts/`, without transcript bodies. Unknown operations cannot automatically retry, including after restart. Other instances are serialized by an application lock. Graceful exit waits for an ongoing operation. Forced OS termination is not recovery; inspect the saved receipt and current data before taking further action.
+Execution intent and results are atomically persisted under `~/.agentbroom/cleanup-receipts/`, without transcript bodies. Manual locks are source-scoped files in its private `locks/` subdirectory and never change Codex data. Unknown operations cannot automatically retry, including after restart. Other instances are serialized by an application lock. Graceful exit waits for an ongoing operation. Forced OS termination is not recovery; inspect the saved receipt and current data before taking further action.
 
 The loopback development browser remains **read-only**, with no write HTTP endpoint or fixture fallback. Native cleanup requires the desktop app.
 
@@ -48,7 +50,7 @@ npm run test:native-helper
 npm run test:fixtures
 ```
 
-`native-cleanup-test` is a separate developer-only desktop build (`npm run desktop:test:build`). It generates its own store, never imports real data and shares the transport and confirmation DTOs with the independently constructed live owner. It is not enabled in the regular app. Python is only a test dependency.
+`native-cleanup-test` is a separate developer-only desktop build (`npm run desktop:test:build`). It generates its own store, never imports real data and shares the transport and confirmation DTOs with the independently constructed live owner. It is not enabled in the regular app. Its generated store is discarded on restart, and manual lock controls are available only in the regular desktop app. Manual-lock policy is tested through the real owner using generated stores. Python is only a test dependency.
 
 ## Privacy and documentation
 

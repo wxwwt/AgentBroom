@@ -13,6 +13,8 @@
     "allow-cleanup-preview",
     "allow-cleanup-result",
     "allow-cleanup-cancel",
-    "allow-cleanup-history"
+    "allow-cleanup-history",
+    "allow-conversation-locks",
+    "allow-set-conversation-lock"
   ]
 }

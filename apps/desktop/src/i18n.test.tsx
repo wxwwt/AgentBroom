@@ -32,10 +32,11 @@ describe("language selection",()=>{
  });
  it("localizes existing events and protection reasons without translating user content",async()=>{
   await start();chinese();fireEvent.click(screen.getByRole("button",{name:/操作记录/}));
-  expect(screen.getByText("已只读盘点本地 Codex")).toBeVisible();expect(screen.getByText(/已测量 13 个文件/)).toBeVisible();
+  expect(screen.getByText("已只读盘点本地 Codex")).toBeVisible();expect(screen.getByText(/已统计 13 个文件/)).toBeVisible();
   fireEvent.click(screen.getByRole("button",{name:/对话/}));
   fireEvent.click(screen.getByRole("button",{name:/Local synthetic 0/}));
-  expect(screen.getByText("仅做只读盘点，不评估是否符合清理条件")).toBeVisible();
+  expect(screen.queryByText("仅做只读盘点，不评估是否符合清理条件")).not.toBeInTheDocument();
+  expect(screen.getAllByText("未上锁").length).toBeGreaterThan(0);
   expect(screen.getByText("atlas-web")).toBeVisible();
   expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
  });

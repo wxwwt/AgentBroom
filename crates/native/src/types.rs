@@ -9,6 +9,8 @@ pub struct NativePlan {
     pub native_ids: Vec<String>,
     pub retained_ids: Vec<String>,
     pub blocked_reasons: Vec<String>,
+    pub warnings: Vec<String>,
+    pub locked_ids: Vec<String>,
     pub executable: bool,
     pub expires_in_seconds: u64,
 }

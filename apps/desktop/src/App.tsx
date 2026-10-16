@@ -12,6 +12,7 @@ import {
   Layers3,
   LayoutDashboard,
   LockKeyhole,
+  LockOpen,
   RefreshCw,
   Search,
   ShieldCheck,
@@ -31,7 +32,9 @@ import {
   type ActivityEntry,
 } from "./types";
 import CleanupPanel from "./CleanupPanel";
+import { conversationLocked, cleanupMessage } from "./cleanup";
 import NativeCleanupPanel from "./NativeCleanupPanel";
+import { readConversationLocks, setConversationLock } from "./nativeCleanup";
 type Page = "overview" | "conversations" | "activity" | "cleanup";
 const categoryNames: Record<string, MessageKey> = {
   sessions: "Session files",
@@ -62,6 +65,9 @@ function AppContent() {
     [filter, setFilter] = useState("all"),
     [detailId, setDetailId] = useState<string | null>(null),
     [kept, setKept] = useState<string[]>([]);
+  const [lockBusy, setLockBusy] = useState(false);
+  const [lockError, setLockError] = useState("");
+  const [lockReadFailed, setLockReadFailed] = useState(false);
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [visibleLimit, setVisibleLimit] = useState(50);
   const scanSeq = useRef(0),
@@ -86,13 +92,20 @@ function AppContent() {
     try {
       const [next, mode] = await Promise.all([loadInventory(), loadCleanupMode()]);
       if (seq !== scanSeq.current) return;
+      let locks: string[] = [];
+      let lockFailure = "";
+      try { if (mode === "native") locks = await readConversationLocks(); }
+      catch (e) { lockFailure = errorText(e); }
+      if (seq !== scanSeq.current) return;
       setCleanupMode(mode);
       setInventory(next);
-      setKept([]);
+      setKept(locks);
+      setLockError(lockFailure);
+      setLockReadFailed(!!lockFailure);
       setDetailId(null);
       addActivity(
         mode === "syntheticNativeTest" ? "Generated native test store loaded" : "Local Codex inspected read-only",
-        mode === "syntheticNativeTest" ? "{count} generated test files measured; no real Agent data accessed." : "{count} files measured; no source files written, no database opened.",
+        mode === "syntheticNativeTest" ? "{count} generated test files measured; no real Agent data accessed." : "{count} files measured; native identities read without changing Agent data.",
         {count: next.items.length},
       );
     } catch (e) {
@@ -111,10 +124,13 @@ function AppContent() {
     };
   }, []);
   const total = inventory?.totals.reduce((n, c) => n + c.logicalBytes, 0) ?? 0;
-  const protectedCount = (inventory?.threads ?? []).filter(
-    (record) => record.protectionReasons.length > 0 || kept.includes(record.id),
-  ).length;
   const records = inventory?.threads ?? [];
+  const byId = new Map(records.map(t => [t.id, t]));
+  const lockedSet = new Set(kept);
+  const isLocked = (id: string) => conversationLocked(id, byId, lockedSet);
+  const protectedCount = (inventory?.threads ?? []).filter(
+    (record) => isLocked(record.id),
+  ).length;
   const allocatedTotal = inventory?.totals.every((record) => record.allocatedBytes !== null) ? inventory.totals.reduce((n,t) => n + t.allocatedBytes!, 0) : null;
   useEffect(() => {setVisibleLimit(50);}, [search, filter, inventory]);
   const sorted = [...records].sort(
@@ -127,20 +143,22 @@ function AppContent() {
         .includes(search.toLowerCase()) &&
       (filter === "all" ||
         (filter === "protected" &&
-          (record.protectionReasons.length > 0 || kept.includes(record.id))) ||
+          isLocked(record.id)) ||
         (filter === "kept" && kept.includes(record.id)) ||
         (["root", "spawned", "fork", "unknown"].includes(filter) && record.relation === filter)),
   );
   const shown = matches.slice(0, visibleLimit);
   const detail = inventory?.threads.find((record) => record.id === detailId);
-  function toggleKeep(t: Thread) {
-    setKept((k) =>
-      k.includes(t.id) ? k.filter((x) => x !== t.id) : [...k, t.id],
-    );
-    addActivity(
-      kept.includes(t.id) ? "Keep choice removed" : "Keep choice added",
-      "{title} · choice exists only for this session.", {title:t.title},
-    );
+  async function toggleKeep(thread: Thread) {
+    if (lockBusy || lockReadFailed || cleanupMode !== "native") return;
+    setLockBusy(true); setLockError("");
+    const locked = !kept.includes(thread.id.toLowerCase());
+    try {
+      const next = await setConversationLock(thread.id, locked);
+      setKept(next);
+      addActivity(locked ? "Conversation locked" : "Conversation unlocked", "{title} · saved on this device.", {title: thread.title});
+    } catch (e) { setLockError(errorText(e)); }
+    finally { setLockBusy(false); }
   }
   function openDetail(id: string) {
     setDetailId(id);
@@ -257,7 +275,7 @@ function AppContent() {
               <strong>{t(cleanupMode === "syntheticNativeTest" ? "Generated native test store" : "Your local Codex metadata. Inspection only.")}</strong>
               <span>
                 {" "}
-                {t(cleanupMode === "syntheticNativeTest" ? "The native test backend opens only its generated state database; real Agent data stays untouched." : cleanupMode === "native" ? "Inventory is read-only. Cleanup previews check native state; execution requires explicit confirmation." : "Databases are measured without opening them. Live status is unknown; every record remains protected.")}
+                {t(cleanupMode === "syntheticNativeTest" ? "The native test backend opens only its generated state database; real Agent data stays untouched." : cleanupMode === "native" ? "Inventory is read-only. Cleanup previews check native state; execution requires explicit confirmation." : "Browser inspection is read-only. Use the desktop app to lock or delete conversations.")}
               </span>
             </div>
             <span className="scanner-source">{systemText(sourceLabel)}</span>
@@ -305,9 +323,9 @@ function AppContent() {
                       Icon={Layers3}
                     />
                     <Metric
-                      label={t("Protected")}
-                      value={String(protectedCount)}
-                      detail={t(cleanupMode === "native" ? "Cleanup eligibility is checked for each preview." : "All real records remain protected")}
+                      label={t("Locked")}
+                      value={lockReadFailed ? t("Unknown") : String(protectedCount)}
+                      detail={t("Only manually locked conversations and their descendants are protected.")}
                       Icon={ShieldCheck}
                     />
                     <Metric
@@ -356,46 +374,15 @@ function AppContent() {
                         ))}
                       </div>
                       <div className="panel-footnote">
-                        {t("Databases, WAL and SHM are stat-only. Shared database bytes are not attributed to individual conversations.")}
+                        {t("Shared database bytes are not attributed to individual conversations.")}
                       </div>
                     </section>
                     <section className="panel protection-panel">
-                      <div className="panel-heading">
-                        <div>
-                          <h2>{t("What stays protected")}</h2>
-                          <p>{t("Uncertainty is a reason to stop.")}</p>
-                        </div>
-                        <ShieldCheck size={23} />
-                      </div>
-                      <div className="protection-item">
-                        <GitBranch size={19} />
-                        <div>
-                          <strong>{t("Shared history references")}</strong>
-                          <p>{t("Independent forks do not become owned children.")}</p>
-                        </div>
-                      </div>
-                      <div className="protection-item">
-                        <Clock3 size={19} />
-                        <div>
-                          <strong>{t("Unverified live status")}</strong>
-                          <p>{t("Pinned, referenced and incomplete records carry explicit reasons. Runtime activity is not queried.")}</p>
-                        </div>
-                      </div>
-                      <div className="protection-item">
-                        <LockKeyhole size={19} />
-                        <div>
-                          <strong>{t("Incomplete metadata")}</strong>
-                          <p>{t("Oversized and unread records stay unresolved.")}</p>
-                        </div>
-                      </div>
-                      <button
-                        className="text-button"
-                        onClick={() => {
-                          setFilter("protected");
-                          setPage("conversations");
-                        }}
-                      >{t("Inspect protected records")}<ArrowRight size={15} />
-                      </button>
+                      <div className="panel-heading"><div><h2>{t(cleanupMode === "syntheticNativeTest" ? "Generated native test store" : "Manual locks")}</h2><p>{t("Conversations are unlocked by default.")}</p></div><LockKeyhole size={23}/></div>
+                      <p>{t(cleanupMode === "syntheticNativeTest" ? "Manual locks are available in the regular desktop app. This test build generates a new store on every start." : "Only manually locked conversations and their descendants are protected.")}</p>
+                      {cleanupMode !== "syntheticNativeTest" && <p>{t("Locks are saved on this device and survive rescans and restarts.")}</p>}
+                      <p>{t("Fork references and recent writes are preview notices, not automatic locks.")}</p>
+                      <button className="text-button" onClick={() => {setFilter("protected");setPage("conversations");}}>{t("View locked conversations")}<ArrowRight size={15}/></button>
                     </section>
                   </div>
                   <section className="panel">
@@ -422,7 +409,7 @@ function AppContent() {
                               {record.project} · {t("{count} segments", {count:record.files.length})}
                             </small>
                           </span>
-                          <Status thread={record} kept={kept.includes(record.id)} />
+                          <Status thread={record} kept={isLocked(record.id)} unavailable={lockReadFailed} />
                           <strong>{!record.files.length ? t("Unattributed") : displayBytes(record.inclusiveBytes)}</strong>
                           <ChevronRight size={16} />
                         </button>
@@ -431,12 +418,12 @@ function AppContent() {
                   </section>
                   <div className="bottom-note">
                     <ShieldCheck size={15} />
-                    {t(cleanupMode === "native" ? "Inventory does not authorize deletion. Review native cleanup before confirming execution." : "All real records remain protected. Cleanup previews do not authorize deletion.")}
+                    {t(cleanupMode === "native" ? "Inventory does not authorize deletion. Review native cleanup before confirming execution." : "Browser inspection is read-only. Use the desktop app to lock or delete conversations.")}
 
                   </div>
                 </>
               )}
-              {page === "cleanup" && (cleanupMode !== "readOnly" ? <NativeCleanupPanel key={`${inventory.sourceFingerprint}:${kept.join(",")}`} inventory={inventory} kept={kept} testOnly={cleanupMode === "syntheticNativeTest"} refresh={() => void rescan()}/> : <CleanupPanel key={`${inventory.sourceFingerprint}:${kept.join(",")}`} inventory={inventory} kept={kept}/>)}
+              {page === "cleanup" && (lockReadFailed ? <p role="alert">{t("Lock state is unavailable. Rescan to restore cleanup controls.")}</p> : cleanupMode !== "readOnly" ? <NativeCleanupPanel key={`${inventory.sourceFingerprint}:${kept.join(",")}`} inventory={inventory} kept={kept} testOnly={cleanupMode === "syntheticNativeTest"} refresh={() => void rescan()}/> : <CleanupPanel key={`${inventory.sourceFingerprint}:${kept.join(",")}`} inventory={inventory} kept={kept}/>)}
               {page === "conversations" && (
                 <>
                   <div className="toolbar">
@@ -457,8 +444,8 @@ function AppContent() {
                       <option value="all">{t("All conversations")}</option>
 
                       {<><option value="root">{t("Main conversations")}</option><option value="spawned">{t("Sub Agents")}</option><option value="fork">{t("Independent forks")}</option><option value="unknown">{t("Unresolved")}</option></>}
-                      <option value="protected">{t("Protected")}</option>
-                      <option value="kept">{t("Kept this session")}</option>
+                      <option value="protected">{t("Locked")}</option>
+                      <option value="kept">{t("Manually locked")}</option>
                     </select>
                     <span className="results-count">
                       {t("{count} records · showing {shown}",{count:matches.length,shown:shown.length})}
@@ -489,7 +476,7 @@ function AppContent() {
                                 {record.ownedDescendantIds.length ? ` · ${t("{count} spawned", {count:record.ownedDescendantIds.length})}` : ""}
                               </span>
                             </button>
-                            <Status thread={record} kept={kept.includes(record.id)} />
+                            <Status thread={record} kept={isLocked(record.id)} unavailable={lockReadFailed} />
                             <strong className="row-size">
                               {!record.files.length ? t("Unattributed") : displayBytes(record.inclusiveBytes)}
                             </strong>
@@ -515,7 +502,7 @@ function AppContent() {
                         <h2>{detail.title}</h2>
                         <Status
                           thread={detail}
-                          kept={kept.includes(detail.id)}
+                          kept={isLocked(detail.id)} unavailable={lockReadFailed}
                         />
                         <div className="detail-facts">
                           <span>{t("Project")}<strong>{detail.project}</strong>
@@ -536,11 +523,11 @@ function AppContent() {
                           </span>
                         </div>
                         <div className="id-box">{detail.id}</div>
-                        {detail.protectionReasons.length > 0 && (
-                          <div className="protection-reasons">
-                            <ShieldCheck size={17} />
+                        {detail.protectionReasons.some(r => !["Read-only inspection: cleanup eligibility is not evaluated", "Live status unknown: no runtime or database activity queried"].includes(r)) && (
+                          <div className="metadata-notices">
+                            <h3>{t("Metadata notices")}</h3>
                             <div>
-                              {detail.protectionReasons.map((r) => (
+                              {detail.protectionReasons.filter(r => !["Read-only inspection: cleanup eligibility is not evaluated", "Live status unknown: no runtime or database activity queried"].includes(r)).map((r) => (
                                 <p key={r}>{systemText(r)}</p>
                               ))}
                             </div>
@@ -577,15 +564,18 @@ function AppContent() {
                         )}
 
                         <button
-                          className={`button ${kept.includes(detail.id) ? "kept-button" : "secondary"}`}
-                          onClick={() => toggleKeep(detail)}
+                          className={`button ${kept.includes(detail.id.toLowerCase()) ? "kept-button" : "secondary"}`}
+                          onClick={() => void toggleKeep(detail)}
+                          disabled={lockBusy || lockReadFailed || cleanupMode !== "native" || !detail.files.length || detail.id.startsWith("unknown:")}
                         >
                           <ShieldCheck size={15} />
-                          {kept.includes(detail.id)
-                            ? t("Remove keep choice")
-                            : t("Keep this conversation")}
+                          {kept.includes(detail.id.toLowerCase())
+                            ? t("Unlock conversation")
+                            : t(isLocked(detail.id) ? "Lock separately" : "Lock conversation")}
                         </button>
-                        <p className="tiny-note">{t("Keep choices exist in memory for this session only. They do not change an agent’s retention rules.")}</p>
+                        {isLocked(detail.id) && !kept.includes(detail.id.toLowerCase()) && <p className="tiny-note">{t("Locked through a parent. Unlock the parent to remove inherited protection.")}</p>}
+                        <p className="tiny-note">{t(cleanupMode === "syntheticNativeTest" ? "Manual locks are available in the regular desktop app. This test build generates a new store on every start." : "Locks are saved on this device and survive rescans and restarts.")}</p>
+                        {lockError && <p role="alert">{systemText(cleanupMessage(lockError))}</p>}
                       </aside>
                     )}
                   </div>
@@ -653,7 +643,8 @@ function Metric({
     </div>
   );
 }
-function Status({ kept }: { thread: Thread; kept: boolean }) {
+function Status({ kept, unavailable = false }: { thread: Thread; kept: boolean; unavailable?: boolean }) {
   const {t} = useLocale();
-  return <span className="status protected"><ShieldCheck size={12}/>{t("Protected")}{kept ? t(" · kept this session") : ""}</span>;
+  const Icon = kept ? LockKeyhole : LockOpen;
+  return <span className={`status ${kept ? "protected" : "reviewable"}`}><Icon size={12}/>{t(unavailable ? "Lock state unknown" : kept ? "Locked" : "Unlocked")}</span>;
 }

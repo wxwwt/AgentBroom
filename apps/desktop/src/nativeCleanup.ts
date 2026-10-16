@@ -8,6 +8,8 @@ export interface NativePlan {
   nativeIds: string[];
   retainedIds: string[];
   blockedReasons: string[];
+  warnings?: string[];
+  lockedIds?: string[];
   executable: boolean;
   expiresInSeconds: number;
 }
@@ -42,3 +44,7 @@ export const readNativeReceipt = (planId: string) =>
 
 export const readNativeHistory = () =>
   invoke<NativeReceipt[]>("cleanup_history");
+
+export const readConversationLocks = () => invoke<string[]>("conversation_locks");
+export const setConversationLock = (threadId: string, locked: boolean) =>
+  invoke<string[]>("set_conversation_lock", { threadId, locked });

@@ -159,13 +159,37 @@ pub(crate) fn stamps(root: &Path) -> Result<BTreeMap<String, Stamp>, Error> {
     }
     Ok(out)
 }
+/// Native indexes can retain the pre-compression rollout path. Resolve only the
+/// format's exact compressed sibling; never guess identities from a filename.
+pub(crate) fn rollout_key(
+    root: &Path,
+    stored: &str,
+    files: &BTreeMap<String, Stamp>,
+) -> Result<String, Error> {
+    let relative = Path::new(stored)
+        .strip_prefix(root)
+        .map_err(|_| fail("nativePathMismatch"))?;
+    let key = relative
+        .to_str()
+        .ok_or_else(|| fail("nativePathMismatch"))?;
+    if files.contains_key(key) {
+        return Ok(key.into());
+    }
+    if key.ends_with(".jsonl") {
+        let compressed = format!("{key}.zst");
+        if files.contains_key(&compressed) {
+            return Ok(compressed);
+        }
+    }
+    Err(fail("nativePathMismatch"))
+}
 pub(crate) fn check_config(root: &Path) -> Result<(), Error> {
     let p = root.join("config.toml");
     if !p.exists() {
         return Ok(());
     }
     let data = read_file(&p, 1024 * 1024)?;
-    let config: toml::Value = std::str::from_utf8(&data)
+    let config: toml::Table = std::str::from_utf8(&data)
         .map_err(|_| fail("configUnsupported"))?
         .parse()
         .map_err(|_| fail("configUnsupported"))?;
@@ -541,35 +565,4 @@ fn auxiliary_schemas(root: &Path) -> Result<(), Error> {
         }
     }
     Ok(())
-}
-
-pub(crate) fn check_pins(root: &Path) -> Result<BTreeSet<String>, Error> {
-    let data = read_file(&root.join(".codex-global-state.json"), 4 * 1024 * 1024)
-        .map_err(|_| fail("pinStateUnavailable"))?;
-    let value: Value = serde_json::from_slice(&data).map_err(|_| fail("pinStateUnavailable"))?;
-    let pins = value
-        .get("pinned-thread-ids")
-        .and_then(Value::as_array)
-        .ok_or_else(|| fail("pinStateUnavailable"))?;
-    if pins.len() > 20000
-        || pins.iter().any(|id| {
-            id.as_str().is_none_or(|id| {
-                id.len() != 36
-                    || !id.bytes().enumerate().all(|(i, b)| {
-                        if [8, 13, 18, 23].contains(&i) {
-                            b == b'-'
-                        } else {
-                            b.is_ascii_hexdigit()
-                        }
-                    })
-            })
-        })
-    {
-        return Err(fail("pinStateUnavailable"));
-    }
-    Ok(pins
-        .iter()
-        .filter_map(Value::as_str)
-        .map(str::to_ascii_lowercase)
-        .collect())
 }

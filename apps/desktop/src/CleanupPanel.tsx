@@ -87,10 +87,13 @@ export function CleanupConfirmation({
         e && typeof e === "object" && "code" in e ? String(e.code) : "";
       setError(
         t(
-          nativeDriver &&
+          code === "lockedConversation"
+            ? "This conversation was locked after the preview. Create a new preview to review the locks."
+            : nativeDriver &&
             [
               "planExpired",
               "staleSnapshot",
+              "lockedConversation",
               "planBlocked",
               "invalidConfirmation",
               "invalidPlan",

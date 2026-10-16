@@ -1,19 +1,18 @@
 //! Native deletion owner. Discovery is read-only; only confirmed execution starts a real server.
 //! No public constructor accepts an existing source directory, Inventory or renderer path.
+mod catalog;
+mod locks;
 pub mod rpc;
 mod source;
 mod types;
-use agentbroom_core::{
-    InspectError, Inventory, cleanup,
-    native_scope::{self, NativeScopeEvidence},
-};
+use agentbroom_core::{InspectError, Inventory, cleanup, native_scope};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use source::{Database, Stamp, database, hash_file, identity, read_file, stamps};
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs,
-    path::{Path, PathBuf},
+    path::PathBuf,
     time::{Duration, Instant},
 };
 pub use types::{Confirmation, NativePlan, Receipt};
@@ -48,6 +47,8 @@ struct Evaluation {
     files: BTreeMap<String, Stamp>,
     ids: Vec<String>,
     blocked: Vec<String>,
+    warnings: Vec<String>,
+    locked_ids: Vec<String>,
 }
 impl LiveCleanup {
     /// Resolves the source and installed runtime internally. Does not launch native maintenance.
@@ -78,7 +79,29 @@ impl LiveCleanup {
     }
     pub fn inventory(&mut self) -> Result<Inventory, Error> {
         self.invalidate();
-        agentbroom_core::codex::scan_store(&self.root)
+        let db = database(&self.root)?;
+        catalog::inspect(&self.root, &db, &stamps(&self.root)?)
+    }
+    pub fn locked_ids(&self) -> Result<Vec<String>, Error> {
+        Ok(locks::read(&self.receipts, &self.source_id())?
+            .into_iter()
+            .collect())
+    }
+    pub fn set_locked(&mut self, id: &str, locked: bool) -> Result<Vec<String>, Error> {
+        if !locks::uuid(id) {
+            return Err(fail("invalidSelection"));
+        }
+        let _operation_lock = source::operation_lock(&self.receipts)?;
+        let mut ids = locks::read(&self.receipts, &self.source_id())?;
+        let id = id.to_ascii_lowercase();
+        if locked {
+            ids.insert(id);
+        } else {
+            ids.remove(&id);
+        }
+        locks::write(&self.receipts, &self.source_id(), ids.clone())?;
+        self.invalidate();
+        Ok(ids.into_iter().collect())
     }
     fn evaluate(
         &self,
@@ -89,7 +112,7 @@ impl LiveCleanup {
         if self.closed {
             return Err(fail("runtimeStopped"));
         }
-        if selected.len() != 1 || kept.len() > 128 {
+        if selected.len() != 1 || !locks::uuid(&selected[0]) || kept.len() > 20000 {
             return Err(fail("invalidSelection"));
         }
         source::guard_root(&self.root)?;
@@ -97,150 +120,127 @@ impl LiveCleanup {
             return Err(fail("sourceChanged"));
         }
         source::check_config(&self.root)?;
-        let pinned = source::check_pins(&self.root)?;
-        let files = stamps(&self.root)?;
-        let mut inventory = agentbroom_core::codex::scan_store(&self.root)?;
-        // Index-only entries have no physical deletion target. Real malformed files remain blockers.
-        inventory.threads.retain(|t| !t.files.is_empty());
-        let observed: BTreeSet<_> = inventory
-            .threads
-            .iter()
-            .flat_map(|t| t.files.iter().cloned())
-            .collect();
-        if observed != files.keys().cloned().collect() {
-            return Err(fail("nativeScopeIncomplete"));
+        if !native_scope::supported_version(runtime_version) {
+            return Err(fail("nativeVersionUnsupported"));
         }
-        // Full source scans can be partial because unrelated cache links are deliberately excluded.
-        // The cleanup corpus above is independently exhaustive, rejects links/special files and budgets.
-        inventory.partial_coverage = false;
-        let analysis = cleanup::plan(&inventory, selected, kept)?;
+        let files = stamps(&self.root)?;
         let db = database(&self.root)?;
         let ids = db.subtree(&selected[0])?;
-        // A fully parsed orphan outside the authoritative subtree cannot be silently selected.
-        // Its explicit history/fork references still participate in the shared dependency checks.
-        // Unread headers, cycles, ambiguous aliases, or an orphan inside this subtree still block.
-        let graph_complete = inventory
+        let inventory = catalog::inspect(&self.root, &db, &files)?;
+        let mut locked = locks::read(&self.receipts, &self.source_id())?;
+        locked.extend(kept.iter().map(|id| id.to_ascii_lowercase()));
+        let header_parents: Vec<_> = inventory
             .threads
             .iter()
-            .filter(|t| t.relation == agentbroom_core::Relation::Unknown)
-            .all(|t| {
-                !ids.contains(&t.id)
-                    && t.source_type == "subagent"
-                    && t.protection_reasons.iter().all(|r| {
-                        matches!(
-                            r.as_str(),
-                            "Read-only inspection: cleanup eligibility is not evaluated"
-                                | "Live status unknown: no runtime or database activity queried"
-                                | "Missing parent identity"
-                                | "Parent conversation missing from inspected metadata"
-                        )
-                    })
-            });
-
-        let known_ids: BTreeSet<_> = inventory.threads.iter().map(|t| t.id.clone()).collect();
-        // Only the explicitly permitted orphan-parent gap can be waived. Missing fork/history
-        // targets and any non-orphan parent gap remain independent global graph blockers.
-        let references_complete = inventory.threads.iter().all(|t| {
-            let sources = t
-                .fork_sources
-                .iter()
-                .chain(t.history_sources.iter())
-                .chain(t.forked_from_id.iter())
-                .chain(t.shared_history_from.iter());
-            sources.clone().all(|source| known_ids.contains(source))
-                && t.parent_id.as_ref().is_none_or(|parent| {
-                    known_ids.contains(parent)
-                        || (t.relation == agentbroom_core::Relation::Unknown
-                            && t.source_type == "subagent"
-                            && !ids.contains(&t.id))
-                })
-        });
-        let mut blocked: BTreeSet<_> = analysis
-            .blocked_reasons
-            .iter()
-            .filter(|r| {
-                !matches!(
-                    r.as_str(),
-                    "realStoreLocked"
-                        | "nativeEffectsUnverified"
-                        | "activityUnverified"
-                        | "protectedRecord"
-                )
+            .filter(|t| t.relation != agentbroom_core::Relation::Fork)
+            .filter_map(|t| {
+                t.parent_id
+                    .as_ref()
+                    .map(|parent| (parent.clone(), t.id.clone()))
             })
-            .cloned()
             .collect();
-        for t in inventory
-            .threads
-            .iter()
-            .filter(|t| analysis.included_ids.contains(&t.id))
-        {
-            for reason in &t.protection_reasons {
-                if !matches!(
-                    reason.as_str(),
-                    "Read-only inspection: cleanup eligibility is not evaluated"
-                        | "Live status unknown: no runtime or database activity queried"
-                ) {
-                    blocked.insert("protectedRecord".into());
-                }
-            }
-        }
-        let scope = native_scope::assess(&NativeScopeEvidence {
-            runtime_version: runtime_version.to_owned(),
-            root_id: selected[0].clone(),
-            observed_ids: analysis.included_ids.clone(),
-            native_ids: ids.clone(),
-            observed_complete: graph_complete,
-            native_complete: true,
-        });
-        blocked.extend(scope.blocked_reasons);
-        if graph_complete && references_complete {
-            blocked.remove("graphUnresolved");
-        }
-        if ids
-            .iter()
-            .any(|id| pinned.contains(&id.to_ascii_lowercase()))
-        {
-            blocked.insert("protectedRecord".into());
+        let locked_ids = catalog::lock_conflicts(&db, &ids, &locked, &header_parents);
+        let mut blocked = BTreeSet::new();
+        if !locked_ids.is_empty() {
+            blocked.insert("lockedConversation".into());
         }
         if ids.len() > 1024 {
             blocked.insert("nativeScopeBudget".into());
         }
-        for file in &analysis.observed_files {
-            if files.get(&file.key).is_some_and(Stamp::recent) {
-                blocked.insert("recentWriteProtected".into());
-            }
-        }
-        if std::env::var("CODEX_THREAD_ID")
-            .ok()
-            .is_some_and(|id| ids.contains(&id))
-        {
-            blocked.insert("currentConversationProtected".into());
-        }
+        let mut selected_files = BTreeSet::new();
         for id in &ids {
-            let row = db
-                .rows
-                .get(id)
-                .ok_or_else(|| fail("nativeStateUnavailable"))?;
-            let path = row
+            let path = db.rows[id]
                 .get("rollout_path")
                 .and_then(Value::as_str)
-                .ok_or_else(|| fail("nativeStateUnavailable"))?;
-            let path = Path::new(path);
-            if !path.starts_with(&self.root)
-                || !analysis
-                    .observed_files
-                    .iter()
-                    .any(|f| self.root.join(&f.key) == path)
-            {
-                blocked.insert("nativePathMismatch".into());
+                .ok_or_else(|| fail("nativePathMismatch"))?;
+            let key = source::rollout_key(&self.root, path, &files)?;
+            selected_files.insert(key);
+            for t in inventory.threads.iter().filter(|t| t.id == *id) {
+                selected_files.extend(t.files.iter().cloned());
             }
         }
+        if inventory
+            .threads
+            .iter()
+            .any(|t| !ids.contains(&t.id) && t.files.iter().any(|f| selected_files.contains(f)))
+        {
+            return Err(fail("fileOwnershipUnverified"));
+        }
+        let observed_files: Vec<_> = selected_files
+            .iter()
+            .map(|key| {
+                let stamp = files
+                    .get(key)
+                    .ok_or_else(|| fail("fileOwnershipUnverified"))?;
+                Ok(agentbroom_core::DiskItem {
+                    key: key.clone(),
+                    category: if key.starts_with("archived_sessions/") {
+                        agentbroom_core::Category::Archives
+                    } else {
+                        agentbroom_core::Category::Sessions
+                    },
+                    logical_bytes: stamp.length,
+                    allocated_bytes: None,
+                })
+            })
+            .collect::<Result<_, Error>>()?;
+        let outside_dependents: Vec<_> = inventory
+            .threads
+            .iter()
+            .filter(|t| {
+                !ids.contains(&t.id)
+                    && t.fork_sources
+                        .iter()
+                        .chain(t.history_sources.iter())
+                        .chain(t.forked_from_id.iter())
+                        .chain(t.shared_history_from.iter())
+                        .any(|id| ids.contains(id))
+            })
+            .map(|t| t.id.clone())
+            .collect();
+        let mut warnings = Vec::new();
+        if !outside_dependents.is_empty() {
+            warnings.push("Other conversations reference this scope. The native store decides whether deletion is possible.".into());
+        }
+        if selected_files.iter().any(|f| files[f].recent()) {
+            warnings.push("This scope has recent file writes. Check that you no longer need these conversations.".into());
+        }
+        if inventory.partial_coverage
+            || inventory
+                .threads
+                .iter()
+                .any(|t| ids.contains(&t.id) && t.relation == agentbroom_core::Relation::Unknown)
+        {
+            warnings.push("Some header relationships are incomplete. This preview uses the native indexed deletion scope.".into());
+        }
+        let analysis = cleanup::CleanupAnalysis {
+            schema_version: 1,
+            source_kind: "codex".into(),
+            snapshot: inventory.source_fingerprint,
+            selected_ids: selected.to_vec(),
+            included_ids: ids.clone(),
+            retained_ids: db
+                .rows
+                .keys()
+                .filter(|id| !ids.contains(id))
+                .cloned()
+                .collect(),
+            outside_dependents,
+            observed_logical_bytes: observed_files.iter().map(|f| f.logical_bytes).sum(),
+            observed_files,
+            executable_files: vec![],
+            blocked_reasons: blocked.iter().cloned().collect(),
+            completeness: "observedOnly".into(),
+            can_execute: false,
+        };
         Ok(Evaluation {
             analysis,
             db,
             files,
             ids,
             blocked: blocked.into_iter().collect(),
+            warnings,
+            locked_ids,
         })
     }
     pub fn preview(&mut self, selected: &[String], kept: &[String]) -> Result<NativePlan, Error> {
@@ -273,6 +273,8 @@ impl LiveCleanup {
                 .cloned()
                 .collect(),
             blocked_reasons: evaluation.blocked.clone(),
+            warnings: evaluation.warnings.clone(),
+            locked_ids: evaluation.locked_ids.clone(),
             executable: evaluation.blocked.is_empty(),
             expires_in_seconds: TTL.as_secs(),
             analysis: evaluation.analysis,
@@ -318,6 +320,9 @@ impl LiveCleanup {
             return Err(fail("runtimeChanged"));
         }
         let e = self.evaluate(&plan.view.analysis.selected_ids, &plan.kept, &runtime)?;
+        if e.blocked.contains(&"lockedConversation".into()) {
+            return Err(fail("lockedConversation"));
+        }
         if !e.blocked.is_empty()
             || e.ids != plan.view.native_ids
             || e.analysis.included_ids != plan.view.analysis.included_ids

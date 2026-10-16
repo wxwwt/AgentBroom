@@ -27,7 +27,19 @@ function compare(a: string, b: string) {
 }
 const sorted = (s: Iterable<string>) => [...s].sort(compare);
 export function selectable(t: Thread) {
-  return (t.relation === "root" || t.relation === "fork") && t.files.length > 0;
+  return t.files.length > 0 && ((t.relation === "root" || t.relation === "fork") || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t.id));
+}
+/** Manual locks also cover known spawned ancestry; fork lineage is independent. */
+export function conversationLocked(id: string, records: ReadonlyMap<string, Thread>, locked: ReadonlySet<string>) {
+  const seen = new Set<string>();
+  let current: string | null | undefined = id;
+  while (current && !seen.has(current)) {
+    if (locked.has(current.toLowerCase())) return true;
+    seen.add(current);
+    const record = records.get(current);
+    current = record?.relation === "fork" ? null : record?.parentId;
+  }
+  return false;
 }
 function safePath(p: string) {
   return (
@@ -166,6 +178,10 @@ export function previewCleanup(
   };
 }
 export const cleanupReasons = {
+  lockStateUnavailable: "Lock state could not be read or saved. Rescan before cleanup.",
+  lockBudget: "The number of manual locks exceeds the current limit.",
+  configUnsupported: "The local configuration could not be parsed. Native cleanup is unavailable.",
+  lockedConversation: "This deletion scope contains a manually locked conversation or belongs to a locked parent.",
   realStoreLocked:
     "Real Codex deletion is locked in this release; native effects are not fully verified.",
   nativeEffectsUnverified:
@@ -183,3 +199,7 @@ export const cleanupReasons = {
   invalidSelection:
     "Select existing main or independent fork conversations only.",
 } as const;
+
+export function cleanupMessage(code: string): string {
+  return code in cleanupReasons ? cleanupReasons[code as keyof typeof cleanupReasons] : code;
+}

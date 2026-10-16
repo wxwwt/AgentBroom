@@ -23,6 +23,12 @@ mod native_session {
         shutdown: Arc<AtomicU8>,
     }
     impl Session {
+        #[cfg(test)]
+        pub(crate) fn stopped_for_test() -> Self {
+            let session = Self::default();
+            session.shutdown.store(1, Ordering::SeqCst);
+            session
+        }
         fn running(&self) -> Result<(), InspectError> {
             if self.shutdown.load(Ordering::SeqCst) != 0 {
                 Err(error("cleanupClosing"))
@@ -93,32 +99,42 @@ mod native_session {
     }
     #[tauri::command]
     pub async fn scan_codex(state: tauri::State<'_, Session>) -> Result<Inventory, InspectError> {
+        with_store(state.inner().clone(), |s| s.inventory()).await
+    }
+    #[tauri::command]
+    pub async fn conversation_locks(
+        state: tauri::State<'_, Session>,
+    ) -> Result<Vec<String>, InspectError> {
         #[cfg(feature = "native-cleanup-test")]
         {
-            with_store(state.inner().clone(), |s| {
-                s.invalidate();
-                s.inventory()
-            })
-            .await
+            let _ = state;
+            Err(error("testLocksUnavailable"))
         }
         #[cfg(not(feature = "native-cleanup-test"))]
         {
-            let session = state.inner().clone();
-            tauri::async_runtime::spawn_blocking(move || {
-                session.running()?;
-                let mut store = session
-                    .sandbox
-                    .try_lock()
-                    .map_err(|_| error("cleanupBusy"))?;
-                if let Some(store) = store.as_mut() {
-                    store.invalidate();
-                }
-                agentbroom_core::codex::scan_default()
-            })
-            .await
-            .map_err(|_| error("scanFailed"))?
+            with_store(state.inner().clone(), |s| s.locked_ids()).await
         }
     }
+    #[tauri::command]
+    pub async fn set_conversation_lock(
+        state: tauri::State<'_, Session>,
+        thread_id: String,
+        locked: bool,
+    ) -> Result<Vec<String>, InspectError> {
+        #[cfg(feature = "native-cleanup-test")]
+        {
+            let _ = (state, thread_id, locked);
+            Err(error("testLocksUnavailable"))
+        }
+        #[cfg(not(feature = "native-cleanup-test"))]
+        {
+            with_store(state.inner().clone(), move |s| {
+                s.set_locked(&thread_id, locked)
+            })
+            .await
+        }
+    }
+
     #[tauri::command]
     pub async fn cleanup_preview(
         state: tauri::State<'_, Session>,
@@ -205,7 +221,8 @@ mod native_session {
     }
 }
 use native_session::{
-    cleanup_cancel, cleanup_execute, cleanup_history, cleanup_preview, cleanup_result, scan_codex,
+    cleanup_cancel, cleanup_execute, cleanup_history, cleanup_preview, cleanup_result,
+    conversation_locks, scan_codex, set_conversation_lock,
 };
 #[tauri::command]
 fn cleanup_mode() -> &'static str {
@@ -215,12 +232,17 @@ fn cleanup_mode() -> &'static str {
         "native"
     }
 }
+fn app_context<R: tauri::Runtime>() -> tauri::Context<R> {
+    tauri::generate_context!()
+}
 pub fn run() {
     let builder = tauri::Builder::default();
     let builder = builder.manage(native_session::Session::default());
     builder
         .invoke_handler(tauri::generate_handler![
             scan_codex,
+            conversation_locks,
+            set_conversation_lock,
             cleanup_mode,
             cleanup_preview,
             cleanup_execute,
@@ -228,7 +250,7 @@ pub fn run() {
             cleanup_cancel,
             cleanup_history
         ])
-        .build(tauri::generate_context!())
+        .build(app_context())
         .expect("Could not launch AgentBroom")
         .run(|app, event| {
             native_session::on_event(app, event);
@@ -247,6 +269,35 @@ mod ipc_contract_tests {
             body: tauri::ipc::InvokeBody::Json(body),
             headers: Default::default(),
             invoke_key: tauri::test::INVOKE_KEY.into(),
+        }
+    }
+    #[test]
+    fn lock_commands_pass_the_real_generated_capability_before_the_stopped_worker_guard() {
+        // Real generated app context binds build.rs command permissions and capabilities/main.json.
+        // A stopped worker ensures these requests cannot discover or read a real source.
+        let app = tauri::test::mock_builder()
+            .manage(native_session::Session::stopped_for_test())
+            .invoke_handler(tauri::generate_handler![
+                conversation_locks,
+                set_conversation_lock
+            ])
+            .build(app_context())
+            .unwrap();
+        let window = tauri::WebviewWindowBuilder::new(&app, "main", Default::default())
+            .build()
+            .unwrap();
+        for (command, body) in [
+            ("conversation_locks", serde_json::json!({})),
+            (
+                "set_conversation_lock",
+                serde_json::json!({"threadId":"00000000-0000-4000-8000-000000000001","locked":true}),
+            ),
+        ] {
+            tauri::test::assert_ipc_response(
+                &window,
+                request(command, body),
+                Err::<InspectError, _>(error("cleanupClosing")),
+            );
         }
     }
     #[test]

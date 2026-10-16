@@ -14,7 +14,7 @@ describe('Codex relationships using synthetic metadata',()=>{
   fireEvent.change(screen.getByRole('combobox',{name:'Filter conversations'}),{target:{value:'fork'}});
   fireEvent.click(screen.getByRole('button',{name:/Local synthetic 1/}));expect(screen.getByText('Fork lineage')).toBeVisible();
   fireEvent.click(screen.getAllByRole('button',{name:'synthetic-0'})[0]);const aside=screen.getByText('Relationship evidence').closest('aside')!;
-  expect(within(aside).getByRole('button',{name:'synthetic-2'})).toBeVisible();expect(screen.getAllByText('Read-only inspection: cleanup eligibility is not evaluated')).toHaveLength(1);
+  expect(within(aside).getByRole('button',{name:'synthetic-2'})).toBeVisible();expect(screen.queryByText('Read-only inspection: cleanup eligibility is not evaluated')).not.toBeInTheDocument();
  });
  it('labels unmatched indexed bytes as unattributed rather than zero',async()=>{
   const inv=testInventory();inv.threads[0].files=[];inv.threads[0].relation='unknown';inv.threads[0].ownBytes=0;inv.threads[0].inclusiveBytes=0;bridge.load.mockResolvedValue(inv);

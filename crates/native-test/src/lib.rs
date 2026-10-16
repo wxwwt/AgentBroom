@@ -239,6 +239,8 @@ impl NativeSandbox {
             native_ids,
             executable: blocked.is_empty(),
             blocked_reasons: blocked.into_iter().collect(),
+            warnings: vec![],
+            locked_ids: vec![],
             expires_in_seconds: TTL.as_secs(),
             analysis,
         };

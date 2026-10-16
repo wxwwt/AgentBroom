@@ -1,5 +1,5 @@
 use super::*;
-use std::{fs::OpenOptions, io::Write, time::SystemTime};
+use std::{fs::OpenOptions, io::Write, path::Path, time::SystemTime};
 const ROOT: &str = "00000000-0000-4000-8000-000000000001";
 const CHILD: &str = "00000000-0000-4000-8000-000000000002";
 const KEEP: &str = "00000000-0000-4000-8000-000000000005";
@@ -27,6 +27,11 @@ impl Fixture {
         fs::write(
             home.join(".codex-global-state.json"),
             b"{\"pinned-thread-ids\":[]}",
+        )
+        .unwrap();
+        fs::write(
+            home.join("config.toml"),
+            "model = \"synthetic-model\"\n[features]\njs_repl = false\n",
         )
         .unwrap();
         for (id, parent) in [(ROOT, None), (CHILD, Some(ROOT)), (KEEP, None)] {
@@ -134,19 +139,19 @@ fn real_owner_generated_plain_and_compressed_confirm_verify_and_persist() {
 }
 #[test]
 #[ignore = "explicit native runtime; only newly generated roots"]
-fn real_owner_rejects_keep_reference_recent_cancel_stale_and_bad_confirmations() {
+fn manual_policy_preserves_confirm_guards_and_uses_notices_for_pins_references_and_recent_writes() {
     let mut f = Fixture::new(false, false);
     let before = stamps(&f.store.root).unwrap();
     let p = f.store.preview(&[ROOT.into()], &[CHILD.into()]).unwrap();
     assert!(!p.executable);
-    assert!(p.blocked_reasons.contains(&"keptRecord".into()));
+    assert!(p.blocked_reasons.contains(&"lockedConversation".into()));
     fs::write(
         f.store.root.join(".codex-global-state.json"),
         serde_json::to_vec(&json!({"pinned-thread-ids":[ROOT]})).unwrap(),
     )
     .unwrap();
     let pinned = f.store.preview(&[ROOT.into()], &[]).unwrap();
-    assert!(!pinned.executable && pinned.blocked_reasons.contains(&"protectedRecord".into()));
+    assert!(pinned.executable, "Codex pins are not manual locks");
     fs::write(
         f.store.root.join(".codex-global-state.json"),
         b"{\"pinned-thread-ids\":[]}",
@@ -177,12 +182,18 @@ fn real_owner_rejects_keep_reference_recent_cancel_stale_and_bad_confirmations()
         .unwrap();
     assert!(f.store.execute(confirmation(&p)).is_err());
     let p = f.store.preview(&[ROOT.into()], &[]).unwrap();
-    assert!(!p.executable && p.blocked_reasons.contains(&"recentWriteProtected".into()));
+    assert!(p.executable);
+    assert!(p.warnings.iter().any(|w| w.contains("recent file writes")));
     assert_eq!(stamps(&f.store.root).unwrap().len(), before.len());
     let mut f = Fixture::new(false, true);
     let p = f.store.preview(&[ROOT.into()], &[]).unwrap();
-    assert!(!p.executable && p.blocked_reasons.contains(&"outsideDependency".into()));
-    assert!(f.store.execute(confirmation(&p)).is_err());
+    assert!(p.executable, "{:?}", p.blocked_reasons);
+    assert!(!p.analysis.outside_dependents.is_empty());
+    assert!(
+        p.warnings
+            .iter()
+            .any(|w| w.contains("reference this scope"))
+    );
 }
 #[test]
 #[ignore = "explicit native runtime; only newly generated roots"]
@@ -284,7 +295,8 @@ fn fully_parsed_unrelated_orphan_stays_retained_and_does_not_disable_other_roots
     let p = f.store.preview(&[ROOT.into()], &[]).unwrap();
     assert!(p.executable, "{:?}", p.blocked_reasons);
     assert!(p.retained_ids.contains(&orphan.into()));
-    assert!(f.store.preview(&[orphan.into()], &[]).is_err());
+    let orphan_plan = f.store.preview(&[orphan.into()], &[]).unwrap();
+    assert!(orphan_plan.executable, "{:?}", orphan_plan.blocked_reasons);
     let p = f.store.preview(&[ROOT.into()], &[]).unwrap();
     let before = hash_file(&path, 1024 * 1024).unwrap();
     let result = f.store.execute(confirmation(&p)).unwrap();
@@ -328,7 +340,7 @@ fn stale_stamp_cannot_be_rebound_to_a_rewritten_prefix() {
 }
 #[test]
 #[ignore = "explicit native runtime; only newly generated roots"]
-fn dangling_unselected_fork_reference_still_blocks_execution() {
+fn unrelated_dangling_fork_does_not_globally_block_execution() {
     let mut f = Fixture::new(false, false);
     let path = f.store.root.join(format!(
         "sessions/2026/01/01/rollout-2026-01-01T00-00-00-{KEEP}.jsonl"
@@ -348,7 +360,237 @@ fn dangling_unselected_fork_reference_still_blocks_execution() {
     )
     .unwrap();
     let plan = f.store.preview(&[ROOT.into()], &[]).unwrap();
-    assert!(!plan.executable);
-    assert!(plan.blocked_reasons.contains(&"graphUnresolved".into()));
-    assert!(f.store.execute(confirmation(&plan)).is_err());
+    assert!(plan.executable, "{:?}", plan.blocked_reasons);
+    let result = f.store.execute(confirmation(&plan)).unwrap();
+    assert_eq!(result.status, "verified", "{result:?}");
+}
+
+#[test]
+fn valid_toml_documents_are_parsed_and_external_stores_remain_unsupported() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().canonicalize().unwrap();
+    fs::write(
+        root.join("config.toml"),
+        "model = \"synthetic-model\"\n[features]\njs_repl = false\n",
+    )
+    .unwrap();
+    assert!(source::check_config(&root).is_ok());
+    fs::write(
+        root.join("config.toml"),
+        "sqlite_home = \"/somewhere-else\"\n",
+    )
+    .unwrap();
+    assert_eq!(
+        source::check_config(&root).unwrap_err().code,
+        "externalDatabaseUnsupported"
+    );
+    fs::write(root.join("config.toml"), "model = [").unwrap();
+    assert_eq!(
+        source::check_config(&root).unwrap_err().code,
+        "configUnsupported"
+    );
+}
+#[test]
+fn manual_locks_are_persistent_source_scoped_and_fail_closed_on_corruption() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().canonicalize().unwrap();
+    let mut store = LiveCleanup {
+        root_identity: identity(&root).unwrap(),
+        root: root.clone(),
+        binary: root.join("not-run"),
+        receipts: root.join("receipts"),
+        pending: None,
+        closed: false,
+    };
+    assert!(store.locked_ids().unwrap().is_empty());
+    store.set_locked(ROOT, true).unwrap();
+    assert_eq!(store.locked_ids().unwrap(), vec![ROOT]);
+    assert!(store.history().unwrap().is_empty());
+    let mut other = LiveCleanup {
+        root_identity: (0, 0),
+        root: root.clone(),
+        binary: root.join("not-run"),
+        receipts: store.receipts.clone(),
+        pending: None,
+        closed: false,
+    };
+    assert!(other.locked_ids().unwrap().is_empty());
+    other.root_identity = store.root_identity;
+    assert_eq!(other.locked_ids().unwrap(), vec![ROOT]);
+    other.set_locked(ROOT, false).unwrap();
+    assert!(store.locked_ids().unwrap().is_empty());
+    assert!(store.set_locked("../../outside", true).is_err());
+    fs::write(
+        store
+            .receipts
+            .join("locks")
+            .join(format!("{}.json", store.source_id())),
+        b"broken",
+    )
+    .unwrap();
+    assert!(store.locked_ids().is_err());
+    assert!(store.set_locked(ROOT, false).is_err());
+}
+#[test]
+fn locks_cover_descendants_and_block_parent_deletion_without_blocking_independent_forks() {
+    let db = Database {
+        rows: BTreeMap::new(),
+        edges: vec![(ROOT.into(), CHILD.into(), "closed".into())],
+    };
+    assert_eq!(
+        catalog::lock_conflicts(&db, &[CHILD.into()], &BTreeSet::from([ROOT.into()]), &[]),
+        vec![ROOT]
+    );
+    assert_eq!(
+        catalog::lock_conflicts(
+            &db,
+            &[ROOT.into(), CHILD.into()],
+            &BTreeSet::from([CHILD.into()]),
+            &[]
+        ),
+        vec![CHILD]
+    );
+    assert!(
+        catalog::lock_conflicts(&db, &[KEEP.into()], &BTreeSet::from([ROOT.into()]), &[])
+            .is_empty()
+    );
+}
+#[test]
+#[ignore = "explicit native runtime; only newly generated roots"]
+fn persisted_locks_block_scope_and_revalidate_across_instances_then_unlock_allows_delete() {
+    let mut f = Fixture::new(false, false);
+    f.store.set_locked(ROOT, true).unwrap();
+    let p = f.store.preview(&[CHILD.into()], &[]).unwrap();
+    assert!(!p.executable);
+    assert_eq!(p.locked_ids, vec![ROOT]);
+    assert!(f.store.execute(confirmation(&p)).is_err());
+    f.store.set_locked(ROOT, false).unwrap();
+    f.store.set_locked(CHILD, true).unwrap();
+    let p = f.store.preview(&[ROOT.into()], &[]).unwrap();
+    assert!(!p.executable);
+    assert_eq!(p.locked_ids, vec![CHILD]);
+    f.store.set_locked(CHILD, false).unwrap();
+    let p = f.store.preview(&[ROOT.into()], &[]).unwrap();
+    assert!(p.executable);
+    // Another instance changes persisted locks without invalidating this process's pending plan.
+    locks::write(
+        &f.store.receipts,
+        &f.store.source_id(),
+        BTreeSet::from([CHILD.into()]),
+    )
+    .unwrap();
+    assert!(f.store.execute(confirmation(&p)).is_err());
+    assert_eq!(stamps(&f.store.root).unwrap().len(), 3);
+    f.store.set_locked(CHILD, false).unwrap();
+    let p = f.store.preview(&[ROOT.into()], &[]).unwrap();
+    let result = f.store.execute(confirmation(&p)).unwrap();
+    assert_eq!(result.status, "verified", "{result:?}");
+}
+
+#[test]
+#[ignore = "explicit native runtime; only newly generated roots"]
+fn compression_after_native_indexing_resolves_stale_plain_paths_and_verifies_deletion() {
+    let mut f = Fixture::new(false, false);
+    for path in stamps(&f.store.root).unwrap().keys() {
+        let path = f.store.root.join(path);
+        let compressed = path.with_extension("jsonl.zst");
+        fs::write(
+            &compressed,
+            zstd::stream::encode_all(&fs::read(&path).unwrap()[..], 3).unwrap(),
+        )
+        .unwrap();
+        fs::remove_file(path).unwrap();
+    }
+    // The native database intentionally retains its original .jsonl rollout_path.
+    assert!(
+        database(&f.store.root).unwrap().rows[ROOT]["rollout_path"]
+            .as_str()
+            .unwrap()
+            .ends_with(".jsonl")
+    );
+    let p = f.store.preview(&[ROOT.into()], &[]).unwrap();
+    assert!(p.executable, "{:?}", p.blocked_reasons);
+    assert!(
+        p.analysis
+            .observed_files
+            .iter()
+            .all(|f| f.key.ends_with(".jsonl.zst"))
+    );
+    let result = f.store.execute(confirmation(&p)).unwrap();
+    assert_eq!(result.status, "verified", "{result:?}");
+    assert_eq!(stamps(&f.store.root).unwrap().len(), 1);
+}
+
+#[test]
+fn header_ancestry_and_uuid_case_do_not_bypass_manual_locks() {
+    let db = Database {
+        rows: BTreeMap::new(),
+        edges: vec![],
+    };
+    let parent = "abcdef00-0000-4000-8000-000000000001";
+    let headers = vec![(parent.to_ascii_uppercase(), CHILD.into())];
+    assert_eq!(
+        catalog::lock_conflicts(
+            &db,
+            &[CHILD.into()],
+            &BTreeSet::from([parent.into()]),
+            &headers
+        ),
+        vec![parent]
+    );
+    assert_eq!(
+        catalog::lock_conflicts(
+            &db,
+            &[parent.to_ascii_uppercase()],
+            &BTreeSet::from([parent.into()]),
+            &[]
+        ),
+        vec![parent]
+    );
+}
+
+#[test]
+fn native_index_recovers_unread_headers_without_creating_fake_protection() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().canonicalize().unwrap();
+    fs::create_dir(root.join("sessions")).unwrap();
+    let path = root.join("sessions/generated.jsonl");
+    fs::write(&path, b"unread synthetic header\n").unwrap();
+    let db = Database {
+        rows: BTreeMap::from([(
+            ROOT.into(),
+            json!({"rollout_path":path,"title":"Synthetic recovered identity"}),
+        )]),
+        edges: vec![],
+    };
+    let inv = catalog::inspect(&root, &db, &stamps(&root).unwrap()).unwrap();
+    assert_eq!(inv.threads.len(), 1);
+    assert_eq!(inv.threads[0].id, ROOT);
+    assert_eq!(inv.threads[0].files, vec!["sessions/generated.jsonl"]);
+    assert_eq!(inv.threads[0].own_bytes, 24);
+    assert!(catalog::lock_conflicts(&db, &[ROOT.into()], &BTreeSet::new(), &[]).is_empty());
+}
+
+#[test]
+#[ignore = "explicit native runtime; only newly generated roots"]
+fn copied_fork_reference_is_a_notice_and_native_outcome_preserves_the_fork() {
+    let mut f = Fixture::new(false, true);
+    let before = stamps(&f.store.root).unwrap();
+    let keep = before.keys().find(|p| p.contains(KEEP)).unwrap().clone();
+    let keep_hash = hash_file(&f.store.root.join(&keep), 1024 * 1024).unwrap();
+    let p = f.store.preview(&[ROOT.into()], &[]).unwrap();
+    assert!(p.executable);
+    let result = f.store.execute(confirmation(&p)).unwrap();
+    assert_eq!(
+        hash_file(&f.store.root.join(keep), 1024 * 1024).unwrap(),
+        keep_hash
+    );
+    assert!(database(&f.store.root).unwrap().rows.contains_key(KEEP));
+    if result.status != "verified" {
+        // A native reference/writer rejection is allowed, but it must leave the selected data intact.
+        assert_eq!(result.status, "verificationFailed", "{result:?}");
+        assert!(result.removed.is_empty(), "{result:?}");
+        assert!(database(&f.store.root).unwrap().rows.contains_key(ROOT));
+        assert_eq!(stamps(&f.store.root).unwrap().len(), before.len());
+    }
 }

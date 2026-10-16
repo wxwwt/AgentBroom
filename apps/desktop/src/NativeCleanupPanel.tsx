@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale } from "./i18n";
 import { bytes, type Inventory } from "./types";
-import { selectable, cleanupReasons } from "./cleanup";
+import { selectable, cleanupReasons, conversationLocked, cleanupMessage } from "./cleanup";
 import { CleanupConfirmation } from "./CleanupPanel";
 import {
   previewNative,
@@ -12,7 +12,7 @@ import {
   type NativeReceipt,
   type NativePlan,
 } from "./nativeCleanup";
-/** Only displayed after the native backend identifies its isolated test build. */
+/** Native desktop flow; the backend identifies live versus generated-store builds. */
 export default function NativeCleanupPanel({
   inventory,
   kept,
@@ -61,6 +61,8 @@ export default function NativeCleanupPanel({
     () => new Map(inventory.threads.map((thread) => [thread.id, thread])),
     [inventory],
   );
+  const lockedSet = useMemo(() => new Set(kept), [kept]);
+  const isLocked = (id: string) => conversationLocked(id, recordsById, lockedSet);
   useEffect(
     () => () => {
       if (latestPlan.current)
@@ -97,9 +99,9 @@ export default function NativeCleanupPanel({
                   : "The native cleanup process stopped. Inspect the receipt before creating another plan.",
               )
             : systemText(
-                e && typeof e === "object" && "code" in e
+                cleanupMessage(e && typeof e === "object" && "code" in e
                   ? String(e.code)
-                  : "Native cleanup request failed. Create a fresh preview.",
+                  : "Native cleanup request failed. Create a fresh preview."),
               ),
         );
       }
@@ -130,7 +132,7 @@ export default function NativeCleanupPanel({
         <h2>{t("Cleanup candidates")}</h2>
         <p>
           {t(
-            "Select one main conversation or independent fork per native plan.",
+            "Select one conversation. Its native spawned subtree is included in the preview.",
           )}
         </p>
         <label className="search">
@@ -160,7 +162,7 @@ export default function NativeCleanupPanel({
                 name="native-candidate"
                 aria-label={t("Select {title}", { title: thread.title })}
                 checked={selected[0] === thread.id}
-                disabled={busy || confirm}
+                disabled={busy || confirm || isLocked(thread.id)}
                 onChange={() => {
                   generation.current++;
                   setSelected([thread.id]);
@@ -170,6 +172,7 @@ export default function NativeCleanupPanel({
               />
               <span>
                 <strong>{thread.title}</strong>
+                {isLocked(thread.id) && <small>{t("Locked")}</small>}
                 <small>
                   {thread.id} · {systemText(thread.relation)}
                 </small>
@@ -249,6 +252,8 @@ export default function NativeCleanupPanel({
               <p key={file.key}>{file.key}</p>
             ))}
           </details>
+          {!!plan.warnings?.length && <><h3>{t("Notices")}</h3>{plan.warnings.map(w => <p key={w}>{systemText(w)}</p>)}</>}
+          {!!plan.lockedIds?.length && <><h3>{t("Locked conversations in this scope")}</h3><ul>{plan.lockedIds.map(id => <li key={id}>{title(id)} · {id}</li>)}</ul></>}
           {!!plan.blockedReasons.length && (
             <>
               <h3>{t("Blocking reasons")}</h3>
