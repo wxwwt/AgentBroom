@@ -553,7 +553,25 @@ export const zhMessages = {
     "原生清理进程已停止，请先核对执行记录。",
   recentWriteProtected: "所选范围最近五分钟有文件写入，暂不允许清理。",
   currentConversationProtected: "所选范围包含当前开发对话，禁止清理。",
-  nativeSchemaUnsupported: "原生数据库格式不兼容；不会替你升级或迁移数据库。",
+  "The installed Codex runtime and storage have different structures. Open Codex to update its own data, then rescan.":
+    "当前 Codex 程序与存储结构不同，请先打开 Codex 让它自行更新数据，再重新盘点。",
+  "Codex startup changed log records before deletion. Log verification uses the state after startup; other associated data keeps its original baseline.":
+    "Codex 启动维护在删除前改变了日志记录。本次清理按维护后的日志状态核验，其他关联数据仍按原快照核验。",
+  nativeSchemaUnsupported:
+    "检测到尚未验证的 Codex 存储结构；不会替你升级或迁移数据库。",
+  "Native runtime {version} · storage contract {profile}":
+    "原生运行时 {version} · 存储兼容规范 {profile}",
+  relatedSchemaUnsupported: "Codex 关联数据表结构不兼容，尚未执行删除。",
+  relatedStateUnavailable: "无法只读核对 Codex 关联数据，请稍后重试。",
+  relatedStateBudget: "关联数据超过本次核对上限，尚未执行删除。",
+  "Codex storage structure is not yet validated; no database upgrade or migration will be performed.":
+    "检测到尚未验证的 Codex 存储结构；不会替你升级或迁移数据库。",
+  "Codex associated metadata has an incompatible structure. Nothing was deleted.":
+    "Codex 关联数据表结构不兼容，尚未执行删除。",
+  "Associated metadata could not be inspected. Nothing was deleted.":
+    "无法读取关联数据，尚未执行删除。",
+  "Associated metadata exceeds the inspection limit. Nothing was deleted.":
+    "关联数据超过本次核对上限，尚未执行删除。",
   nativeVersionUnsupported: "当前原生运行时版本尚未通过验证。",
   nativeRuntimeUnavailable: "未找到支持的官方 Codex 运行时。",
   externalDatabaseUnsupported: "外置 SQLite 目录暂不支持清理。",

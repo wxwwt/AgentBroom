@@ -24,7 +24,11 @@ jobs:
 
   native-contract:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        codex: ["0.162.1", "0.163.0-alpha.10.2"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,7 +37,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo build --locked -p agentbroom-cli
       - name: Install isolated official native test runtime
-        run: npm install --prefix "$RUNNER_TEMP/agentbroom-codex" --ignore-scripts --no-audit --no-fund --save-exact @openai/codex@0.162.1
+        run: npm install --prefix "$RUNNER_TEMP/agentbroom-codex" --ignore-scripts --no-audit --no-fund --save-exact @openai/codex@${{ matrix.codex }}
       - name: Run native contracts on generated data only
         env:
           AGENTBROOM_TEST_CODEX_BIN: ${{ runner.temp }}/agentbroom-codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex

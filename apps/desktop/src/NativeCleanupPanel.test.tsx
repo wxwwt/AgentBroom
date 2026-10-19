@@ -292,33 +292,120 @@ describe("native desktop test flow", () => {
 });
 
 it("manual lock disables its candidate and scope lock blocks confirmation", async () => {
-  api.preview.mockResolvedValue({...plan(),executable:false,blockedReasons:["lockedConversation"],lockedIds:["c"]});
+  api.preview.mockResolvedValue({
+    ...plan(),
+    executable: false,
+    blockedReasons: ["lockedConversation"],
+    lockedIds: ["c"],
+  });
   show(["e"]);
-  expect(screen.getByRole("radio",{name:"Select Synthetic e"})).toBeDisabled();
-  fireEvent.click(screen.getByRole("radio",{name:"Select Synthetic a"}));
-  fireEvent.click(screen.getByRole("button",{name:"Preview impact"}));
+  expect(
+    screen.getByRole("radio", { name: "Select Synthetic e" }),
+  ).toBeDisabled();
+  fireEvent.click(screen.getByRole("radio", { name: "Select Synthetic a" }));
+  fireEvent.click(screen.getByRole("button", { name: "Preview impact" }));
   await screen.findByText("Locked conversations in this scope");
-  expect(screen.getByRole("button",{name:"Review confirmation"})).toBeDisabled();
+  expect(
+    screen.getByRole("button", { name: "Review confirmation" }),
+  ).toBeDisabled();
   expect(api.execute).not.toHaveBeenCalled();
 });
 it("native-indexed child and unresolved logical conversations are selectable", async () => {
-  const child = {...inventory.threads[0], id:"00000000-0000-4000-8000-000000000009",relation:"unknown" as const,title:"Synthetic orphan"};
-  render(<LocaleProvider><NativeCleanupPanel inventory={{...inventory,threads:[child]}} kept={[]} refresh={()=>{}}/></LocaleProvider>);
-  expect(screen.getByRole("radio",{name:"Select Synthetic orphan"})).toBeEnabled();
+  const child = {
+    ...inventory.threads[0],
+    id: "00000000-0000-4000-8000-000000000009",
+    relation: "unknown" as const,
+    title: "Synthetic orphan",
+  };
+  render(
+    <LocaleProvider>
+      <NativeCleanupPanel
+        inventory={{ ...inventory, threads: [child] }}
+        kept={[]}
+        refresh={() => {}}
+      />
+    </LocaleProvider>,
+  );
+  expect(
+    screen.getByRole("radio", { name: "Select Synthetic orphan" }),
+  ).toBeEnabled();
 });
 
 it("locked parent disables its child while an independent fork stays selectable", () => {
-  const root = {...inventory.threads[0],id:"00000000-0000-4000-8000-000000000001",title:"Synthetic root"};
-  const child = {...root,id:"00000000-0000-4000-8000-000000000002",parentId:root.id,relation:"spawned" as const,title:"Synthetic child"};
-  const fork = {...root,id:"00000000-0000-4000-8000-000000000003",parentId:root.id,relation:"fork" as const,title:"Synthetic fork"};
-  render(<LocaleProvider><NativeCleanupPanel inventory={{...inventory,threads:[root,child,fork]}} kept={[root.id]} refresh={()=>{}}/></LocaleProvider>);
-  expect(screen.getByRole("radio",{name:"Select Synthetic root"})).toBeDisabled();
-  expect(screen.getByRole("radio",{name:"Select Synthetic child"})).toBeDisabled();
-  expect(screen.getByRole("radio",{name:"Select Synthetic fork"})).toBeEnabled();
+  const root = {
+    ...inventory.threads[0],
+    id: "00000000-0000-4000-8000-000000000001",
+    title: "Synthetic root",
+  };
+  const child = {
+    ...root,
+    id: "00000000-0000-4000-8000-000000000002",
+    parentId: root.id,
+    relation: "spawned" as const,
+    title: "Synthetic child",
+  };
+  const fork = {
+    ...root,
+    id: "00000000-0000-4000-8000-000000000003",
+    parentId: root.id,
+    relation: "fork" as const,
+    title: "Synthetic fork",
+  };
+  render(
+    <LocaleProvider>
+      <NativeCleanupPanel
+        inventory={{ ...inventory, threads: [root, child, fork] }}
+        kept={[root.id]}
+        refresh={() => {}}
+      />
+    </LocaleProvider>,
+  );
+  expect(
+    screen.getByRole("radio", { name: "Select Synthetic root" }),
+  ).toBeDisabled();
+  expect(
+    screen.getByRole("radio", { name: "Select Synthetic child" }),
+  ).toBeDisabled();
+  expect(
+    screen.getByRole("radio", { name: "Select Synthetic fork" }),
+  ).toBeEnabled();
 });
 
-it("a lock added after preview is a clear pre-deletion rejection",async()=>{
-  api.execute.mockRejectedValue({code:"lockedConversation"}); show(); await review(); execute();
-  await screen.findByText("This conversation was locked after the preview. Create a new preview to review the locks.");
-  expect(api.execute).toHaveBeenCalledOnce(); expect(api.receipt).not.toHaveBeenCalled();
+it("a lock added after preview is a clear pre-deletion rejection", async () => {
+  api.execute.mockRejectedValue({ code: "lockedConversation" });
+  show();
+  await review();
+  execute();
+  await screen.findByText(
+    "This conversation was locked after the preview. Create a new preview to review the locks.",
+  );
+  expect(api.execute).toHaveBeenCalledOnce();
+  expect(api.receipt).not.toHaveBeenCalled();
+});
+it("shows the detected runtime and storage contract before confirmation", async () => {
+  api.preview.mockResolvedValue({
+    ...plan(),
+    runtimeVersion: "0.163.0-alpha.10.2",
+    storageProfile: "state-v61",
+  });
+  show();
+  await review();
+  expect(
+    screen.getByText(
+      "Native runtime 0.163.0-alpha.10.2 · storage contract state-v61",
+    ),
+  ).toBeVisible();
+  expect(api.execute).not.toHaveBeenCalled();
+});
+it("explains storage incompatibility in English without calling it a version rejection", async () => {
+  api.preview.mockRejectedValue({ code: "nativeSchemaUnsupported" });
+  show();
+  fireEvent.click(screen.getByLabelText("Select Synthetic a"));
+  fireEvent.click(screen.getByRole("button", { name: "Preview impact" }));
+  expect(
+    await screen.findByText(
+      "Codex storage structure is not yet validated; no database upgrade or migration will be performed.",
+    ),
+  ).toBeVisible();
+  expect(api.execute).not.toHaveBeenCalled();
 });

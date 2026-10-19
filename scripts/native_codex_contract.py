@@ -317,8 +317,10 @@ def verify_runtime(binary, home):
         capture_output=True,
         timeout=TIMEOUT,
     )
-    if result.returncode or result.stdout.decode().strip() != f"codex-cli {VERSION}":
-        raise ContractError("unsupported native runtime version")
+    version = result.stdout.decode().strip()
+    if result.returncode or not version.startswith("codex-cli "):
+        raise ContractError("unrecognized native runtime identity")
+    home.runtime_version = version.removeprefix("codex-cli ")
 
 
 def warm(server, home):
@@ -391,7 +393,7 @@ def scope_check(agentbroom, home, root, native_ids):
     ):
         raise ContractError("inspection policy changed")
     evidence = {
-        "runtimeVersion": VERSION,
+        "runtimeVersion": home.runtime_version,
         "rootId": root,
         "observedIds": plan["includedIds"],
         "nativeIds": native_ids,
@@ -614,7 +616,7 @@ def main():
     args = parser.parse_args()
     if not args.codex_bin:
         parser.error(
-            "provide an official fixed-version test executable; no global CLI fallback"
+            "provide an official test executable; no global CLI fallback"
         )
     cases = (
         [args.case]

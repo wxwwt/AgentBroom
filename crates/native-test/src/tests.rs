@@ -1,7 +1,7 @@
 use super::*;
 fn sandbox(shared: bool) -> NativeSandbox {
     let binary = std::env::var_os("AGENTBROOM_TEST_CODEX_BIN")
-        .expect("explicit official 0.162.1 test binary required");
+        .expect("explicit official test binary required");
     NativeSandbox::generate_case(Path::new(&binary), shared).unwrap()
 }
 fn confirm(p: &NativePlan) -> Confirmation {

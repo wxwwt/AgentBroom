@@ -290,6 +290,14 @@ export default function NativeCleanupPanel({
               <p key={file.key}>{file.key}</p>
             ))}
           </details>
+          {plan.runtimeVersion && (
+            <p className="muted">
+              {t("Native runtime {version} · storage contract {profile}", {
+                version: plan.runtimeVersion,
+                profile: plan.storageProfile ?? "—",
+              })}
+            </p>
+          )}
           {!!plan.warnings?.length && (
             <>
               <h3>{t("Notices")}</h3>

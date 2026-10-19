@@ -4,9 +4,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 pub const VERIFIED_NATIVE_VERSION: &str = "0.162.1";
 pub const BUNDLED_NATIVE_VERSION: &str = "0.162.0-alpha.17.2";
-pub fn supported_version(version: &str) -> bool {
-    matches!(version, VERIFIED_NATIVE_VERSION | BUNDLED_NATIVE_VERSION)
-}
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct NativeScopeEvidence {
@@ -50,9 +47,6 @@ fn identifiers(values: &[String]) -> Option<BTreeSet<String>> {
 }
 pub fn assess(evidence: &NativeScopeEvidence) -> NativeScopeAssessment {
     let mut reasons = Vec::new();
-    if !supported_version(&evidence.runtime_version) {
-        reasons.push("nativeVersionUnsupported".into());
-    }
     if !evidence.observed_complete || !evidence.native_complete {
         reasons.push("nativeScopeIncomplete".into());
     }
@@ -128,15 +122,24 @@ mod tests {
         }
     }
     #[test]
-    fn unsupported_versions_and_incomplete_projections_are_rejected() {
-        for mode in 0..3 {
+    fn incomplete_projections_are_rejected() {
+        for mode in 0..2 {
             let mut e = evidence();
             match mode {
-                0 => e.runtime_version = "0.154.0".into(),
-                1 => e.native_complete = false,
+                0 => e.native_complete = false,
                 _ => e.observed_complete = false,
             };
             assert!(!assess(&e).aligned);
+        }
+    }
+    #[test]
+    fn version_label_is_diagnostic_and_never_grants_execution() {
+        for version in ["0.163.0-alpha.10.2", "9.99.0", "unrecognized"] {
+            let mut e = evidence();
+            e.runtime_version = version.into();
+            let result = assess(&e);
+            assert!(result.aligned);
+            assert!(!result.execution_enabled);
         }
     }
     #[test]

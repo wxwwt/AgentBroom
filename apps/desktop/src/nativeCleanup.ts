@@ -4,6 +4,8 @@ import type { CleanupResult } from "./CleanupPanel";
 export interface NativePlan {
   planId: string;
   testOnly: boolean;
+  runtimeVersion?: string;
+  storageProfile?: string;
   analysis: CleanupAnalysis;
   nativeIds: string[];
   retainedIds: string[];
@@ -22,6 +24,7 @@ export interface NativeReceipt extends CleanupResult {
   nativeNotificationsVerified: boolean;
   filesVerified: boolean;
   stateVerified: boolean;
+  relatedVerified?: boolean;
 }
 export const previewNative = (selectedIds: string[], kept: string[]) =>
   invoke<NativePlan>("cleanup_preview", { selectedIds, kept });

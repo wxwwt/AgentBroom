@@ -92,6 +92,7 @@ impl Fixture {
             receipts: root.join("receipts"),
             pending: None,
             closed: false,
+            runtime_contract: None,
         };
         Self { _temp: temp, store }
     }
@@ -218,6 +219,7 @@ fn unresolved_durable_intent_cannot_retry_after_restart_and_schema_changes_block
         native_deleted_ids: vec![],
         files_verified: false,
         state_verified: false,
+        related_verified: false,
     };
     f.store.write_receipt(&r).unwrap();
     f.store.pending = None;
@@ -402,6 +404,7 @@ fn manual_locks_are_persistent_source_scoped_and_fail_closed_on_corruption() {
         receipts: root.join("receipts"),
         pending: None,
         closed: false,
+        runtime_contract: None,
     };
     assert!(store.locked_ids().unwrap().is_empty());
     store.set_locked(ROOT, true).unwrap();
@@ -414,6 +417,7 @@ fn manual_locks_are_persistent_source_scoped_and_fail_closed_on_corruption() {
         receipts: store.receipts.clone(),
         pending: None,
         closed: false,
+        runtime_contract: None,
     };
     assert!(other.locked_ids().unwrap().is_empty());
     other.root_identity = store.root_identity;
@@ -435,6 +439,7 @@ fn manual_locks_are_persistent_source_scoped_and_fail_closed_on_corruption() {
 #[test]
 fn locks_cover_descendants_and_block_parent_deletion_without_blocking_independent_forks() {
     let db = Database {
+        storage_profile: "state-v59",
         rows: BTreeMap::new(),
         edges: vec![(ROOT.into(), CHILD.into(), "closed".into())],
     };
@@ -525,6 +530,7 @@ fn compression_after_native_indexing_resolves_stale_plain_paths_and_verifies_del
 #[test]
 fn header_ancestry_and_uuid_case_do_not_bypass_manual_locks() {
     let db = Database {
+        storage_profile: "state-v59",
         rows: BTreeMap::new(),
         edges: vec![],
     };
@@ -558,6 +564,7 @@ fn native_index_recovers_unread_headers_without_creating_fake_protection() {
     let path = root.join("sessions/generated.jsonl");
     fs::write(&path, b"unread synthetic header\n").unwrap();
     let db = Database {
+        storage_profile: "state-v59",
         rows: BTreeMap::from([(
             ROOT.into(),
             json!({"rollout_path":path,"title":"Synthetic recovered identity"}),
@@ -599,6 +606,7 @@ fn copied_fork_reference_is_a_notice_and_native_outcome_preserves_the_fork() {
 #[test]
 fn batch_selection_deduplicates_spawned_children_and_rejects_duplicate_inputs() {
     let db = Database {
+        storage_profile: "state-v59",
         rows: BTreeMap::from([
             (ROOT.into(), json!({})),
             (CHILD.into(), json!({})),
@@ -673,4 +681,207 @@ fn broken_activity_log_does_not_block_locks_preview_or_durable_cleanup() {
     assert_eq!(receipt.warnings, vec![events::HISTORY_WARNING]);
     assert_eq!(f.store.execute(c).unwrap().warnings, receipt.warnings);
     assert_eq!(f.store.receipt(&p.plan_id).unwrap().status, "verified");
+}
+
+fn seed_related(f: &Fixture) {
+    for (file, statements) in [
+        (
+            "state_5.sqlite",
+            vec![
+                "INSERT INTO thread_attachments(id,thread_id,attachment_type,identity_key,payload,created_at) VALUES(?1,?1,'synthetic',?1,'{}',1)",
+                "INSERT INTO thread_dynamic_tools(thread_id,position,name,description,input_schema) VALUES(?1,0,'synthetic','generated','{}')",
+            ],
+        ),
+        (
+            "goals_1.sqlite",
+            vec![
+                "INSERT INTO thread_goals(thread_id,goal_id,objective,status,created_at_ms,updated_at_ms) VALUES(?1,?1,'generated','active',1,1)",
+                "INSERT INTO thread_goal_continuation_deferrals VALUES(?1)",
+            ],
+        ),
+        (
+            "logs_2.sqlite",
+            vec![
+                "INSERT INTO logs(ts,ts_nanos,level,target,thread_id,feedback_log_body) VALUES(CAST(strftime('%s','now') AS INTEGER),0,'INFO','synthetic',?1,'generated')",
+            ],
+        ),
+        (
+            "memories_1.sqlite",
+            vec![
+                "INSERT INTO stage1_outputs(thread_id,source_updated_at,raw_memory,rollout_summary,generated_at) VALUES(?1,1,'generated','generated',1)",
+                "INSERT INTO jobs(kind,job_key,status,retry_remaining) VALUES('memory_stage1',?1,'done',0)",
+            ],
+        ),
+        (
+            "queue_1.sqlite",
+            vec!["INSERT INTO queued_items VALUES(?1,?1,'{}',1,1,1)"],
+        ),
+    ] {
+        let db = rusqlite::Connection::open(f.store.root.join(file)).unwrap();
+        for sql in statements {
+            for id in [ROOT, CHILD, KEEP] {
+                db.execute(sql, [id]).unwrap();
+            }
+        }
+        if file == "state_5.sqlite"
+            && db
+                .query_row(
+                    "SELECT count(*) FROM sqlite_master WHERE name='thread_read_receipts'",
+                    [],
+                    |r| r.get::<_, i64>(0),
+                )
+                .unwrap()
+                == 1
+        {
+            for id in [ROOT, CHILD, KEEP] {
+                db.execute(
+                    "INSERT INTO thread_read_receipts VALUES(?1,NULL,'generated',NULL)",
+                    [id],
+                )
+                .unwrap();
+                db.execute(
+                    "INSERT INTO guardian_review_feedback VALUES(?1,?1,X'010203')",
+                    [id],
+                )
+                .unwrap();
+            }
+        }
+    }
+}
+#[test]
+#[ignore = "explicit native runtime; generated associated metadata only"]
+fn native_delete_verifies_all_related_tables_and_preserves_unselected_metadata() {
+    let mut f = Fixture::new(false, false);
+    seed_related(&f);
+    let profile = database(&f.store.root).unwrap().storage_profile;
+    let before = related::snapshot(&f.store.root, profile).unwrap();
+    let p = f.store.preview(&[ROOT.into()], &[]).unwrap();
+    assert_eq!(p.storage_profile, profile);
+    assert!(p.runtime_version.starts_with("0."));
+    let r = f.store.execute(confirmation(&p)).unwrap();
+    let after = related::snapshot(&f.store.root, profile).unwrap();
+    for (table, owners) in &before.rows {
+        assert_eq!(
+            owners.get(KEEP),
+            after.rows[table].get(KEEP),
+            "retained {table}"
+        );
+        assert!(!after.rows[table].contains_key(ROOT), "residual {table}");
+        assert!(!after.rows[table].contains_key(CHILD), "residual {table}");
+        assert!(!owners[ROOT].is_empty(), "empty test seed {table}");
+    }
+    assert_eq!(r.status, "verified", "{r:?}");
+    assert!(r.related_verified);
+    for id in [ROOT, CHILD] {
+        assert!(after.revisions[id] > before.revisions[id]);
+    }
+    assert_eq!(after.revisions[KEEP], before.revisions[KEEP]);
+    assert!(database(&f.store.root).unwrap().rows.contains_key(KEEP));
+}
+#[test]
+fn storage_profiles_accept_verified_shapes_and_reject_unknown_or_modified_history() {
+    assert_eq!(
+        source::storage_profile(
+            59,
+            "b2a35ca432edfeb0545fcbabc63e3e1abb5f4b9de0146e33de8a8a8f9a87cb5e"
+        )
+        .unwrap(),
+        "state-v59"
+    );
+    assert_eq!(
+        source::storage_profile(
+            61,
+            "466e7cd4abaee882d5d7fc3048128a6794fb6fbe35b466ede2d31d9e41318050"
+        )
+        .unwrap(),
+        "state-v61"
+    );
+    assert!(source::storage_profile(61, "modified").is_err());
+    assert!(source::storage_profile(62, "future").is_err());
+}
+
+#[test]
+#[ignore = "explicit native runtime; generated source and diagnostic version wrapper only"]
+fn compatible_runtime_is_not_rejected_for_a_new_version_label() {
+    use std::os::unix::fs::PermissionsExt;
+    let mut f = Fixture::new(false, false);
+    let official = f.store.binary.clone();
+    let wrapper = f._temp.path().join("version-wrapper");
+    // Change only --version; actual initialize/read/delete protocol stays official.
+    fs::write(&wrapper,format!("#!/bin/sh\nif [ \"$1\" = --version ]; then printf '%s\\n' 'codex-cli 99.0.0'; else exec '{}' \"$@\"; fi\n",official.display())).unwrap();
+    fs::set_permissions(&wrapper, fs::Permissions::from_mode(0o700)).unwrap();
+    f.store.binary = wrapper.canonicalize().unwrap();
+    let files_before = stamps(&f.store.root).unwrap();
+    let rows_before = database(&f.store.root).unwrap().rows;
+    let p = f.store.preview(&[ROOT.into()], &[]).unwrap();
+    assert_eq!(p.runtime_version, "99.0.0");
+    assert!(p.executable);
+    assert_eq!(stamps(&f.store.root).unwrap(), files_before);
+    assert_eq!(database(&f.store.root).unwrap().rows, rows_before);
+    // A mismatched cached storage contract is refused before source initialization.
+    let hash = hash_file(&f.store.binary, 400 * 1024 * 1024).unwrap();
+    let other = if p.storage_profile == "state-v59" {
+        "state-v61"
+    } else {
+        "state-v59"
+    };
+    f.store.runtime_contract = Some((hash, other.into()));
+    assert_eq!(
+        f.store.preview(&[ROOT.into()], &[]).unwrap_err().code,
+        "runtimeStorageMismatch"
+    );
+    assert_eq!(database(&f.store.root).unwrap().rows, rows_before);
+    assert_eq!(stamps(&f.store.root).unwrap(), files_before);
+}
+
+#[test]
+#[ignore = "explicit native runtime; generated expired and current log rows only"]
+fn expired_retained_logs_are_reported_as_startup_maintenance_and_deletion_still_verifies() {
+    let mut f = Fixture::new(false, false);
+    seed_related(&f);
+    let profile = database(&f.store.root).unwrap().storage_profile;
+    let before = related::snapshot(&f.store.root, profile).unwrap();
+    let expired_id = {
+        let db = rusqlite::Connection::open(f.store.root.join("logs_2.sqlite")).unwrap();
+        db.execute("INSERT INTO logs(ts,ts_nanos,level,target,thread_id,feedback_log_body) VALUES(1,0,'INFO','generated-expired',?1,'generated expired log')",[KEEP]).unwrap();
+        db.last_insert_rowid()
+    };
+    let p = f.store.preview(&[ROOT.into()], &[]).unwrap();
+    // Preview stays read-only, including the old retained log row.
+    {
+        let db = rusqlite::Connection::open_with_flags(
+            f.store.root.join("logs_2.sqlite"),
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+        )
+        .unwrap();
+        assert_eq!(
+            db.query_row("SELECT count(*) FROM logs WHERE id=?1", [expired_id], |r| r
+                .get::<_, i64>(0))
+                .unwrap(),
+            1
+        );
+    }
+    let r = f.store.execute(confirmation(&p)).unwrap();
+    assert_eq!(r.status, "verified", "{r:?}");
+    assert!(r.related_verified);
+    assert!(
+        r.warnings
+            .iter()
+            .any(|w| w.starts_with("Codex startup changed log records"))
+    );
+    let after = related::snapshot(&f.store.root, profile).unwrap();
+    // All current retained metadata remains, including its non-expired log row.
+    assert!(related::verify(&before, &after, &[ROOT.into(), CHILD.into()]).is_empty());
+    let db = rusqlite::Connection::open_with_flags(
+        f.store.root.join("logs_2.sqlite"),
+        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+    )
+    .unwrap();
+    assert_eq!(
+        db.query_row("SELECT count(*) FROM logs WHERE id=?1", [expired_id], |r| r
+            .get::<_, i64>(0))
+            .unwrap(),
+        0
+    );
+    assert_eq!(f.store.receipt(&p.plan_id).unwrap().warnings, r.warnings);
 }

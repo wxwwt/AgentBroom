@@ -99,6 +99,9 @@ export function CleanupConfirmation({
                   "invalidConfirmation",
                   "invalidPlan",
                   "cleanupBusy",
+                  "relatedSchemaUnsupported",
+                  "relatedStateUnavailable",
+                  "relatedStateBudget",
                   "runtimeStopped",
                 ].includes(code)
               ? "Cleanup was rejected before deletion. Create a fresh preview."

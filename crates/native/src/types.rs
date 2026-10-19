@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 pub struct NativePlan {
     pub plan_id: String,
     pub test_only: bool,
+    pub runtime_version: String,
+    pub storage_profile: String,
     pub analysis: CleanupAnalysis,
     pub native_ids: Vec<String>,
     pub root_ids: Vec<String>,
@@ -49,4 +51,6 @@ pub struct Receipt {
     pub native_deleted_ids: Vec<String>,
     pub files_verified: bool,
     pub state_verified: bool,
+    #[serde(default)]
+    pub related_verified: bool,
 }

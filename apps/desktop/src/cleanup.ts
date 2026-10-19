@@ -27,10 +27,21 @@ function compare(a: string, b: string) {
 }
 const sorted = (s: Iterable<string>) => [...s].sort(compare);
 export function selectable(t: Thread) {
-  return t.files.length > 0 && ((t.relation === "root" || t.relation === "fork") || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t.id));
+  return (
+    t.files.length > 0 &&
+    (t.relation === "root" ||
+      t.relation === "fork" ||
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        t.id,
+      ))
+  );
 }
 /** Manual locks also cover known spawned ancestry; fork lineage is independent. */
-export function conversationLocked(id: string, records: ReadonlyMap<string, Thread>, locked: ReadonlySet<string>) {
+export function conversationLocked(
+  id: string,
+  records: ReadonlyMap<string, Thread>,
+  locked: ReadonlySet<string>,
+) {
   const seen = new Set<string>();
   let current: string | null | undefined = id;
   while (current && !seen.has(current)) {
@@ -178,10 +189,23 @@ export function previewCleanup(
   };
 }
 export const cleanupReasons = {
-  lockStateUnavailable: "Lock state could not be read or saved. Rescan before cleanup.",
+  runtimeStorageMismatch:
+    "The installed Codex runtime and storage have different structures. Open Codex to update its own data, then rescan.",
+  nativeSchemaUnsupported:
+    "Codex storage structure is not yet validated; no database upgrade or migration will be performed.",
+  relatedSchemaUnsupported:
+    "Codex associated metadata has an incompatible structure. Nothing was deleted.",
+  relatedStateUnavailable:
+    "Associated metadata could not be inspected. Nothing was deleted.",
+  relatedStateBudget:
+    "Associated metadata exceeds the inspection limit. Nothing was deleted.",
+  lockStateUnavailable:
+    "Lock state could not be read or saved. Rescan before cleanup.",
   lockBudget: "The number of manual locks exceeds the current limit.",
-  configUnsupported: "The local configuration could not be parsed. Native cleanup is unavailable.",
-  lockedConversation: "This deletion scope contains a manually locked conversation or belongs to a locked parent.",
+  configUnsupported:
+    "The local configuration could not be parsed. Native cleanup is unavailable.",
+  lockedConversation:
+    "This deletion scope contains a manually locked conversation or belongs to a locked parent.",
   realStoreLocked:
     "Real Codex deletion is locked in this release; native effects are not fully verified.",
   nativeEffectsUnverified:
@@ -201,5 +225,7 @@ export const cleanupReasons = {
 } as const;
 
 export function cleanupMessage(code: string): string {
-  return code in cleanupReasons ? cleanupReasons[code as keyof typeof cleanupReasons] : code;
+  return code in cleanupReasons
+    ? cleanupReasons[code as keyof typeof cleanupReasons]
+    : code;
 }

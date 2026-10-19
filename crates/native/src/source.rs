@@ -261,7 +261,43 @@ pub(crate) fn probe_version(binary: &Path) -> Result<String, Error> {
     v.trim()
         .strip_prefix("codex-cli ")
         .map(str::to_owned)
-        .ok_or_else(|| fail("nativeVersionUnsupported"))
+        .filter(|v| !v.is_empty())
+        .ok_or_else(|| fail("runtimeVersion"))
+}
+/// Probe only a newly generated, empty home; never initialize/migrate the real source.
+/// Bind the result to the executable digest in the owning session.
+pub(crate) fn probe_storage(binary: &Path) -> Result<String, Error> {
+    let temp = tempfile::Builder::new()
+        .prefix("agentbroom-compatibility-")
+        .tempdir()
+        .map_err(|_| fail("nativeRuntimeUnavailable"))?;
+    let base = temp
+        .path()
+        .canonicalize()
+        .map_err(|_| fail("nativeRuntimeUnavailable"))?;
+    let home = base.join("codex");
+    let work = base.join("runtime");
+    fs::create_dir(&home)
+        .and_then(|_| fs::create_dir(&work))
+        .map_err(|_| fail("nativeRuntimeUnavailable"))?;
+    let mut rpc = crate::rpc::Rpc::start(native_command(binary, &home, &work)?)?;
+    rpc.request("thread/list", json!({"limit":1}))?;
+    drop(rpc);
+    // Only these newly generated databases may be checkpointed. The real source
+    // is never passed to this helper; auxiliary schema inspection uses immutable RO.
+    for file in [
+        "state_5.sqlite",
+        "goals_1.sqlite",
+        "logs_2.sqlite",
+        "memories_1.sqlite",
+        "queue_1.sqlite",
+    ] {
+        let db = Connection::open_with_flags(home.join(file), OpenFlags::SQLITE_OPEN_READ_WRITE)
+            .map_err(|_| fail("nativeStateUnavailable"))?;
+        db.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);")
+            .map_err(|_| fail("nativeStateUnavailable"))?;
+    }
+    Ok(database(&home)?.storage_profile.into())
 }
 pub(crate) fn native_command(binary: &Path, root: &Path, work: &Path) -> Result<Command, Error> {
     let work = work
@@ -302,6 +338,7 @@ pub(crate) fn private_directory(path: &Path) -> Result<(), Error> {
 }
 #[derive(Clone)]
 pub(crate) struct Database {
+    pub storage_profile: &'static str,
     pub rows: BTreeMap<String, Value>,
     pub edges: Vec<(String, String, String)>,
 }
@@ -359,6 +396,13 @@ impl Database {
         Ok(seen.into_iter().collect())
     }
 }
+pub(crate) fn storage_profile(count: usize, digest: &str) -> Result<&'static str, Error> {
+    match (count, digest) {
+        (59, "b2a35ca432edfeb0545fcbabc63e3e1abb5f4b9de0146e33de8a8a8f9a87cb5e") => Ok("state-v59"),
+        (61, "466e7cd4abaee882d5d7fc3048128a6794fb6fbe35b466ede2d31d9e41318050") => Ok("state-v61"),
+        _ => Err(fail("nativeSchemaUnsupported")),
+    }
+}
 pub(crate) fn database(root: &Path) -> Result<Database, Error> {
     auxiliary_schemas(root)?;
     let path = root.join("state_5.sqlite");
@@ -396,12 +440,9 @@ pub(crate) fn database(root: &Path) -> Result<Database, Error> {
             serde_json::to_vec(&migrations).map_err(|_| fail("nativeSchemaUnsupported"))?
         )
     );
-    // Measured on newly generated databases from both exact supported official runtimes.
-    if migrations.len() != 59
-        || digest != "b2a35ca432edfeb0545fcbabc63e3e1abb5f4b9de0146e33de8a8a8f9a87cb5e"
-    {
-        return Err(fail("nativeSchemaUnsupported"));
-    }
+    // Storage contracts, not runtime version labels. An upgrade with the same
+    // schema needs no new version entry; genuinely new schemas still need validation.
+    let storage_profile = storage_profile(migrations.len(), &digest)?;
     let mut q = db
         .prepare("SELECT * FROM threads ORDER BY id")
         .map_err(|_| fail("nativeStateUnavailable"))?;
@@ -446,7 +487,11 @@ pub(crate) fn database(root: &Path) -> Result<Database, Error> {
     if edges.len() > 25000 {
         return Err(fail("nativeStateBudget"));
     }
-    Ok(Database { rows, edges })
+    Ok(Database {
+        storage_profile,
+        rows,
+        edges,
+    })
 }
 pub(crate) fn same_row(a: &Value, b: &Value) -> bool {
     let (Some(a), Some(b)) = (a.as_object(), b.as_object()) else {

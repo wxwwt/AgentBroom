@@ -4,10 +4,11 @@ mod catalog;
 pub mod diagnostics;
 pub mod events;
 mod locks;
+mod related;
 pub mod rpc;
 mod source;
 mod types;
-use agentbroom_core::{InspectError, Inventory, cleanup, native_scope};
+use agentbroom_core::{InspectError, Inventory, cleanup};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use source::{Database, Stamp, database, hash_file, identity, read_file, stamps};
@@ -44,6 +45,7 @@ pub struct LiveCleanup {
     receipts: PathBuf,
     pending: Option<SavedPlan>,
     closed: bool,
+    runtime_contract: Option<(String, String)>,
 }
 struct Evaluation {
     analysis: cleanup::CleanupAnalysis,
@@ -74,6 +76,7 @@ impl LiveCleanup {
             receipts,
             pending: None,
             closed: false,
+            runtime_contract: None,
         })
     }
     fn event_dir(&self) -> PathBuf {
@@ -212,7 +215,7 @@ impl LiveCleanup {
         &self,
         selected: &[String],
         kept: &[String],
-        runtime_version: &str,
+        _runtime_version: &str,
     ) -> Result<Evaluation, Error> {
         if self.closed {
             return Err(fail("runtimeStopped"));
@@ -229,9 +232,6 @@ impl LiveCleanup {
             return Err(fail("sourceChanged"));
         }
         source::check_config(&self.root)?;
-        if !native_scope::supported_version(runtime_version) {
-            return Err(fail("nativeVersionUnsupported"));
-        }
         let files = stamps(&self.root)?;
         let db = database(&self.root)?;
         let (roots, ids) = db.selection(selected)?;
@@ -363,9 +363,21 @@ impl LiveCleanup {
     pub fn preview(&mut self, selected: &[String], kept: &[String]) -> Result<NativePlan, Error> {
         self.invalidate();
         let runtime = source::probe_version(&self.binary)?;
+        let binary_hash = hash_file(&self.binary, 400 * 1024 * 1024)?;
+        let runtime_profile = match &self.runtime_contract {
+            Some((hash, profile)) if *hash == binary_hash => profile.clone(),
+            _ => {
+                let profile = source::probe_storage(&self.binary)?;
+                if hash_file(&self.binary, 400 * 1024 * 1024)? != binary_hash {
+                    return Err(fail("runtimeChanged"));
+                }
+                self.runtime_contract = Some((binary_hash.clone(), profile.clone()));
+                profile
+            }
+        };
         let evaluation = self.evaluate(selected, kept, &runtime)?;
-        if !native_scope::supported_version(&runtime) {
-            return Err(fail("nativeVersionUnsupported"));
+        if evaluation.db.storage_profile != runtime_profile {
+            return Err(fail("runtimeStorageMismatch"));
         }
         let nonce = tempfile::Builder::new()
             .prefix("live-")
@@ -381,6 +393,8 @@ impl LiveCleanup {
         let mut view = NativePlan {
             plan_id,
             test_only: false,
+            runtime_version: runtime.clone(),
+            storage_profile: evaluation.db.storage_profile.into(),
             native_ids: evaluation.ids.clone(),
             root_ids: evaluation.roots.clone(),
             retained_ids: evaluation
@@ -417,7 +431,6 @@ impl LiveCleanup {
             .into_iter()
             .filter(|(id, _)| view.native_ids.contains(id))
             .collect();
-        let binary_hash = hash_file(&self.binary, 400 * 1024 * 1024)?;
         if self
             .record(
                 String::new(),
@@ -458,7 +471,8 @@ impl LiveCleanup {
         if e.blocked.contains(&"lockedConversation".into()) {
             return Err(fail("lockedConversation"));
         }
-        if !e.blocked.is_empty()
+        if e.db.storage_profile != plan.view.storage_profile
+            || !e.blocked.is_empty()
             || e.ids != plan.view.native_ids
             || e.roots != plan.view.root_ids
             || e.analysis.included_ids != plan.view.analysis.included_ids
@@ -612,6 +626,7 @@ impl LiveCleanup {
             return Err(fail("planBlocked"));
         }
         let before = self.revalidate(plan)?;
+        let mut related_before = related::snapshot(&self.root, before.db.storage_profile)?;
         let plan = self.pending.take().unwrap();
         // Kernel stamps prove unchanged retained files. For recently written files, preserve a
         // content prefix so legitimate concurrent appends cannot hide rewrites of existing bytes.
@@ -644,6 +659,7 @@ impl LiveCleanup {
             native_deleted_ids: vec![],
             files_verified: false,
             state_verified: false,
+            related_verified: false,
         };
         self.write_receipt(&receipt)?;
         let titles: Vec<String> = c
@@ -719,6 +735,11 @@ impl LiveCleanup {
         let mut errors = vec![];
         if validation.is_err() {
             errors.push("staleAfterNativeInitialization");
+        }
+        match related::initialized_logs(&self.root, &mut related_before) {
+            Ok(true) => receipt.warnings.push("Codex startup changed log records before deletion. Log verification uses the state after startup; other associated data keeps its original baseline.".into()),
+            Ok(false) => (),
+            Err(_) => errors.push("startupRelatedReadbackUnavailable"),
         }
         if errors.is_empty() {
             let mut expected = BTreeSet::new();
@@ -902,6 +923,14 @@ impl LiveCleanup {
                 readback_error = files.err().or_else(|| db.err()).map(|e| e.code);
                 errors.push("readbackUnavailable");
             }
+        }
+        match related::snapshot(&self.root, before.db.storage_profile) {
+            Ok(after) => {
+                let problems = related::verify(&related_before, &after, &plan.view.native_ids);
+                receipt.related_verified = problems.is_empty();
+                errors.extend(problems);
+            }
+            Err(_) => errors.push("relatedReadbackUnavailable"),
         }
         drop(server);
         if !receipt.files_verified {

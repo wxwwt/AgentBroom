@@ -18,7 +18,7 @@ The backend checks native/observed scopes, file content/identity, source identit
 
 ## Runtime and safety boundaries
 
-The initial native target is macOS Apple silicon; metadata inspection also supports Linux. Supported native versions are exactly `0.162.0-alpha.17.2` and `0.162.1`, tested on newly generated stores. On macOS the bundled official Codex executable is discovered inside ChatGPT/Codex. A developer can explicitly set `AGENTBROOM_CODEX_BIN` to a trusted official executable. AgentBroom does not upgrade Codex or migrate existing databases; incompatible native schemas remain blocked. Source roots and executable paths cannot be supplied by the renderer.
+The initial native target is macOS Apple silicon; metadata inspection also supports Linux. Native compatibility is based on validated storage contracts (state migration histories 59 and 61), rather than an exact executable-version allowlist. Compatible runtime updates need no version-list update. Unknown or modified storage structures still pause cleanup. Generated-data regressions cover `0.162.1` and `0.163.0-alpha.10.2`; the earlier bundled `0.162.0-alpha.17.2` uses the same state-59 contract. On macOS the bundled official Codex executable is discovered inside ChatGPT/Codex. A developer can explicitly set `AGENTBROOM_CODEX_BIN` to a trusted official executable. AgentBroom does not upgrade Codex or migrate existing databases; incompatible native schemas remain blocked. Source roots and executable paths cannot be supplied by the renderer. Runtime/binary changes after preview still require a new preview. Cleanup also verifies thread-owned attachments, tools, read receipts/review feedback when present, goals, logs, memory jobs/outputs and queue content. Queue invalidation revisions are retained and advanced by Codex when queued content is removed; they are not leftover queue content. Codex may expire logs at startup; such changes are reported separately, and deletion is checked against the log snapshot after startup. All other associated data keeps its original verification baseline.
 
 Inventory uses bounded Zstandard session headers and read-only native identities/spawn edges, recovering indexed identities when header scanning is incomplete. Cleanup previews additionally hash the selected files; bodies are never displayed or exported. Actual deletion is delegated to the official native store, including its writer/reference checks. This is not an atomic snapshot of a concurrently running Codex instance. Recent writes are shown as notices. Official native writer/reference checks can still reject a requested deletion.
 
@@ -49,7 +49,7 @@ All automated mutation tests use newly generated data. Do not use real conversat
 AGENTBROOM_TEST_CODEX_BIN=/absolute/path/to/official/codex cargo test --locked -p agentbroom-native -- --ignored --test-threads=1
 AGENTBROOM_TEST_CODEX_BIN=/absolute/path/to/official/codex cargo test --locked -p agentbroom-native-test -- --ignored --test-threads=1
 cargo build --locked -p agentbroom-cli
-AGENTBROOM_TEST_CODEX_BIN=/absolute/path/to/official-0.162.1/codex npm run test:native
+AGENTBROOM_TEST_CODEX_BIN=/absolute/path/to/official/codex npm run test:native
 npm run test:native-helper
 npm run test:fixtures
 ```

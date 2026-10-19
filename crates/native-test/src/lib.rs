@@ -95,9 +95,6 @@ impl NativeSandbox {
             .trim()
             .strip_prefix("codex-cli ")
             .ok_or_else(|| fail("runtimeVersion"))?;
-        if !native_scope::supported_version(actual_version) {
-            return Err(fail("runtimeVersion"));
-        }
         write_rollout(&home, &root, ROOT, None, None, None)?;
         write_rollout(&home, &root, CHILD, Some(ROOT), None, None)?;
         write_rollout(&home, &root, KEEP, None, None, None)?;
@@ -230,6 +227,8 @@ impl NativeSandbox {
         let view = NativePlan {
             plan_id,
             test_only: true,
+            runtime_version: self.runtime_version.clone(),
+            storage_profile: "generated-test-store".into(),
             retained_ids: before
                 .rows
                 .keys()
@@ -409,6 +408,7 @@ impl NativeSandbox {
             native_deleted_ids,
             files_verified,
             state_verified,
+            related_verified: false,
         };
         if self.receipts.len() >= 20 {
             if let Some(id) = self.receipts.keys().next().cloned() {
