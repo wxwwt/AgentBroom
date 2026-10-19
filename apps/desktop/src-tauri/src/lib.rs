@@ -19,6 +19,7 @@ mod native_session {
     #[derive(Clone, Default)]
     pub struct Session {
         sandbox: Arc<Mutex<Option<Store>>>,
+        reports: Arc<Mutex<Option<agentbroom_native::diagnostics::Diagnostics>>>,
         // 0=running, 1=waiting for the current worker and cleanup, 2=ready to exit.
         shutdown: Arc<AtomicU8>,
     }
@@ -41,7 +42,11 @@ mod native_session {
                 .sandbox
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
-            guard.take(); // Drop the owned server first, then its generated temporary home.
+            guard.take();
+            self.reports
+                .lock()
+                .unwrap_or_else(|p| p.into_inner())
+                .take(); // Drop the owned server first, then its generated temporary home.
             self.shutdown.store(2, Ordering::SeqCst);
         }
     }
@@ -136,6 +141,108 @@ mod native_session {
     }
 
     #[tauri::command]
+    pub async fn set_conversation_locks(
+        state: tauri::State<'_, Session>,
+        thread_ids: Vec<String>,
+        locked: bool,
+    ) -> Result<Vec<String>, InspectError> {
+        #[cfg(feature = "native-cleanup-test")]
+        {
+            let _ = (state, thread_ids, locked);
+            Err(error("testLocksUnavailable"))
+        }
+        #[cfg(not(feature = "native-cleanup-test"))]
+        {
+            with_store(state.inner().clone(), move |s| {
+                s.set_locks(&thread_ids, locked)
+            })
+            .await
+        }
+    }
+    #[tauri::command]
+    pub async fn operation_history(
+        state: tauri::State<'_, Session>,
+    ) -> Result<Vec<agentbroom_native::events::OperationEvent>, InspectError> {
+        #[cfg(feature = "native-cleanup-test")]
+        {
+            let _ = state;
+            Ok(vec![])
+        }
+        #[cfg(not(feature = "native-cleanup-test"))]
+        {
+            with_store(state.inner().clone(), |s| s.operations()).await
+        }
+    }
+    async fn with_reports<T: Send + 'static>(
+        state: Session,
+        action: impl FnOnce(&mut agentbroom_native::diagnostics::Diagnostics) -> Result<T, InspectError>
+        + Send
+        + 'static,
+    ) -> Result<T, InspectError> {
+        #[cfg(feature = "native-cleanup-test")]
+        {
+            let _ = (state, action);
+            return Err(error("testDiagnosticsUnavailable"));
+        }
+        #[cfg(not(feature = "native-cleanup-test"))]
+        {
+            tauri::async_runtime::spawn_blocking(move || {
+                state.running()?;
+                let mut guard = state.reports.try_lock().map_err(|_| error("cleanupBusy"))?;
+                state.running()?;
+                if guard.is_none() {
+                    *guard = Some(agentbroom_native::diagnostics::Diagnostics::discover()?)
+                }
+                action(guard.as_mut().unwrap())
+            })
+            .await
+            .map_err(|_| error("cleanupWorkerFailed"))?
+        }
+    }
+    #[tauri::command]
+    pub async fn diagnostic_inventory(
+        state: tauri::State<'_, Session>,
+    ) -> Result<agentbroom_native::diagnostics::ReportInventory, InspectError> {
+        with_reports(state.inner().clone(), |s| s.inventory()).await
+    }
+    #[tauri::command]
+    pub async fn diagnostic_preview(
+        state: tauri::State<'_, Session>,
+        keys: Vec<String>,
+    ) -> Result<agentbroom_native::diagnostics::ReportPlan, InspectError> {
+        with_reports(state.inner().clone(), move |s| s.preview(&keys)).await
+    }
+    #[tauri::command]
+    pub async fn diagnostic_execute(
+        state: tauri::State<'_, Session>,
+        plan_id: String,
+        phrase: String,
+        acknowledged: bool,
+    ) -> Result<agentbroom_native::diagnostics::ReportResult, InspectError> {
+        with_reports(state.inner().clone(), move |s| {
+            s.execute(&plan_id, &phrase, acknowledged)
+        })
+        .await
+    }
+    #[tauri::command]
+    pub async fn diagnostic_result(
+        state: tauri::State<'_, Session>,
+        plan_id: String,
+    ) -> Result<agentbroom_native::diagnostics::ReportResult, InspectError> {
+        with_reports(state.inner().clone(), move |s| s.result(&plan_id)).await
+    }
+    #[tauri::command]
+    pub async fn diagnostic_cancel(
+        state: tauri::State<'_, Session>,
+        plan_id: String,
+    ) -> Result<(), InspectError> {
+        with_reports(state.inner().clone(), move |s| {
+            s.cancel(&plan_id);
+            Ok(())
+        })
+        .await
+    }
+    #[tauri::command]
     pub async fn cleanup_preview(
         state: tauri::State<'_, Session>,
         selected_ids: Vec<String>,
@@ -222,7 +329,9 @@ mod native_session {
 }
 use native_session::{
     cleanup_cancel, cleanup_execute, cleanup_history, cleanup_preview, cleanup_result,
-    conversation_locks, scan_codex, set_conversation_lock,
+    conversation_locks, diagnostic_cancel, diagnostic_execute, diagnostic_inventory,
+    diagnostic_preview, diagnostic_result, operation_history, scan_codex, set_conversation_lock,
+    set_conversation_locks,
 };
 #[tauri::command]
 fn cleanup_mode() -> &'static str {
@@ -241,6 +350,13 @@ pub fn run() {
     builder
         .invoke_handler(tauri::generate_handler![
             scan_codex,
+            set_conversation_locks,
+            operation_history,
+            diagnostic_inventory,
+            diagnostic_preview,
+            diagnostic_execute,
+            diagnostic_result,
+            diagnostic_cancel,
             conversation_locks,
             set_conversation_lock,
             cleanup_mode,
@@ -279,7 +395,14 @@ mod ipc_contract_tests {
             .manage(native_session::Session::stopped_for_test())
             .invoke_handler(tauri::generate_handler![
                 conversation_locks,
-                set_conversation_lock
+                set_conversation_lock,
+                set_conversation_locks,
+                operation_history,
+                diagnostic_inventory,
+                diagnostic_preview,
+                diagnostic_execute,
+                diagnostic_result,
+                diagnostic_cancel
             ])
             .build(app_context())
             .unwrap();
@@ -291,6 +414,28 @@ mod ipc_contract_tests {
             (
                 "set_conversation_lock",
                 serde_json::json!({"threadId":"00000000-0000-4000-8000-000000000001","locked":true}),
+            ),
+            (
+                "set_conversation_locks",
+                serde_json::json!({"threadIds":["00000000-0000-4000-8000-000000000001"],"locked":true}),
+            ),
+            ("operation_history", serde_json::json!({})),
+            ("diagnostic_inventory", serde_json::json!({})),
+            (
+                "diagnostic_preview",
+                serde_json::json!({"keys":["opaque-synthetic"]}),
+            ),
+            (
+                "diagnostic_execute",
+                serde_json::json!({"planId":"reports-synthetic","phrase":"DELETE","acknowledged":true}),
+            ),
+            (
+                "diagnostic_result",
+                serde_json::json!({"planId":"reports-synthetic"}),
+            ),
+            (
+                "diagnostic_cancel",
+                serde_json::json!({"planId":"reports-synthetic"}),
             ),
         ] {
             tauri::test::assert_ipc_response(

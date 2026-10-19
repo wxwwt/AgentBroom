@@ -6,11 +6,11 @@ AgentBroom is an early desktop tool for inspecting local Codex storage and expli
 
 ## Use
 
-The desktop opens your configured `CODEX_HOME` (otherwise `$HOME/.codex`) for read-only inventory and native identity lookup. Nothing is selected or deleted automatically. English and Simplified Chinese are available.
+The desktop opens your configured `CODEX_HOME` (otherwise `$HOME/.codex`) for read-only inventory and native identity lookup. Nothing is selected or deleted automatically. English and Simplified Chinese are available. The minimal interface uses a quiet top navigation with Overview, Conversations and Execution log. Light/dark appearance can be switched in the header and is remembered locally; first launch uses the system appearance.
 
 Conversations are **unlocked by default**. In conversation details, choose **Lock conversation** to prevent deletion, or **Unlock conversation** to allow it again. Locks are saved locally, survive rescans/restarts, and are enforced by the backend. A locked parent protects its native spawned descendants; a locked descendant blocks a plan containing it. Codex pins are separate from AgentBroom locks.
 
-Open **Cleanup preview**, select a conversation (including a native-indexed sub Agent or orphan), and review its native spawned subtree, measured files, retained records and notices. Age, recent writes and fork/history references do not automatically lock records. Independent forks are never automatically included. Linked files, unidentified paths, unsupported runtimes/databases and changed plans can still prevent execution; these are execution errors, not manual protection.
+The **Conversations** table supports search, activity/size/title sorting, pagination, individual row actions, batch locking/unlocking and selection of up to 128 conversations. Choose **Clean…** or **Clean selected** to review their native spawned scope, measured files, retained records and notices. Parent/child selections are deduplicated; independent roots run sequentially, stop on the first failed/unknown request, and share a single confirmation and overall result verification. A lock conflict blocks the entire selection. Age, recent writes and fork/history references do not automatically lock records. Independent forks are never automatically included. Linked files, unidentified paths, unsupported runtimes/databases and changed plans can still prevent execution; these are execution errors, not manual protection.
 
 If the backend can validate the plan, review the permanent-deletion warning, acknowledge the scope and type `DELETE`. Only this confirmation starts official native `thread/delete`. It can also update Codex indexes and remove native metadata belonging to those conversations. Receipts are **not backups**. Deletion cannot be undone through AgentBroom.
 
@@ -22,9 +22,13 @@ The initial native target is macOS Apple silicon; metadata inspection also suppo
 
 Inventory uses bounded Zstandard session headers and read-only native identities/spawn edges, recovering indexed identities when header scanning is incomplete. Cleanup previews additionally hash the selected files; bodies are never displayed or exported. Actual deletion is delegated to the official native store, including its writer/reference checks. This is not an atomic snapshot of a concurrently running Codex instance. Recent writes are shown as notices. Official native writer/reference checks can still reject a requested deletion.
 
+**Overview** includes identified Codex/CodexCLI reports from macOS user/system DiagnosticReports, Codex Crashpad pending/completed/new directories, and dedicated crash directories within Codex home. Other applications and Crashpad settings are excluded. External report bytes are added once; unavailable locations are explicitly marked incomplete. Inspect reports, select exact files and confirm `DELETE` before removal; file identity/content are checked again and removed files verified. Neither measured file lengths nor allocated blocks guarantee reclaimable space.
+
+**Execution log** records scans, lock changes, previews and cleanup outcomes, including affected IDs/titles and verified removed file lengths. History is kept for seven days, with expired AgentBroom log files pruned when history is read or written. This retention does not erase the separate durable at-most-once execution receipts needed for uncertain outcomes. No transcript bodies are logged.
+
 Execution intent and results are atomically persisted under `~/.agentbroom/cleanup-receipts/`, without transcript bodies. Manual locks are source-scoped files in its private `locks/` subdirectory and never change Codex data. Unknown operations cannot automatically retry, including after restart. Other instances are serialized by an application lock. Graceful exit waits for an ongoing operation. Forced OS termination is not recovery; inspect the saved receipt and current data before taking further action.
 
-The loopback development browser remains **read-only**, with no write HTTP endpoint or fixture fallback. Native cleanup requires the desktop app.
+The loopback development browser remains **read-only** (appearance, navigation and table inspection are available), with no write HTTP endpoint or fixture fallback. Native cleanup requires the desktop app.
 
 ## Development and tests
 

@@ -16,6 +16,7 @@ export interface CleanupResult {
   freedBytes: null;
   error?: string;
   concurrentChanges?: string[];
+  warnings?: string[];
 }
 /** The normal app has no driver; the dedicated native test build uses backend-owned plans. */
 export function CleanupConfirmation({
@@ -90,18 +91,18 @@ export function CleanupConfirmation({
           code === "lockedConversation"
             ? "This conversation was locked after the preview. Create a new preview to review the locks."
             : nativeDriver &&
-            [
-              "planExpired",
-              "staleSnapshot",
-              "lockedConversation",
-              "planBlocked",
-              "invalidConfirmation",
-              "invalidPlan",
-              "cleanupBusy",
-              "runtimeStopped",
-            ].includes(code)
-            ? "Cleanup was rejected before deletion. Create a fresh preview."
-            : "Execution outcome is unknown. Do not automatically retry.",
+                [
+                  "planExpired",
+                  "staleSnapshot",
+                  "lockedConversation",
+                  "planBlocked",
+                  "invalidConfirmation",
+                  "invalidPlan",
+                  "cleanupBusy",
+                  "runtimeStopped",
+                ].includes(code)
+              ? "Cleanup was rejected before deletion. Create a fresh preview."
+              : "Execution outcome is unknown. Do not automatically retry.",
         ),
       );
     } finally {
@@ -263,6 +264,9 @@ export function CleanupConfirmation({
                   ))}
                 </details>
               )}
+              {result.warnings?.map((warning, i) => (
+                <p key={i}>{systemText(warning)}</p>
+              ))}
               {result.error && (
                 <p>{t("Verification error: {code}", { code: result.error })}</p>
               )}

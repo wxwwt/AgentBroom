@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale } from "./i18n";
 import { bytes, type Inventory } from "./types";
-import { selectable, cleanupReasons, conversationLocked, cleanupMessage } from "./cleanup";
+import {
+  selectable,
+  cleanupReasons,
+  conversationLocked,
+  cleanupMessage,
+} from "./cleanup";
 import { CleanupConfirmation } from "./CleanupPanel";
 import {
   previewNative,
@@ -18,14 +23,18 @@ export default function NativeCleanupPanel({
   kept,
   refresh,
   testOnly = true,
+  initialSelected,
+  onClose,
 }: {
   testOnly?: boolean;
+  initialSelected?: string[];
+  onClose?: () => void;
   inventory: Inventory;
   kept: string[];
   refresh: () => void;
 }) {
   const { t, systemText } = useLocale();
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string[]>(initialSelected ?? []);
   const [plan, setPlan] = useState<NativePlan | null>(null);
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -35,7 +44,7 @@ export default function NativeCleanupPanel({
   const [history, setHistory] = useState<NativeReceipt[]>([]);
   const [historyError, setHistoryError] = useState("");
   useEffect(() => {
-    if (!testOnly)
+    if (!testOnly && !initialSelected)
       void readNativeHistory()
         .then(setHistory)
         .catch(() => setHistoryError(t("Cleanup history could not be read.")));
@@ -62,7 +71,8 @@ export default function NativeCleanupPanel({
     [inventory],
   );
   const lockedSet = useMemo(() => new Set(kept), [kept]);
-  const isLocked = (id: string) => conversationLocked(id, recordsById, lockedSet);
+  const isLocked = (id: string) =>
+    conversationLocked(id, recordsById, lockedSet);
   useEffect(
     () => () => {
       if (latestPlan.current)
@@ -99,9 +109,11 @@ export default function NativeCleanupPanel({
                   : "The native cleanup process stopped. Inspect the receipt before creating another plan.",
               )
             : systemText(
-                cleanupMessage(e && typeof e === "object" && "code" in e
-                  ? String(e.code)
-                  : "Native cleanup request failed. Create a fresh preview."),
+                cleanupMessage(
+                  e && typeof e === "object" && "code" in e
+                    ? String(e.code)
+                    : "Native cleanup request failed. Create a fresh preview.",
+                ),
               ),
         );
       }
@@ -109,9 +121,27 @@ export default function NativeCleanupPanel({
       if (current === generation.current) setBusy(false);
     }
   }
+  useEffect(() => {
+    if (initialSelected?.length) void preview();
+  }, []);
   const title = (id: string) => recordsById.get(id)?.title ?? id;
   return (
     <section className="cleanup-page">
+      {onClose && (
+        <div className="dialog-heading">
+          <h2>{t("Impact preview")}</h2>
+          <button
+            className="button secondary"
+            disabled={busy || confirm}
+            onClick={() => {
+              if (latestPlan.current) void cancelNative(latestPlan.current);
+              onClose();
+            }}
+          >
+            {t("Close preview")}
+          </button>
+        </div>
+      )}
       <div className="scope-banner">
         <strong>
           {t(
@@ -128,67 +158,75 @@ export default function NativeCleanupPanel({
           )}
         </p>
       </div>
-      <section className="panel cleanup-candidates">
-        <h2>{t("Cleanup candidates")}</h2>
-        <p>
-          {t(
-            "Select one conversation. Its native spawned subtree is included in the preview.",
+      {!initialSelected && (
+        <section className="panel cleanup-candidates">
+          <h2>{t("Cleanup candidates")}</h2>
+          <p>
+            {t(
+              "Select one conversation. Its native spawned subtree is included in the preview.",
+            )}
+          </p>
+          <label className="search">
+            <input
+              value={search}
+              aria-label={t("Search cleanup candidates")}
+              placeholder={t("Search cleanup candidates")}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setLimit(50);
+              }}
+            />
+          </label>
+          {inventory.threads
+            .filter(selectable)
+            .filter((thread) =>
+              `${thread.title} ${thread.id}`
+                .toLowerCase()
+                .includes(search.toLowerCase()),
+            )
+            .sort((a, b) => b.inclusiveBytes - a.inclusiveBytes)
+            .slice(0, limit)
+            .map((thread) => (
+              <label className="cleanup-candidate" key={thread.id}>
+                <input
+                  type={testOnly ? "radio" : "checkbox"}
+                  name="native-candidate"
+                  aria-label={t("Select {title}", { title: thread.title })}
+                  checked={selected.includes(thread.id)}
+                  disabled={busy || confirm || isLocked(thread.id)}
+                  onChange={() => {
+                    generation.current++;
+                    setSelected((current) =>
+                      testOnly
+                        ? [thread.id]
+                        : current.includes(thread.id)
+                          ? current.filter((id) => id !== thread.id)
+                          : [...current, thread.id],
+                    );
+                    setPlan(null);
+                    setError("");
+                  }}
+                />
+                <span>
+                  <strong>{thread.title}</strong>
+                  {isLocked(thread.id) && <small>{t("Locked")}</small>}
+                  <small>
+                    {thread.id} · {systemText(thread.relation)}
+                  </small>
+                </span>
+                <span>{systemText(bytes(thread.inclusiveBytes))}</span>
+              </label>
+            ))}
+          {inventory.threads.filter(selectable).length > limit && (
+            <button
+              className="text-button"
+              onClick={() => setLimit((n) => n + 50)}
+            >
+              {t("Show 50 more")}
+            </button>
           )}
-        </p>
-        <label className="search">
-          <input
-            value={search}
-            aria-label={t("Search cleanup candidates")}
-            placeholder={t("Search cleanup candidates")}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setLimit(50);
-            }}
-          />
-        </label>
-        {inventory.threads
-          .filter(selectable)
-          .filter((thread) =>
-            `${thread.title} ${thread.id}`
-              .toLowerCase()
-              .includes(search.toLowerCase()),
-          )
-          .sort((a, b) => b.inclusiveBytes - a.inclusiveBytes)
-          .slice(0, limit)
-          .map((thread) => (
-            <label className="cleanup-candidate" key={thread.id}>
-              <input
-                type="radio"
-                name="native-candidate"
-                aria-label={t("Select {title}", { title: thread.title })}
-                checked={selected[0] === thread.id}
-                disabled={busy || confirm || isLocked(thread.id)}
-                onChange={() => {
-                  generation.current++;
-                  setSelected([thread.id]);
-                  setPlan(null);
-                  setError("");
-                }}
-              />
-              <span>
-                <strong>{thread.title}</strong>
-                {isLocked(thread.id) && <small>{t("Locked")}</small>}
-                <small>
-                  {thread.id} · {systemText(thread.relation)}
-                </small>
-              </span>
-              <span>{systemText(bytes(thread.inclusiveBytes))}</span>
-            </label>
-          ))}
-        {inventory.threads.filter(selectable).length > limit && (
-          <button
-            className="text-button"
-            onClick={() => setLimit((n) => n + 50)}
-          >
-            {t("Show 50 more")}
-          </button>
-        )}
-      </section>
+        </section>
+      )}
       <div className="cleanup-actions">
         <button
           className="button primary"
@@ -252,8 +290,26 @@ export default function NativeCleanupPanel({
               <p key={file.key}>{file.key}</p>
             ))}
           </details>
-          {!!plan.warnings?.length && <><h3>{t("Notices")}</h3>{plan.warnings.map(w => <p key={w}>{systemText(w)}</p>)}</>}
-          {!!plan.lockedIds?.length && <><h3>{t("Locked conversations in this scope")}</h3><ul>{plan.lockedIds.map(id => <li key={id}>{title(id)} · {id}</li>)}</ul></>}
+          {!!plan.warnings?.length && (
+            <>
+              <h3>{t("Notices")}</h3>
+              {plan.warnings.map((w) => (
+                <p key={w}>{systemText(w)}</p>
+              ))}
+            </>
+          )}
+          {!!plan.lockedIds?.length && (
+            <>
+              <h3>{t("Locked conversations in this scope")}</h3>
+              <ul>
+                {plan.lockedIds.map((id) => (
+                  <li key={id}>
+                    {title(id)} · {id}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
           {!!plan.blockedReasons.length && (
             <>
               <h3>{t("Blocking reasons")}</h3>
@@ -282,7 +338,7 @@ export default function NativeCleanupPanel({
           </button>
         </section>
       )}
-      {!testOnly && (
+      {!testOnly && !initialSelected && (
         <details className="panel">
           <summary>
             {t("Recent cleanup results ({count})", { count: history.length })}
@@ -329,6 +385,7 @@ export default function NativeCleanupPanel({
             setPlan(null);
             setSelected([]);
             refresh();
+            onClose?.();
           }}
           nativeDriver={{
             planId: plan.planId,

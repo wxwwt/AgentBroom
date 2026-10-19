@@ -1,70 +1,99 @@
 export const zhMessages = {
   "Cleanup execution unavailable": "当前无法执行清理",
   "Outside dependencies retained": "保留的外部依赖",
-  "Independent forks are never automatically selected.": "独立 fork 不会自动加入选择。",
-  "No observed outside dependencies. Native reference coverage remains unverified.": "未观测到外部依赖；原生引用覆盖仍未验证。",
+  "Independent forks are never automatically selected.":
+    "独立 fork 不会自动加入选择。",
+  "No observed outside dependencies. Native reference coverage remains unverified.":
+    "未观测到外部依赖；原生引用覆盖仍未验证。",
   "Review cleanup before any deletion.": "删除前先检查清理影响。",
-  "Read-only inventory and cleanup preview. Real deletion remains locked.": "只读盘点与清理预览；真实删除仍锁定。",
+  "Read-only inventory and cleanup preview. Real deletion remains locked.":
+    "只读盘点与清理预览；真实删除仍锁定。",
   "No synthetic files were removed.": "未移除任何合成文件。",
   "Verification error: {code}": "验证错误：{code}",
   "Cleanup preview": "清理预览",
   "Review candidates; no automatic selection.": "查看候选，不自动选中。",
-  "Observed scope, not an executable deletion list.": "已观测影响范围，不是可执行删除列表。",
+  "Observed scope, not an executable deletion list.":
+    "已观测影响范围，不是可执行删除列表。",
   "Retained — this plan cannot run.": "保留对象：当前计划不能执行。",
-  "Real Codex deletion is locked in this release; native effects are not fully verified.": "本版本锁定真实 Codex 删除，原生影响尚未完整验证。",
-  "Confirming here will not delete local Codex data.": "在此确认不会删除本机 Codex 数据。",
-  "Preview local deletion scope. No sample mode, export or database connections.": "可查看本机删除影响预览；无样本模式、导出或数据库连接。",
-  "All real records remain protected. Cleanup previews do not authorize deletion.": "所有真实记录仍受保护；清理预览不构成删除许可。",
-  "Native database, asset and cascade effects are not fully verified.": "原生数据库、素材和级联影响尚未完整验证。",
-  "Incomplete coverage cannot prove there are no external dependencies.": "覆盖不完整，无法证明不存在外部依赖。",
-  "A selected tree contains a conversation marked Keep.": "选中子树中含有标记为保留的对话。",
+  "Real Codex deletion is locked in this release; native effects are not fully verified.":
+    "本版本锁定真实 Codex 删除，原生影响尚未完整验证。",
+  "Confirming here will not delete local Codex data.":
+    "在此确认不会删除本机 Codex 数据。",
+  "Preview local deletion scope. No sample mode, export or database connections.":
+    "可查看本机删除影响预览；无样本模式、导出或数据库连接。",
+  "All real records remain protected. Cleanup previews do not authorize deletion.":
+    "所有真实记录仍受保护；清理预览不构成删除许可。",
+  "Native database, asset and cascade effects are not fully verified.":
+    "原生数据库、素材和级联影响尚未完整验证。",
+  "Incomplete coverage cannot prove there are no external dependencies.":
+    "覆盖不完整，无法证明不存在外部依赖。",
+  "A selected tree contains a conversation marked Keep.":
+    "选中子树中含有标记为保留的对话。",
   "A selected tree contains protected records.": "选中子树中含有受保护记录。",
-  "Active or unknown activity prevents cleanup.": "活动中或运行状态未知，无法清理。",
-  "Unknown, cyclic or missing relationships prevent cleanup.": "存在未知、循环或缺失关系，无法清理。",
-  "An unselected fork or conversation depends on this scope.": "未选中的 fork 或对话依赖当前影响范围。",
-  "File ownership or measurement is incomplete or conflicting.": "文件归属或测量不完整，或存在冲突。",
-  "Select existing main or independent fork conversations only.": "只能选择已识别的主对话或独立 fork。",
-  "Execution outcome is unknown. Do not automatically retry.": "执行结果未知，请勿自动重试。",
+  "Active or unknown activity prevents cleanup.":
+    "活动中或运行状态未知，无法清理。",
+  "Unknown, cyclic or missing relationships prevent cleanup.":
+    "存在未知、循环或缺失关系，无法清理。",
+  "An unselected fork or conversation depends on this scope.":
+    "未选中的 fork 或对话依赖当前影响范围。",
+  "File ownership or measurement is incomplete or conflicting.":
+    "文件归属或测量不完整，或存在冲突。",
+  "Select existing main or independent fork conversations only.":
+    "只能选择已识别的主对话或独立 fork。",
+  "Execution outcome is unknown. Do not automatically retry.":
+    "执行结果未知，请勿自动重试。",
   "Confirm cleanup": "确认清理",
-  "Permanent deletion cannot be undone. A receipt is not a backup.": "永久删除无法撤销，结果凭证不是备份。",
-  "{count} observed records · {files} measured files": "已观测 {count} 条记录 · 测量 {files} 个文件",
-  "I reviewed the scope and understand deletion is permanent.": "我已检查影响范围，并理解删除无法撤销。",
+  "Permanent deletion cannot be undone. A receipt is not a backup.":
+    "永久删除无法撤销，结果凭证不是备份。",
+  "{count} observed records · {files} measured files":
+    "已观测 {count} 条记录 · 测量 {files} 个文件",
+  "I reviewed the scope and understand deletion is permanent.":
+    "我已检查影响范围，并理解删除无法撤销。",
   "Type DELETE to confirm": "输入 DELETE 确认",
   "Executing and verifying…": "正在执行并验证…",
   "Synthetic cleanup verified": "合成数据清理已验证",
   "Cleanup partially failed": "清理部分失败",
   "Cleanup verification failed": "清理验证失败",
-  "Synthetic files actually removed; this is not verification of native Codex deletion.": "已实际删除合成文件；这不是原生 Codex 删除验证。",
-  "{removed} removed · {remaining} remaining": "已移除 {removed} 个 · 剩余 {remaining} 个",
-  "Removed file lengths, not disk space reclaimed.": "已移除文件长度，不等于释放磁盘空间。",
+  "Synthetic files actually removed; this is not verification of native Codex deletion.":
+    "已实际删除合成文件；这不是原生 Codex 删除验证。",
+  "{removed} removed · {remaining} remaining":
+    "已移除 {removed} 个 · 剩余 {remaining} 个",
+  "Removed file lengths, not disk space reclaimed.":
+    "已移除文件长度，不等于释放磁盘空间。",
   "Removed files": "已移除文件",
   "Remaining files": "剩余文件",
   "Confirm execution": "确认执行",
   "Search cleanup candidates": "搜索清理候选",
   "{count} review candidates": "{count} 个审查候选",
   "Cleanup candidates": "清理候选",
-  "Candidates are for review, not a safety approval. Sub Agents are included through their main conversation.": "候选供审查，不是安全许可；子 Agent 随所属主对话展示。",
+  "Candidates are for review, not a safety approval. Sub Agents are included through their main conversation.":
+    "候选供审查，不是安全许可；子 Agent 随所属主对话展示。",
   "No selectable main or fork conversations.": "没有可选的主对话或 fork。",
   "Clear selection": "清空选择",
   "Preview impact": "预览影响",
   "Impact preview": "影响预览",
   "Blocking reasons": "阻止原因",
   "Observed main and spawned scope": "已观测主对话及子 Agent 范围",
-  "Independent forks and outside dependencies retained": "保留的独立 fork 和外部依赖",
+  "Independent forks and outside dependencies retained":
+    "保留的独立 fork 和外部依赖",
   "Observed files ({count})": "已观测文件（{count}）",
-  "Database, index and asset changes are not fully covered. No reclaimed-space estimate is available.": "数据库、索引和素材变化尚未完整覆盖，无法估算可释放空间。",
+  "Database, index and asset changes are not fully covered. No reclaimed-space estimate is available.":
+    "数据库、索引和素材变化尚未完整覆盖，无法估算可释放空间。",
   "Review confirmation": "查看确认步骤",
 
   "Local browser read-only scanner": "本机网页只读盘点器",
-  "Only a real read-only Codex inventory is accepted.": "只接受真实 Codex 的只读盘点结果。",
-  "Local Codex inspection requires the desktop app or a loopback development server.": "请使用桌面应用或本机开发服务查看 Codex 数据。",
-  "Local read-only inventory requests must originate from this application.": "本机只读盘点请求必须来自当前应用。",
+  "Only a real read-only Codex inventory is accepted.":
+    "只接受真实 Codex 的只读盘点结果。",
+  "Local Codex inspection requires the desktop app or a loopback development server.":
+    "请使用桌面应用或本机开发服务查看 Codex 数据。",
+  "Local read-only inventory requests must originate from this application.":
+    "本机只读盘点请求必须来自当前应用。",
   "Session files": "会话文件",
   "Archived sessions": "已归档会话",
   "History database": "历史数据库",
   "Logs & WAL": "日志与 WAL",
   "Generated assets": "生成素材",
-  "Worktrees": "工作树",
+  Worktrees: "工作树",
   "Tools & cache": "工具与缓存",
   "Other local files": "其他本地文件",
   "Close dialog": "关闭弹窗",
@@ -73,27 +102,31 @@ export const zhMessages = {
   "Keep choice removed": "已取消本次保留标记",
   "Keep choice added": "已添加本次保留标记",
   "Read-only report prepared": "已生成只读报告",
-  "A sample report, not a backup or deletion receipt.": "这是样本报告，不是备份或删除凭证。",
+  "A sample report, not a backup or deletion receipt.":
+    "这是样本报告，不是备份或删除凭证。",
   "Selection previewed": "已预览选中记录",
   "STORAGE, CLEARLY.": "本地存储，清晰可见。",
-  "WORKSPACE": "工作区",
+  WORKSPACE: "工作区",
   "Main navigation": "主导航",
-  "Overview": "总览",
-  "Conversations": "对话",
-  "Activity": "操作记录",
-  "SOURCE": "数据来源",
+  Overview: "总览",
+  Conversations: "对话",
+  Activity: "操作记录",
+  SOURCE: "数据来源",
   "Local Codex home": "本地 Codex 目录",
   "Codex sample store": "Codex 演示数据",
   "Metadata inspection only": "仅查看元数据",
   "Bundled synthetic fixtures": "应用自带合成样本",
   "Inspect local Codex": "盘点本地 Codex",
   "Switch to demo": "切换到演示数据",
-  "Local inspection requires the desktop app.": "查看本地数据需要使用桌面应用。",
+  "Local inspection requires the desktop app.":
+    "查看本地数据需要使用桌面应用。",
   "Inspection comes first.": "先看清，再决定。",
-  "Metadata stays in this window. No cleanup, export or database connections.": "元数据仅在此窗口查看。没有清理、导出或数据库连接。",
-  "Demo mode inspects bundled synthetic data only.": "演示模式仅查看应用自带的合成数据。",
+  "Metadata stays in this window. No cleanup, export or database connections.":
+    "元数据仅在此窗口查看。没有清理、导出或数据库连接。",
+  "Demo mode inspects bundled synthetic data only.":
+    "演示模式仅查看应用自带的合成数据。",
   "v0.1.0 · prototype": "v0.1.0 · 原型",
-  "Workspace": "工作区",
+  Workspace: "工作区",
   "Local Codex · read-only": "本地 Codex · 只读",
   "Demo dataset · read-only": "演示数据 · 只读",
   "LOCAL STORAGE INSPECTION": "本地存储盘点",
@@ -101,66 +134,87 @@ export const zhMessages = {
   "Know what’s taking up space.": "看清空间都用在哪里。",
   "A clearer view of your history.": "理清对话与历史的关系。",
   "Inspection, with a paper trail.": "每次查看，都有记录。",
-  "Read-only inventory. Every record stays protected; no cleanup or export.": "只读盘点。所有记录均受保护，没有清理或导出功能。",
-  "Understand the footprint. Keep the context. Make an informed decision.": "了解存储占用，理清上下文，再作决定。",
-  "Segments, spawned agents and independent forks — kept distinct.": "分别展示会话分段、子 Agent 和独立 fork。",
-  "This session’s inspection events. These are not backups or deletion receipts.": "这里记录本次查看操作，不是备份或删除凭证。",
+  "Read-only inventory. Every record stays protected; no cleanup or export.":
+    "只读盘点。所有记录均受保护，没有清理或导出功能。",
+  "Understand the footprint. Keep the context. Make an informed decision.":
+    "了解存储占用，理清上下文，再作决定。",
+  "Segments, spawned agents and independent forks — kept distinct.":
+    "分别展示会话分段、子 Agent 和独立 fork。",
+  "This session’s inspection events. These are not backups or deletion receipts.":
+    "这里记录本次查看操作，不是备份或删除凭证。",
   "Inspecting…": "正在盘点…",
   "Rescan Codex": "重新盘点 Codex",
   "Rescan demo": "重新盘点演示数据",
-  "Your local Codex metadata. Inspection only.": "本地 Codex 元数据，仅供查看。",
+  "Your local Codex metadata. Inspection only.":
+    "本地 Codex 元数据，仅供查看。",
   "You’re exploring a sample dataset.": "你正在查看合成样本。",
-  "Databases are measured without opening them. Live status is unknown; every record remains protected.": "数据库仅统计大小，不建立连接。运行状态未知，所有记录均受保护。",
-  "Only bundled synthetic files are inspected. No cleanup is available.": "仅查看应用自带的合成文件，没有清理功能。",
+  "Databases are measured without opening them. Live status is unknown; every record remains protected.":
+    "数据库仅统计大小，不建立连接。运行状态未知，所有记录均受保护。",
+  "Only bundled synthetic files are inspected. No cleanup is available.":
+    "仅查看应用自带的合成文件，没有清理功能。",
   "Native Codex scanner": "原生 Codex 盘点器",
   "Native demo scanner": "原生演示盘点器",
   "Browser fixture catalog": "浏览器样本目录",
   "Inspecting local file metadata…": "正在查看本地文件元数据…",
   "Loading the bundled demo inventory…": "正在加载演示数据…",
-  "Local inspection unavailable. No data was changed.": "暂时无法盘点本地数据，没有修改任何数据。",
-  "Demo unavailable. No fallback to a real agent store.": "演示数据不可用，不会自动改读真实 Agent 数据。",
+  "Local inspection unavailable. No data was changed.":
+    "暂时无法盘点本地数据，没有修改任何数据。",
+  "Demo unavailable. No fallback to a real agent store.":
+    "演示数据不可用，不会自动改读真实 Agent 数据。",
   "Retry inspection": "重新尝试",
   "Partial inventory · measured home files": "部分盘点 · 已测量目录内文件",
   "Measured home files only": "仅测量指定目录内的文件",
-  "Only the configured Codex home is measured. External sqlite_home, symlink targets, directory metadata and inaccessible entries are excluded. Allocated blocks are not reclaimable space; shared hardlink blocks are credited to the first lexical path.": "仅测量配置的 Codex 目录，不包含外置 sqlite_home、符号链接目标、目录元数据和无法访问的条目。分配块不等于可回收空间；共享硬链接块按路径字典序计入首个路径。",
+  "Only the configured Codex home is measured. External sqlite_home, symlink targets, directory metadata and inaccessible entries are excluded. Allocated blocks are not reclaimable space; shared hardlink blocks are credited to the first lexical path.":
+    "仅测量配置的 Codex 目录，不包含外置 sqlite_home、符号链接目标、目录元数据和无法访问的条目。分配块不等于可回收空间；共享硬链接块按路径字典序计入首个路径。",
   "Scope and measurement limits ({count})": "盘点范围与测量限制（{count}）",
   "Inventory summary": "盘点摘要",
   "Measured file lengths": "已测量文件长度",
   "Sample storage": "样本占用",
   "Main & fork conversations": "主对话与 fork",
-  "Protected": "受保护",
+  Protected: "受保护",
   "All real records remain protected": "所有真实记录均受保护",
   "Active, referenced or incomplete": "活跃、被引用或信息不完整",
   "Allocated blocks": "分配块占用",
-  "Reviewable": "可查看预览",
-  "Filesystem accounting; not reclaimable space": "文件系统计量，不代表可回收空间",
+  Reviewable: "可查看预览",
+  "Filesystem accounting; not reclaimable space":
+    "文件系统计量，不代表可回收空间",
   "Metadata checks passed in the demo": "演示元数据检查已通过",
   "Where the bytes live": "空间占用分布",
-  "File lengths and allocated blocks, grouped by category.": "按类别展示文件长度与分配块占用。",
-  "Measured sample file sizes, grouped by category.": "按类别展示测量后的样本文件大小。",
+  "File lengths and allocated blocks, grouped by category.":
+    "按类别展示文件长度与分配块占用。",
+  "Measured sample file sizes, grouped by category.":
+    "按类别展示测量后的样本文件大小。",
   "Logical size": "文件长度",
   "{count} files": "{count} 个文件",
   "{size} allocated": "分配块 {size}",
-  "Databases, WAL and SHM are stat-only. Shared database bytes are not attributed to individual conversations.": "数据库、WAL 和 SHM 只统计文件元数据。共享数据库占用不会分摊到单条对话。",
-  "Database and WAL placeholders are measured only. They are never opened as databases.": "数据库与 WAL 样本仅统计大小，不作为数据库打开。",
+  "Databases, WAL and SHM are stat-only. Shared database bytes are not attributed to individual conversations.":
+    "数据库、WAL 和 SHM 只统计文件元数据。共享数据库占用不会分摊到单条对话。",
+  "Database and WAL placeholders are measured only. They are never opened as databases.":
+    "数据库与 WAL 样本仅统计大小，不作为数据库打开。",
   "What stays protected": "哪些记录受到保护",
   "Uncertainty is a reason to stop.": "信息不确定，就保持保护。",
   "Shared history references": "共享历史引用",
-  "Independent forks do not become owned children.": "独立 fork 不会被视为当前对话所属的子记录。",
+  "Independent forks do not become owned children.":
+    "独立 fork 不会被视为当前对话所属的子记录。",
   "Unverified live status": "运行状态尚未确认",
   "Active conversations": "活跃对话",
-  "Pinned, referenced and incomplete records carry explicit reasons. Runtime activity is not queried.": "置顶、被引用和信息不完整的记录会标明保护原因，不查询运行时状态。",
+  "Pinned, referenced and incomplete records carry explicit reasons. Runtime activity is not queried.":
+    "置顶、被引用和信息不完整的记录会标明保护原因，不查询运行时状态。",
   "A completed reply is not task acceptance.": "回复完成不等于任务已经验收。",
   "Incomplete metadata": "元数据不完整",
-  "Oversized and unread records stay unresolved.": "过大或未能读取的记录保持未解析状态。",
+  "Oversized and unread records stay unresolved.":
+    "过大或未能读取的记录保持未解析状态。",
   "Inspect protected records": "查看受保护记录",
   "Largest conversations": "占用最大的对话",
-  "Includes proved spawned records. Shared database overhead stays separate.": "包含已确认所属的子 Agent，占用共享的数据库单独统计。",
+  "Includes proved spawned records. Shared database overhead stays separate.":
+    "包含已确认所属的子 Agent，占用共享的数据库单独统计。",
   "View all": "查看全部",
   "{count} segments": "{count} 个分段",
-  "Unattributed": "占用尚未归属",
-  "Only local metadata is displayed. All real records are protected; no cleanup or export is available.": "仅显示本地元数据，所有真实记录均受保护，没有清理或导出功能。",
-  "No disk-free-space query, real agent discovery or deletion was performed.": "没有查询磁盘剩余空间、发现真实 Agent 数据或执行删除。",
+  Unattributed: "占用尚未归属",
+  "Only local metadata is displayed. All real records are protected; no cleanup or export is available.":
+    "仅显示本地元数据，所有真实记录均受保护，没有清理或导出功能。",
+  "No disk-free-space query, real agent discovery or deletion was performed.":
+    "没有查询磁盘剩余空间、发现真实 Agent 数据或执行删除。",
   "View sample report": "查看样本报告",
   "Search conversations": "搜索对话",
   "Search title, project or identity…": "搜索标题、项目或 ID…",
@@ -169,12 +223,13 @@ export const zhMessages = {
   "Main conversations": "主对话",
   "Sub Agents": "子 Agent",
   "Independent forks": "独立 fork",
-  "Unresolved": "未解析",
+  Unresolved: "未解析",
   "Kept this session": "本次已标记保留",
-  "{count} records · showing {shown}": "共 {count} 条记录 · 当前显示 {shown} 条",
-  "CONVERSATION": "对话",
-  "STATUS": "状态",
-  "FOOTPRINT": "占用",
+  "{count} records · showing {shown}":
+    "共 {count} 条记录 · 当前显示 {shown} 条",
+  CONVERSATION: "对话",
+  STATUS: "状态",
+  FOOTPRINT: "占用",
   "No conversations match this view.": "没有符合当前筛选条件的对话。",
   "Show 50 more": "再显示 50 条",
   "{count} selected · inspection only": "已选 {count} 条 · 仅供查看",
@@ -182,70 +237,88 @@ export const zhMessages = {
   "Review selection": "查看选中记录",
   "CONVERSATION DETAILS": "对话详情",
   "Close details": "关闭详情",
-  "Project": "项目",
+  Project: "项目",
   "Own files": "自身文件占用",
   "Unknown / unattributed": "未知 / 占用尚未归属",
   "With spawned records": "含所属子 Agent 的占用",
-  "Relation": "关联类型",
+  Relation: "关联类型",
   "Index / header timestamp": "索引 / 元数据时间",
   "Recorded activity": "记录时间",
-  "Unknown": "未知",
+  Unknown: "未知",
   "Relationship evidence": "关联依据",
-  "Parent": "父级对话",
+  Parent: "父级对话",
   "Fork lineage": "fork 来源",
   "Shared history": "共享历史",
   "Attributed rollout files": "已确认归属的会话文件",
   "Owned sample files": "所属样本文件",
   "Spawned records": "所属子 Agent",
-  "Independent fork referencing {id}. The source is not owned by this record.": "独立 fork 引用了 {id}，来源记录不归此记录所有。",
+  "Independent fork referencing {id}. The source is not owned by this record.":
+    "独立 fork 引用了 {id}，来源记录不归此记录所有。",
   "Remove keep choice": "取消本次保留标记",
   "Keep this conversation": "标记保留此对话",
-  "Keep choices exist in memory for this session only. They do not change an agent’s retention rules.": "保留标记仅存在于本次应用会话的内存中，不改变 Agent 的数据保留规则。",
-  "Sizes include attributed rollout files only. Shared databases, fork histories and unresolved children are not added to a conversation’s footprint.": "单条对话仅计入已确认归属的会话文件。共享数据库、fork 引用历史及归属未明的子记录不计入。",
-  "Reviewable means demo metadata checks passed. It does not mean safe to delete.": "可查看预览仅表示演示元数据检查通过，不表示可以安全删除。",
+  "Keep choices exist in memory for this session only. They do not change an agent’s retention rules.":
+    "保留标记仅存在于本次应用会话的内存中，不改变 Agent 的数据保留规则。",
+  "Sizes include attributed rollout files only. Shared databases, fork histories and unresolved children are not added to a conversation’s footprint.":
+    "单条对话仅计入已确认归属的会话文件。共享数据库、fork 引用历史及归属未明的子记录不计入。",
+  "Reviewable means demo metadata checks passed. It does not mean safe to delete.":
+    "可查看预览仅表示演示元数据检查通过，不表示可以安全删除。",
   "This session": "本次会话",
-  "Inspection events only. No records have been deleted.": "仅记录查看操作，没有删除任何记录。",
+  "Inspection events only. No records have been deleted.":
+    "仅记录查看操作，没有删除任何记录。",
   "In-memory": "仅在内存中",
   "Inspection events will appear here.": "本次查看操作会显示在这里。",
-  "This activity log is not a backup and cannot restore anything. It clears when the app reloads.": "此操作记录不是备份，不能用于恢复数据，重新加载应用后会清空。",
+  "This activity log is not a backup and cannot restore anything. It clears when the app reloads.":
+    "此操作记录不是备份，不能用于恢复数据，重新加载应用后会清空。",
   "Review the sample selection": "查看选中的样本",
-  "An exact, read-only preview. There is no executable cleanup action.": "只读展示选中记录及其所属子记录，没有可执行的清理操作。",
+  "An exact, read-only preview. There is no executable cleanup action.":
+    "只读展示选中记录及其所属子记录，没有可执行的清理操作。",
   "{count} selected conversations": "已选 {count} 条对话",
   "sample file bytes · not freed space": "样本文件大小，不代表已释放空间",
   "Execution is disabled.": "执行功能已禁用。",
-  "No deletion, database changes or backup operations exist in this prototype.": "此原型没有删除、数据库修改或备份操作。",
+  "No deletion, database changes or backup operations exist in this prototype.":
+    "此原型没有删除、数据库修改或备份操作。",
   "View JSON report": "查看 JSON 报告",
   "Read-only sample report": "只读样本报告",
-  "Sanitized fixture metadata. This report is not a backup or a deletion receipt.": "经过处理的样本元数据，此报告不是备份或删除凭证。",
+  "Sanitized fixture metadata. This report is not a backup or a deletion receipt.":
+    "经过处理的样本元数据，此报告不是备份或删除凭证。",
   "Sample JSON report": "样本 JSON 报告",
-  "All identities and paths belong to bundled synthetic fixtures. No real history is included.": "所有 ID 和路径均来自应用自带的合成样本，不包含真实历史。",
+  "All identities and paths belong to bundled synthetic fixtures. No real history is included.":
+    "所有 ID 和路径均来自应用自带的合成样本，不包含真实历史。",
   " · kept this session": " · 本次标记保留",
-  "Kept": "已标记保留",
-  "Archived": "已归档",
-  "Language": "语言",
-  "Language changed for this window; preferences could not be saved.": "当前窗口已切换语言，但未能保存语言偏好。",
+  Kept: "已标记保留",
+  Archived: "已归档",
+  Language: "语言",
+  "Language changed for this window; preferences could not be saved.":
+    "当前窗口已切换语言，但未能保存语言偏好。",
   "AgentBroom · Read-only prototype": "AgentBroom · 只读原型",
   "{count} local files measured": "已测量 {count} 个本地文件",
   "{count} fixture files measured": "已测量 {count} 个样本文件",
-  "{spawned} confirmed sub Agents · {unknown} unresolved": "{spawned} 个已确认子 Agent · {unknown} 条未解析记录",
-  "{count} spawned records, counted separately": "{count} 条子 Agent 记录，单独统计",
-  "{count} files measured; no source files written, no database opened.": "已测量 {count} 个文件，没有写入源文件或建立数据库连接。",
-  "{count} bundled synthetic files. No real agent data accessed.": "已查看 {count} 个合成样本文件，没有访问真实 Agent 数据。",
-  "{title} · choice exists only for this session.": "{title} · 标记仅在本次应用会话有效。",
-  "{count} synthetic records · execution is disabled.": "{count} 条合成样本记录 · 执行功能已禁用。",
+  "{spawned} confirmed sub Agents · {unknown} unresolved":
+    "{spawned} 个已确认子 Agent · {unknown} 条未解析记录",
+  "{count} spawned records, counted separately":
+    "{count} 条子 Agent 记录，单独统计",
+  "{count} files measured; no source files written, no database opened.":
+    "已测量 {count} 个文件，没有写入源文件或建立数据库连接。",
+  "{count} bundled synthetic files. No real agent data accessed.":
+    "已查看 {count} 个合成样本文件，没有访问真实 Agent 数据。",
+  "{title} · choice exists only for this session.":
+    "{title} · 标记仅在本次应用会话有效。",
+  "{count} synthetic records · execution is disabled.":
+    "{count} 条合成样本记录 · 执行功能已禁用。",
   "{count} spawned": "{count} 个子 Agent",
   "Select {title}": "选择 {title}",
-  "root": "主对话",
-  "spawned": "子 Agent",
-  "fork": "独立 fork",
-  "unknown": "未知",
-  "user": "用户对话",
-  "automation": "自动任务",
-  "guardian_review": "内部保护审核",
-  "subagent": "子 Agent",
-  "agent_created_thread": "Agent 创建的对话",
-  "chatgpt_handoff": "ChatGPT 转入对话",
-  "A Codex entry is inaccessible or linked.": "某个 Codex 条目无法访问或属于链接。",
+  root: "主对话",
+  spawned: "子 Agent",
+  fork: "独立 fork",
+  unknown: "未知",
+  user: "用户对话",
+  automation: "自动任务",
+  guardian_review: "内部保护审核",
+  subagent: "子 Agent",
+  agent_created_thread: "Agent 创建的对话",
+  chatgpt_handoff: "ChatGPT 转入对话",
+  "A Codex entry is inaccessible or linked.":
+    "某个 Codex 条目无法访问或属于链接。",
   "A fixture path is unavailable.": "样本路径不可用。",
   "A kept record cannot be reviewed.": "已标记保留的记录不能加入预览。",
   "A local inspection is already running.": "本地盘点已在进行中。",
@@ -254,16 +327,22 @@ export const zhMessages = {
   "Active conversation": "活跃对话",
   "Aggregate metadata budget reached.": "已达到元数据读取总量上限。",
   "Ambiguous physical history reference": "物理历史引用存在歧义",
-  "Browser catalog is limited to eight reviewable sample roots.": "浏览器样本目录最多支持八条可预览的主记录。",
+  "Browser catalog is limited to eight reviewable sample roots.":
+    "浏览器样本目录最多支持八条可预览的主记录。",
   "Bundled demo dataset is unavailable.": "应用自带的演示数据不可用。",
   "Bundled synthetic demo store": "应用自带的合成演示数据",
-  "Changed directory skipped: inventory is partial.": "已跳过发生变化的目录，盘点结果不完整。",
+  "Changed directory skipped: inventory is partial.":
+    "已跳过发生变化的目录，盘点结果不完整。",
   "Codex home must be absolute.": "Codex 目录必须使用绝对路径。",
-  "Codex home must not contain traversal components.": "Codex 目录不能包含路径回退成分。",
-  "Compressed or unrecognized sessions are stat-only.": "压缩或无法识别的会话仅统计文件元数据。",
+  "Codex home must not contain traversal components.":
+    "Codex 目录不能包含路径回退成分。",
+  "Compressed or unrecognized sessions are stat-only.":
+    "压缩或无法识别的会话仅统计文件元数据。",
   "Compressed sample content was not inspected.": "没有检查压缩样本的内容。",
-  "Conflicting fork provenance retained conservatively": "保守保留存在冲突的 fork 来源",
-  "Conflicting metadata across session segments": "会话分段之间的元数据存在冲突",
+  "Conflicting fork provenance retained conservatively":
+    "保守保留存在冲突的 fork 来源",
+  "Conflicting metadata across session segments":
+    "会话分段之间的元数据存在冲突",
   "Conflicting parent metadata": "父级元数据存在冲突",
   "Conflicting segment metadata": "分段元数据存在冲突",
   "Conversation count exceeds graph budget.": "对话数量超过关联分析上限。",
@@ -275,34 +354,46 @@ export const zhMessages = {
   "Cyclic parent relationship": "父级关联存在循环",
   "Demo resources are unavailable.": "演示资源不可用。",
   "Demo root must be a regular directory.": "演示目录必须是普通目录。",
-  "Depth limit reached: inventory is partial.": "已达到目录深度上限，盘点结果不完整。",
-  "Desktop pinned state missing; pins cannot be identified.": "桌面置顶状态缺失，无法识别置顶记录。",
+  "Depth limit reached: inventory is partial.":
+    "已达到目录深度上限，盘点结果不完整。",
+  "Desktop pinned state missing; pins cannot be identified.":
+    "桌面置顶状态缺失，无法识别置顶记录。",
   "Directory changed.": "目录发生了变化。",
-  "Directory enumeration failed; inventory incomplete.": "目录枚举失败，盘点结果不完整。",
+  "Directory enumeration failed; inventory incomplete.":
+    "目录枚举失败，盘点结果不完整。",
   "Directory unavailable.": "目录不可用。",
   "Duplicate fixture file.": "存在重复样本文件。",
-  "Entry budget exceeded; scan is incomplete. No totals returned.": "条目数量超过上限，盘点未完成，不返回总量。",
+  "Entry budget exceeded; scan is incomplete. No totals returned.":
+    "条目数量超过上限，盘点未完成，不返回总量。",
   "Expected a regular fixture file.": "需要普通样本文件。",
   "Expected an absolute Codex home.": "需要使用 Codex 目录的绝对路径。",
   "File changed while opening.": "文件在打开时发生了变化。",
   "Fixture changed while being opened.": "样本在打开时发生了变化。",
-  "Fixture identity changed while being opened.": "样本身份在打开时发生了变化。",
+  "Fixture identity changed while being opened.":
+    "样本身份在打开时发生了变化。",
   "Fixture metadata is unavailable.": "样本元数据不可用。",
   "Fixture metadata unavailable.": "样本元数据不可用。",
   "Fixture path must stay inside its root.": "样本路径必须位于样本根目录内。",
-  "Fork lineage referenced by another record (shared bytes not confirmed)": "fork 来源被其他记录引用，尚未确认是否共享文件内容",
+  "Fork lineage referenced by another record (shared bytes not confirmed)":
+    "fork 来源被其他记录引用，尚未确认是否共享文件内容",
   "Fork lineage source missing or unresolved": "fork 来源缺失或未解析",
-  "Fork lineage: forked_from_id; does not prove shared bytes": "fork 来源依据为 forked_from_id，不表示已经确认共享文件内容",
+  "Fork lineage: forked_from_id; does not prove shared bytes":
+    "fork 来源依据为 forked_from_id，不表示已经确认共享文件内容",
   "Global state invalid.": "全局状态无效。",
   "Hard-linked fixture files are not supported.": "不支持硬链接样本文件。",
   "Header exceeds the bounded metadata budget.": "元数据首行超过读取上限。",
-  "History base resolves to another segment of this same logical conversation": "历史来源对应同一逻辑对话的另一个物理分段",
+  "History base resolves to another segment of this same logical conversation":
+    "历史来源对应同一逻辑对话的另一个物理分段",
   "Home directory unavailable.": "用户目录不可用。",
-  "Inaccessible entries skipped: inventory is partial.": "已跳过无法访问的条目，盘点结果不完整。",
-  "Inaccessible or linked directory skipped: inventory is partial.": "已跳过无法访问或属于链接的目录，盘点结果不完整。",
+  "Inaccessible entries skipped: inventory is partial.":
+    "已跳过无法访问的条目，盘点结果不完整。",
+  "Inaccessible or linked directory skipped: inventory is partial.":
+    "已跳过无法访问或属于链接的目录，盘点结果不完整。",
   "Incomplete relationship metadata": "关联元数据不完整",
-  "Indexed conversation count exceeds graph budget.": "索引中的对话数量超过关联分析上限。",
-  "Indexed title has no matched parseable session_meta; bytes may exist in unread or skipped files": "索引标题没有匹配到可解析的 session_meta，占用可能位于未读取或已跳过的文件中",
+  "Indexed conversation count exceeds graph budget.":
+    "索引中的对话数量超过关联分析上限。",
+  "Indexed title has no matched parseable session_meta; bytes may exist in unread or skipped files":
+    "索引标题没有匹配到可解析的 session_meta，占用可能位于未读取或已跳过的文件中",
   "Inspection only. No deletion is available.": "仅供查看，没有删除功能。",
   "Invalid fixture path.": "样本路径无效。",
   "Invalid or cyclic parent chain": "父级链无效或存在循环",
@@ -310,65 +401,101 @@ export const zhMessages = {
   "Invalid synthetic fixture manifest.": "合成样本清单无效。",
   "Keep choices are session-local": "保留标记仅在本次应用会话有效",
   "Linked fixture paths are not supported.": "不支持链接样本路径。",
-  "Live filesystem observation, not an atomic snapshot. Codex may change files during inspection.": "这是运行中文件系统的观察结果，不是原子快照。盘点期间 Codex 可能修改文件。",
-  "Live status unknown: no runtime or database activity queried": "运行状态未知，没有查询运行时或数据库活动",
+  "Live filesystem observation, not an atomic snapshot. Codex may change files during inspection.":
+    "这是运行中文件系统的观察结果，不是原子快照。盘点期间 Codex 可能修改文件。",
+  "Live status unknown: no runtime or database activity queried":
+    "运行状态未知，没有查询运行时或数据库活动",
   "Local Codex home · read-only observation": "本地 Codex 目录 · 只读观察",
   "Local inspection failed.": "本地盘点失败。",
-  "Logical bytes are file lengths; allocated bytes are filesystem blocks with hardlinks deduplicated by first lexical path (category attribution is accounting, not ownership). APFS clones/compression may share blocks; neither value is reclaimable space.": "文件长度是逻辑大小；分配块按文件系统块计量，硬链接按路径字典序去重，类别归账不代表块的所有权。APFS 克隆或压缩可能共享块，两种数值均不代表可回收空间。",
-  "Logical identity: session_meta.payload.id (not session_id or filename)": "逻辑 ID 来自 session_meta.payload.id，不使用 session_id 或文件名",
-  "Long paths skipped: inventory is partial.": "已跳过过长路径，盘点结果不完整。",
+  "Logical bytes are file lengths; allocated bytes are filesystem blocks with hardlinks deduplicated by first lexical path (category attribution is accounting, not ownership). APFS clones/compression may share blocks; neither value is reclaimable space.":
+    "文件长度是逻辑大小；分配块按文件系统块计量，硬链接按路径字典序去重，类别归账不代表块的所有权。APFS 克隆或压缩可能共享块，两种数值均不代表可回收空间。",
+  "Logical identity: session_meta.payload.id (not session_id or filename)":
+    "逻辑 ID 来自 session_meta.payload.id，不使用 session_id 或文件名",
+  "Long paths skipped: inventory is partial.":
+    "已跳过过长路径，盘点结果不完整。",
   "Metadata exceeds the per-file limit.": "元数据超过单文件读取上限。",
   "Metadata unavailable.": "元数据不可用。",
-  "Metadata unavailable: link or scan read budget.": "元数据不可用：条目属于链接或已达到读取总量上限。",
+  "Metadata unavailable: link or scan read budget.":
+    "元数据不可用：条目属于链接或已达到读取总量上限。",
   "Missing parent identity": "缺少父级 ID",
   "Missing parent record": "缺少父级记录",
   "Missing shared history source": "缺少共享历史来源",
-  "Missing valid session_meta logical identity": "缺少有效的 session_meta 逻辑 ID",
-  "Mixed archived and live segment locations": "同一对话的分段同时出现在归档与未归档位置",
+  "Missing valid session_meta logical identity":
+    "缺少有效的 session_meta 逻辑 ID",
+  "Mixed archived and live segment locations":
+    "同一对话的分段同时出现在归档与未归档位置",
   "No deletion or database maintenance": "没有删除或数据库维护操作",
   "No real agent data inspected": "没有查看真实 Agent 数据",
-  "No supported Codex sessions or index in the configured home.": "配置目录内没有受支持的 Codex 会话或索引。",
-  "Non-UTF8 entries skipped: inventory is partial.": "已跳过非 UTF-8 条目，盘点结果不完整。",
-  "Only bounded session_meta headers, session_index titles and pinned IDs are parsed. Transcript bodies are not parsed; unread/compressed headers remain unknown. No activity or cleanup safety is inferred.": "仅解析有界的 session_meta 首行、session_index 标题和置顶 ID。不解析对话正文；未读取或压缩的元数据保持未知，不推断运行状态或清理安全性。",
+  "No supported Codex sessions or index in the configured home.":
+    "配置目录内没有受支持的 Codex 会话或索引。",
+  "Non-UTF8 entries skipped: inventory is partial.":
+    "已跳过非 UTF-8 条目，盘点结果不完整。",
+  "Only bounded session_meta headers, session_index titles and pinned IDs are parsed. Transcript bodies are not parsed; unread/compressed headers remain unknown. No activity or cleanup safety is inferred.":
+    "仅解析有界的 session_meta 首行、session_index 标题和置顶 ID。不解析对话正文；未读取或压缩的元数据保持未知，不推断运行状态或清理安全性。",
   "Opened fixture metadata is unavailable.": "已打开样本的元数据不可用。",
-  "Parent conversation missing from inspected metadata": "已查看的元数据中缺少父级对话",
-  "Parent depth exceeds metadata graph limit": "父级关联深度超过元数据关联分析上限",
-  "Parent metadata on non-subagent source; relation unresolved": "非子 Agent 来源包含父级元数据，关联尚未解析",
+  "Parent conversation missing from inspected metadata":
+    "已查看的元数据中缺少父级对话",
+  "Parent depth exceeds metadata graph limit":
+    "父级关联深度超过元数据关联分析上限",
+  "Parent metadata on non-subagent source; relation unresolved":
+    "非子 Agent 来源包含父级元数据，关联尚未解析",
   "Parent relationship unresolved": "父级关联尚未解析",
   "Physical history reference unavailable": "物理历史引用不可用",
   "Pinned in Codex desktop state": "在 Codex 桌面状态中已置顶",
-  "Pinned state unavailable or oversized; pins cannot be fully identified.": "置顶状态不可用或过大，无法完整识别置顶记录。",
+  "Pinned state unavailable or oversized; pins cannot be fully identified.":
+    "置顶状态不可用或过大，无法完整识别置顶记录。",
   "Protected sample records cannot be selected.": "不能选择受保护的样本记录。",
-  "Protected, spawned or kept records cannot be selected.": "不能选择受保护、所属子 Agent 或已标记保留的记录。",
-  "Read-only inspection: cleanup eligibility is not evaluated": "仅做只读盘点，不评估是否符合清理条件",
-  "Real Codex data supports inspection only; no plan or report export.": "真实 Codex 数据仅支持查看，没有清理计划或报告导出。",
-  "Real Codex inspection currently requires macOS or Linux. Demo remains available.": "真实 Codex 盘点目前需要 macOS 或 Linux，仍可使用演示模式。",
-  "Real Codex inspection is available in the native desktop app only.": "真实 Codex 盘点仅在原生桌面应用中可用。",
+  "Protected, spawned or kept records cannot be selected.":
+    "不能选择受保护、所属子 Agent 或已标记保留的记录。",
+  "Read-only inspection: cleanup eligibility is not evaluated":
+    "仅做只读盘点，不评估是否符合清理条件",
+  "Real Codex data supports inspection only; no plan or report export.":
+    "真实 Codex 数据仅支持查看，没有清理计划或报告导出。",
+  "Real Codex inspection currently requires macOS or Linux. Demo remains available.":
+    "真实 Codex 盘点目前需要 macOS 或 Linux，仍可使用演示模式。",
+  "Real Codex inspection is available in the native desktop app only.":
+    "真实 Codex 盘点仅在原生桌面应用中可用。",
   "Referenced by an independent fork": "被独立 fork 引用",
   "Root unavailable.": "根目录不可用。",
-  "SQLite, WAL, SHM, auth/config and assets are stat-only. External sqlite_home and remote stores are not included.": "SQLite、WAL、SHM、凭据、配置和素材仅统计文件元数据，不包含外置 sqlite_home 或远端数据。",
+  "SQLite, WAL, SHM, auth/config and assets are stat-only. External sqlite_home and remote stores are not included.":
+    "SQLite、WAL、SHM、凭据、配置和素材仅统计文件元数据，不包含外置 sqlite_home 或远端数据。",
   "Sample metadata is incomplete or malformed.": "样本元数据不完整或格式错误。",
-  "Session header invalid or unsupported.": "会话元数据首行无效或格式不受支持。",
-  "Session index missing; primary titles and missing-record checks unavailable.": "会话索引缺失，无法获取主对话标题或检查缺失记录。",
-  "Session index unavailable or oversized; titles and missing-record checks are incomplete.": "会话索引不可用或过大，标题和缺失记录检查不完整。",
-  "Session metadata unread, oversized, linked or unsupported": "会话元数据未读取、过大、属于链接或格式不受支持",
+  "Session header invalid or unsupported.":
+    "会话元数据首行无效或格式不受支持。",
+  "Session index missing; primary titles and missing-record checks unavailable.":
+    "会话索引缺失，无法获取主对话标题或检查缺失记录。",
+  "Session index unavailable or oversized; titles and missing-record checks are incomplete.":
+    "会话索引不可用或过大，标题和缺失记录检查不完整。",
+  "Session metadata unread, oversized, linked or unsupported":
+    "会话元数据未读取、过大、属于链接或格式不受支持",
   "Shared history source missing or unresolved": "共享历史来源缺失或未解析",
-  "Shared history used by another inspected record": "共享历史被另一条已查看记录使用",
-  "Shared history: history_base.thread_id": "共享历史依据为 history_base.thread_id",
-  "Some session index rows are invalid; titles may be incomplete.": "部分会话索引行无效，标题信息可能不完整。",
-  "Sub Agent: source.subagent; parent: explicit parent_thread_id": "子 Agent 依据为 source.subagent，父级依据为显式 parent_thread_id",
-  "Symlinks and special files skipped; links are never followed. Inventory excludes their targets.": "已跳过符号链接与特殊文件，不跟随链接，盘点不包含其目标。",
-  "The demo could not be loaded. No agent data was accessed.": "无法加载演示数据，没有访问 Agent 数据。",
-  "The sample inventory changed. Rescan before reviewing.": "样本盘点结果已变化，请重新盘点后再查看预览。",
+  "Shared history used by another inspected record":
+    "共享历史被另一条已查看记录使用",
+  "Shared history: history_base.thread_id":
+    "共享历史依据为 history_base.thread_id",
+  "Some session index rows are invalid; titles may be incomplete.":
+    "部分会话索引行无效，标题信息可能不完整。",
+  "Sub Agent: source.subagent; parent: explicit parent_thread_id":
+    "子 Agent 依据为 source.subagent，父级依据为显式 parent_thread_id",
+  "Symlinks and special files skipped; links are never followed. Inventory excludes their targets.":
+    "已跳过符号链接与特殊文件，不跟随链接，盘点不包含其目标。",
+  "The demo could not be loaded. No agent data was accessed.":
+    "无法加载演示数据，没有访问 Agent 数据。",
+  "The sample inventory changed. Rescan before reviewing.":
+    "样本盘点结果已变化，请重新盘点后再查看预览。",
   "The sample snapshot changed. Rescan.": "样本快照已变化，请重新盘点。",
-  "These bytes describe synthetic files, not recoverable or freed space.": "这些数值仅描述合成文件，不代表可回收或已释放空间。",
-  "This is not a supported synthetic demo store.": "这不是受支持的合成演示数据目录。",
+  "These bytes describe synthetic files, not recoverable or freed space.":
+    "这些数值仅描述合成文件，不代表可回收或已释放空间。",
+  "This is not a supported synthetic demo store.":
+    "这不是受支持的合成演示数据目录。",
   "Unknown or duplicate sample identity.": "样本 ID 未知或重复。",
-  "Unknown, duplicate or over-budget sample identity.": "样本 ID 未知、重复或数量超过上限。",
+  "Unknown, duplicate or over-budget sample identity.":
+    "样本 ID 未知、重复或数量超过上限。",
   "Unrecognized session source": "无法识别会话来源",
   "Unresolved sample record": "未解析样本记录",
   "Unresolved session file": "未解析会话文件",
-  "history_base physical rollout ID resolved to its session_meta logical ID": "history_base 中的物理分段 ID 已映射到 session_meta 的逻辑 ID",
+  "history_base physical rollout ID resolved to its session_meta logical ID":
+    "history_base 中的物理分段 ID 已映射到 session_meta 的逻辑 ID",
   "identity validated": "ID 已验证",
   "Synthetic native cleanup test": "原生清理合成测试",
   "This build only uses a newly generated test store. Real Agent data is never loaded or deleted.":
@@ -395,47 +522,64 @@ export const zhMessages = {
   "Verified: deleted notifications, remaining file hashes, thread rows and spawn edges.":
     "已核对：删除通知、剩余文件哈希、对话记录及子 Agent 关联。",
   "Generated native test store loaded": "已加载生成的原生测试存储",
-  "{count} generated test files measured; no real Agent data accessed.": "已测量 {count} 个生成测试文件；未访问真实 Agent 数据。",
-  "Native deletion was not fully verified. Inspect the result before closing.": "原生删除未完全验证，请检查结果后再关闭。",
-  "The test runtime is stopped. Restart the test app to generate a new store.": "测试运行时已停止，请重启测试应用以生成新的测试存储。",
+  "{count} generated test files measured; no real Agent data accessed.":
+    "已测量 {count} 个生成测试文件；未访问真实 Agent 数据。",
+  "Native deletion was not fully verified. Inspect the result before closing.":
+    "原生删除未完全验证，请检查结果后再关闭。",
+  "The test runtime is stopped. Restart the test app to generate a new store.":
+    "测试运行时已停止，请重启测试应用以生成新的测试存储。",
   "Generated native test store": "生成的原生测试存储",
-  "Only generated data can be deleted in this test build.": "此测试构建仅可删除生成的数据。",
-  "The native test backend opens only its generated state database; real Agent data stays untouched.": "原生测试后端仅连接生成的状态数据库；不操作真实 Agent 数据。",
+  "Only generated data can be deleted in this test build.":
+    "此测试构建仅可删除生成的数据。",
+  "The native test backend opens only its generated state database; real Agent data stays untouched.":
+    "原生测试后端仅连接生成的状态数据库；不操作真实 Agent 数据。",
   "Real data · manual cleanup": "真实数据 · 手动清理",
-  "Inspect real data; deletion requires your selection, preview and confirmation.": "查看真实数据；删除必须经过你的选择、预览和确认。",
-  "Inventory is read-only. Cleanup previews check native state; execution requires explicit confirmation.": "盘点只读。清理预览会核对原生状态，执行必须由你明确确认。",
-  "Nothing is selected automatically. Review the complete subtree and retained conversations before permanent deletion.": "不会自动选择任何记录。永久删除前，请检查完整子树和保留的对话。",
-  "This operation permanently deletes real conversations and their native metadata. A receipt is not a backup.": "本操作将永久删除真实对话及其原生元数据，执行记录不是备份。",
+  "Inspect real data; deletion requires your selection, preview and confirmation.":
+    "查看真实数据；删除必须经过你的选择、预览和确认。",
+  "Inventory is read-only. Cleanup previews check native state; execution requires explicit confirmation.":
+    "盘点只读。清理预览会核对原生状态，执行必须由你明确确认。",
+  "Nothing is selected automatically. Review the complete subtree and retained conversations before permanent deletion.":
+    "不会自动选择任何记录。永久删除前，请检查完整子树和保留的对话。",
+  "This operation permanently deletes real conversations and their native metadata. A receipt is not a backup.":
+    "本操作将永久删除真实对话及其原生元数据，执行记录不是备份。",
   "Native cleanup verified": "原生清理验证通过",
-  "Official native cleanup completed for the confirmed scope.": "已在你确认的范围内完成官方原生清理。",
-  "Cleanup outcome is unknown. Do not repeat deletion.": "清理结果未知，请勿重复删除。",
-  "Verified: deletion scope, native state and retained files; concurrent additions are tracked separately.": "已核对删除范围、原生状态和保留文件；并发追加另行记录。",
-  "The native cleanup process stopped. Inspect the receipt before creating another plan.": "原生清理进程已停止，请先核对执行记录。",
-  "recentWriteProtected": "所选范围最近五分钟有文件写入，暂不允许清理。",
-  "currentConversationProtected": "所选范围包含当前开发对话，禁止清理。",
-  "nativeSchemaUnsupported": "原生数据库格式不兼容；不会替你升级或迁移数据库。",
-  "nativeVersionUnsupported": "当前原生运行时版本尚未通过验证。",
-  "nativeRuntimeUnavailable": "未找到支持的官方 Codex 运行时。",
-  "externalDatabaseUnsupported": "外置 SQLite 目录暂不支持清理。",
-  "nativeScopeIncomplete": "无法完整确定会话文件范围，已阻止清理。",
-  "nativeRootMissing": "该对话不在本机原生索引中，暂时无法执行原生删除。",
-  "unresolvedPreviousOperation": "所选范围存在结果未知的上次操作，请先核对执行记录，不能重试。",
+  "Official native cleanup completed for the confirmed scope.":
+    "已在你确认的范围内完成官方原生清理。",
+  "Cleanup outcome is unknown. Do not repeat deletion.":
+    "清理结果未知，请勿重复删除。",
+  "Verified: deletion scope, native state and retained files; concurrent additions are tracked separately.":
+    "已核对删除范围、原生状态和保留文件；并发追加另行记录。",
+  "The native cleanup process stopped. Inspect the receipt before creating another plan.":
+    "原生清理进程已停止，请先核对执行记录。",
+  recentWriteProtected: "所选范围最近五分钟有文件写入，暂不允许清理。",
+  currentConversationProtected: "所选范围包含当前开发对话，禁止清理。",
+  nativeSchemaUnsupported: "原生数据库格式不兼容；不会替你升级或迁移数据库。",
+  nativeVersionUnsupported: "当前原生运行时版本尚未通过验证。",
+  nativeRuntimeUnavailable: "未找到支持的官方 Codex 运行时。",
+  externalDatabaseUnsupported: "外置 SQLite 目录暂不支持清理。",
+  nativeScopeIncomplete: "无法完整确定会话文件范围，已阻止清理。",
+  nativeRootMissing: "该对话不在本机原生索引中，暂时无法执行原生删除。",
+  unresolvedPreviousOperation:
+    "所选范围存在结果未知的上次操作，请先核对执行记录，不能重试。",
   "Compressed header invalid.": "压缩会话头无效。",
   "Compressed header window unsupported.": "压缩会话头需要的窗口超出支持范围。",
-  "Only bounded session_meta headers, session_index titles and pinned IDs are parsed. Transcript bodies are not parsed; unread or unsupported headers remain unknown. No activity or cleanup safety is inferred.": "仅解析有界会话头、标题索引与置顶 ID，不解析对话正文；无法读取或不支持的头仍保持未知，不据此判断活动或清理安全。",
+  "Only bounded session_meta headers, session_index titles and pinned IDs are parsed. Transcript bodies are not parsed; unread or unsupported headers remain unknown. No activity or cleanup safety is inferred.":
+    "仅解析有界会话头、标题索引与置顶 ID，不解析对话正文；无法读取或不支持的头仍保持未知，不据此判断活动或清理安全。",
   "AgentBroom · Local storage": "AgentBroom · 本地存储",
-  "nativeScopeBudget": "所选子树过大，超出当前原生验证预算。",
+  nativeScopeBudget: "所选子树过大，超出当前原生验证预算。",
   "Concurrent changes detected ({count})": "检测到 {count} 项并发变化",
-  "Cleanup eligibility is checked for each preview.": "每次清理预览都会重新核对执行条件。",
-  "Inventory does not authorize deletion. Review native cleanup before confirming execution.": "盘点不授予删除权限，须检查原生清理预览后再确认执行。",
-  "pinStateUnavailable": "无法完整读取置顶保护状态，已阻止清理。",
-  "hashBudget": "文件超出当前内容核验预算，已阻止清理。",
-  "nativePathMismatch": "原生记录与实际会话路径不一致，已阻止清理。",
-  "runtimeChanged": "原生运行时已变化，请重新预览。",
+  "Cleanup eligibility is checked for each preview.":
+    "每次清理预览都会重新核对执行条件。",
+  "Inventory does not authorize deletion. Review native cleanup before confirming execution.":
+    "盘点不授予删除权限，须检查原生清理预览后再确认执行。",
+  pinStateUnavailable: "无法完整读取置顶保护状态，已阻止清理。",
+  hashBudget: "文件超出当前内容核验预算，已阻止清理。",
+  nativePathMismatch: "原生记录与实际会话路径不一致，已阻止清理。",
+  runtimeChanged: "原生运行时已变化，请重新预览。",
   "Recent cleanup results ({count})": "最近清理记录（{count}）",
   "Cleanup history could not be read.": "无法读取清理历史记录。",
-  "Locked": "已上锁",
-  "Unlocked": "未上锁",
+  Locked: "已上锁",
+  Unlocked: "未上锁",
   "Manually locked": "手动上锁",
   "Manual locks": "手动锁定",
   "Lock conversation": "锁定对话",
@@ -443,33 +587,172 @@ export const zhMessages = {
   "Conversation locked": "对话已上锁",
   "Conversation unlocked": "对话已解锁",
   "{title} · saved on this device.": "{title} · 已保存到本机。",
-  "Only manually locked conversations and their descendants are protected.": "仅手动上锁的对话及其子 Agent 受到保护。",
+  "Only manually locked conversations and their descendants are protected.":
+    "仅手动上锁的对话及其子 Agent 受到保护。",
   "Conversations are unlocked by default.": "对话默认不上锁，可以选择删除。",
-  "Locks are saved on this device and survive rescans and restarts.": "锁定状态保存在本机，刷新和重启后仍然有效。",
-  "Fork references and recent writes are preview notices, not automatic locks.": "fork 引用和最近写入会在预览中提示，不会自动上锁。",
+  "Locks are saved on this device and survive rescans and restarts.":
+    "锁定状态保存在本机，刷新和重启后仍然有效。",
+  "Fork references and recent writes are preview notices, not automatic locks.":
+    "fork 引用和最近写入会在预览中提示，不会自动上锁。",
   "View locked conversations": "查看已上锁对话",
-  "Browser inspection is read-only. Use the desktop app to lock or delete conversations.": "浏览器仅供查看，请使用桌面应用锁定或删除对话。",
-  "Shared database bytes are not attributed to individual conversations.": "共享数据库空间不计入单条对话。",
-  "{count} files measured; native identities read without changing Agent data.": "已统计 {count} 个文件，并只读核对原生会话身份，未修改 Agent 数据。",
-  "Select one conversation. Its native spawned subtree is included in the preview.": "选择一条对话，预览将包含其原生子 Agent 范围。",
-  "Notices": "注意事项",
+  "Browser inspection is read-only. Use the desktop app to lock or delete conversations.":
+    "浏览器仅供查看，请使用桌面应用锁定或删除对话。",
+  "Shared database bytes are not attributed to individual conversations.":
+    "共享数据库空间不计入单条对话。",
+  "{count} files measured; native identities read without changing Agent data.":
+    "已统计 {count} 个文件，并只读核对原生会话身份，未修改 Agent 数据。",
+  "Select one conversation. Its native spawned subtree is included in the preview.":
+    "选择一条对话，预览将包含其原生子 Agent 范围。",
+  Notices: "注意事项",
   "Locked conversations in this scope": "影响范围中的已上锁对话",
-  "This deletion scope contains a manually locked conversation or belongs to a locked parent.": "删除范围包含手动上锁的对话，或属于已上锁的主对话。",
-  "Other conversations reference this scope. The native store decides whether deletion is possible.": "其他对话引用了此范围，原生存储将判断能否删除。",
-  "This scope has recent file writes. Check that you no longer need these conversations.": "此范围最近有文件写入，请确认这些对话已不再需要。",
-  "Some header relationships are incomplete. This preview uses the native indexed deletion scope.": "部分文件头关系不完整，本次预览以原生索引中的删除范围为准。",
-  "lockStateUnavailable": "无法读取或保存锁定状态，请重试；不会绕过已有锁定。",
-  "lockBudget": "锁定数量超出当前限制。",
-  "configUnsupported": "无法解析本机配置，暂时无法执行原生清理。",
-  "Logical identity confirmed by the native read-only index": "逻辑身份已由原生索引只读核实",
+  "This deletion scope contains a manually locked conversation or belongs to a locked parent.":
+    "删除范围包含手动上锁的对话，或属于已上锁的主对话。",
+  "Other conversations reference this scope. The native store decides whether deletion is possible.":
+    "其他对话引用了此范围，原生存储将判断能否删除。",
+  "This scope has recent file writes. Check that you no longer need these conversations.":
+    "此范围最近有文件写入，请确认这些对话已不再需要。",
+  "Some header relationships are incomplete. This preview uses the native indexed deletion scope.":
+    "部分文件头关系不完整，本次预览以原生索引中的删除范围为准。",
+  lockStateUnavailable: "无法读取或保存锁定状态，请重试；不会绕过已有锁定。",
+  lockBudget: "锁定数量超出当前限制。",
+  configUnsupported: "无法解析本机配置，暂时无法执行原生清理。",
+  "Logical identity confirmed by the native read-only index":
+    "逻辑身份已由原生索引只读核实",
   "Metadata notices": "元数据提示",
   "Lock state unknown": "锁定状态未知",
-  "Lock state is unavailable. Rescan to restore cleanup controls.": "无法读取锁定状态，请重新扫描以恢复清理功能。",
-  "Manual locks are available in the regular desktop app. This test build generates a new store on every start.": "手动锁定功能请在普通桌面应用中使用。此测试构建每次启动都会生成新的数据。",
-  "This conversation was locked after the preview. Create a new preview to review the locks.": "预览后该范围被上锁，请重新预览查看锁定详情。",
+  "Lock state is unavailable. Rescan to restore cleanup controls.":
+    "无法读取锁定状态，请重新扫描以恢复清理功能。",
+  "Manual locks are available in the regular desktop app. This test build generates a new store on every start.":
+    "手动锁定功能请在普通桌面应用中使用。此测试构建每次启动都会生成新的数据。",
+  "This conversation was locked after the preview. Create a new preview to review the locks.":
+    "预览后该范围被上锁，请重新预览查看锁定详情。",
   "Lock separately": "单独锁定此对话",
-  "Locked through a parent. Unlock the parent to remove inherited protection.": "此对话受主对话的锁定保护；请解锁主对话以解除继承的保护。",
-  "Lock state could not be read or saved. Rescan before cleanup.": "无法读取或保存锁定状态，请重新扫描后再清理。",
-  "The number of manual locks exceeds the current limit.": "手动锁定数量超出当前限制。",
-  "The local configuration could not be parsed. Native cleanup is unavailable.": "无法解析本机配置，暂时无法执行原生清理。",
+  "Locked through a parent. Unlock the parent to remove inherited protection.":
+    "此对话受主对话的锁定保护；请解锁主对话以解除继承的保护。",
+  "Lock state could not be read or saved. Rescan before cleanup.":
+    "无法读取或保存锁定状态，请重新扫描后再清理。",
+  "The number of manual locks exceeds the current limit.":
+    "手动锁定数量超出当前限制。",
+  "The local configuration could not be parsed. Native cleanup is unavailable.":
+    "无法解析本机配置，暂时无法执行原生清理。",
+  "Storage scan": "扫描磁盘占用",
+  "Conversation cleanup": "清理对话",
+  "Crash report cleanup": "清理崩溃报告",
+  Completed: "已完成",
+  Ready: "可执行",
+  Blocked: "已阻止",
+  "In progress": "进行中",
+  "Needs verification": "待核验",
+  "Execution log": "执行日志",
+  "Local data · manual cleanup": "本机数据 · 手动确认清理",
+  "Browser inspection · read-only": "浏览器查看 · 只读",
+  "Inspecting local storage…": "正在盘点本地存储…",
+  "Local inspection unavailable": "无法盘点本地数据",
+  "Language preference could not be saved.": "无法保存语言偏好。",
+  "Codex storage, including crash reports.":
+    "查看 Codex 存储占用，包含崩溃报告。",
+  "Updated {time}": "更新于 {time}",
+  "Locks saved. Operation history is unavailable.":
+    "锁定状态已保存，操作日志暂不可用。",
+  "Operation history could not be saved.": "操作日志无法保存。",
+  "Nothing was deleted. Create a fresh preview before confirming again.":
+    "未删除任何文件，请重新预览后再次确认。",
+  "Create fresh preview": "重新预览",
+  "Crash report scan limit reached; showing partial results.":
+    "崩溃报告数量达到扫描上限，当前显示部分结果。",
+  "Codex file usage": "Codex 文件占用",
+  "File lengths are measured; they are not a reclaimed-space estimate.":
+    "按文件长度统计，不代表清理后可回收的磁盘空间。",
+  "Crash report coverage is incomplete or unavailable; the total includes measured files only.":
+    "崩溃报告的盘点不完整或暂不可用；总量仅包含已测量文件。",
+  "Storage breakdown": "存储分类",
+  files: "个文件",
+  "Crash reports": "崩溃报告",
+  "Inspect and clean": "查看并清理",
+  "External crash reports are added once; reports already inside Codex home are not counted twice.":
+    "外部崩溃报告只计入一次，Codex 目录内已有的报告不重复累加。",
+  "View all conversations": "查看全部对话",
+  "All conversations · {count}": "全部对话 · {count}",
+  "Search conversations or projects": "搜索对话或项目",
+  All: "全部",
+  "All relations": "全部关系",
+  "Sort conversations": "排序对话",
+  "Latest activity first": "最近活动优先",
+  "Oldest activity first": "最早活动优先",
+  "Largest first": "占用从大到小",
+  "Smallest first": "占用从小到大",
+  "Largest own files first": "自身文件从大到小",
+  "Title A–Z": "按标题排序",
+  "Select this page": "选择本页",
+  Conversation: "对话",
+  "Last activity": "最近活动",
+  Size: "占用",
+  Lock: "锁定",
+  Unlock: "解锁",
+  Actions: "操作",
+  "Unlock {title}": "解锁 {title}",
+  "Lock {title}": "锁定 {title}",
+  "Clean {title}": "清理 {title}",
+  "Clean…": "清理…",
+  "No conversations match.": "没有匹配的对话。",
+  "{count} matching conversations": "共 {count} 条匹配对话",
+  "Previous page": "上一页",
+  "Next page": "下一页",
+  "{count} selected": "已选 {count} 个",
+  "Own file lengths; preview includes spawned scope.":
+    "仅计自身文件，预览时会包含子 Agent 范围。",
+  "Lock selected": "锁定选中",
+  "Unlock selected": "解锁选中",
+  "Clean selected ({count})": "清理选中（{count}）",
+  "Select up to 128 conversations per cleanup.":
+    "单次清理最多选择 128 条对话。",
+  "Unlock protected conversations before cleanup.":
+    "选中范围含已锁定对话，请先解锁后再清理。",
+  "Cleanup results and operations on this device.":
+    "查看本机清理结果与操作记录。",
+  "Keep 7 days": "保留 7 天",
+  "Only the last 7 days of operation history are kept.":
+    "操作日志默认仅保留最近 7 天。",
+  "Operation history is available in the desktop app.":
+    "执行日志请在桌面应用中查看。",
+  Time: "时间",
+  Operation: "操作",
+  Objects: "对象",
+  Result: "结果",
+  "View details": "查看详情",
+  "No operations in the last 7 days.": "最近 7 天暂无操作记录。",
+  "Conversation details": "对话详情",
+  "Operation details": "操作详情",
+  "Verified removed file lengths": "已核验移除的文件长度",
+  "Close preview": "关闭预览",
+  "Switch to dark mode": "切换深色模式",
+  "Switch to light mode": "切换浅色模式",
+  "Theme preference could not be saved.": "无法保存主题偏好。",
+  "Only identified Codex crash reports are included. Other applications are excluded.":
+    "仅列出明确属于 Codex 的崩溃报告，不包含其他应用。",
+  Select: "选择",
+  File: "文件",
+  Location: "位置",
+  "No Codex crash reports found.": "未发现 Codex 崩溃报告。",
+  "Review selected crash reports": "检查选中的崩溃报告",
+  "I have reviewed the selected files.": "我已检查所选文件。",
+  "Crash report cleanup verified": "崩溃报告清理已核验",
+  "Crash reports changed or could not be read. Rescan and try again.":
+    "崩溃报告已变化或无法读取，请重新扫描后再试。",
+  "User diagnostic reports": "用户诊断报告",
+  "System diagnostic reports": "系统诊断报告",
+  "Codex crash directory": "Codex 崩溃目录",
+  reportChanged: "崩溃报告已变化，请重新预览。",
+  reportDeleteFailed: "报告文件清理失败，请查看结果。",
+  reportVerificationFailed: "报告文件清理后核验失败。",
+  operationLogUnavailable: "无法读取或保存操作日志。",
+  operationLogBudget: "操作日志超出读取限制。",
+  "Inspect {title}": "查看 {title}",
+  "Codex Crashpad reports": "Codex Crashpad 崩溃报告",
+  "Measured filesystem blocks": "已盘点文件的分配块",
+  "Blocks may be shared; this is not a freed-space estimate.":
+    "分配块可能共享，不代表可回收空间。",
+  "External crash reports": "崩溃报告（额外目录）",
+  "Operation history could not be saved; inventory is still available.":
+    "无法保存操作日志，盘点结果仍可查看。",
 } as const;

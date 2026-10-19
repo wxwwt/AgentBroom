@@ -61,7 +61,7 @@ function show(kept: string[] = []) {
   return refresh;
 }
 async function review() {
-  fireEvent.click(screen.getByRole("radio", { name: "Select Synthetic a" }));
+  fireEvent.click(screen.getByLabelText("Select Synthetic a"));
   fireEvent.click(screen.getByRole("button", { name: "Preview impact" }));
   await screen.findByText("Impact preview");
   fireEvent.click(screen.getByRole("button", { name: "Review confirmation" }));
@@ -114,7 +114,7 @@ describe("native desktop test flow", () => {
       blockedReasons: ["keptRecord"],
     });
     show(["c"]);
-    fireEvent.click(screen.getByRole("radio", { name: "Select Synthetic a" }));
+    fireEvent.click(screen.getByLabelText("Select Synthetic a"));
     fireEvent.click(screen.getByRole("button", { name: "Preview impact" }));
     await screen.findByText("Impact preview");
     expect(
@@ -183,7 +183,7 @@ describe("native desktop test flow", () => {
   it("stopped native runtime disables retry and explains restart", async () => {
     api.preview.mockRejectedValue({ code: "runtimeStopped" });
     show();
-    fireEvent.click(screen.getByRole("radio", { name: "Select Synthetic a" }));
+    fireEvent.click(screen.getByLabelText("Select Synthetic a"));
     fireEvent.click(screen.getByRole("button", { name: "Preview impact" }));
     await screen.findByText(
       "The test runtime is stopped. Restart the test app to generate a new store.",

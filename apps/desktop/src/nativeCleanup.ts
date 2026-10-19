@@ -45,6 +45,72 @@ export const readNativeReceipt = (planId: string) =>
 export const readNativeHistory = () =>
   invoke<NativeReceipt[]>("cleanup_history");
 
-export const readConversationLocks = () => invoke<string[]>("conversation_locks");
+export const readConversationLocks = () =>
+  invoke<string[]>("conversation_locks");
 export const setConversationLock = (threadId: string, locked: boolean) =>
   invoke<string[]>("set_conversation_lock", { threadId, locked });
+
+export interface OperationEvent {
+  id: string;
+  at: number;
+  action: string;
+  status: string;
+  ids: string[];
+  titles: string[];
+  count: number;
+  bytes: number;
+  error: string | null;
+}
+export interface CrashReport {
+  key: string;
+  name: string;
+  location: string;
+  bytes: number;
+  modifiedAt: number;
+  external: boolean;
+}
+export interface DiagnosticInventory {
+  files: CrashReport[];
+  totalBytes: number;
+  externalBytes: number;
+  externalAllocatedBytes?: number;
+  complete: boolean;
+  warnings: string[];
+}
+export interface DiagnosticPlan {
+  planId: string;
+  files: CrashReport[];
+  bytes: number;
+  expiresInSeconds: number;
+}
+export interface DiagnosticResult {
+  planId: string;
+  status: string;
+  removed: string[];
+  remaining: string[];
+  observedRemovedLogicalBytes: number;
+  warnings?: string[];
+  error: string | null;
+}
+export const readOperations = () =>
+  invoke<OperationEvent[]>("operation_history");
+export const setConversationLocks = (threadIds: string[], locked: boolean) =>
+  invoke<string[]>("set_conversation_locks", { threadIds, locked });
+export const readDiagnostics = () =>
+  invoke<DiagnosticInventory>("diagnostic_inventory");
+export const previewDiagnostics = (keys: string[]) =>
+  invoke<DiagnosticPlan>("diagnostic_preview", { keys });
+export const executeDiagnostics = (
+  planId: string,
+  phrase: string,
+  acknowledged: boolean,
+) =>
+  invoke<DiagnosticResult>("diagnostic_execute", {
+    planId,
+    phrase,
+    acknowledged,
+  });
+export const readDiagnosticResult = (planId: string) =>
+  invoke<DiagnosticResult>("diagnostic_result", { planId });
+export const cancelDiagnostics = (planId: string) =>
+  invoke<void>("diagnostic_cancel", { planId });

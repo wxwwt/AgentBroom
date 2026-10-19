@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-set-conversation-locks"
+description = "Enables the set_conversation_locks command without any pre-configured scope."
+commands.allow = ["set_conversation_locks"]
+
+[[permission]]
+identifier = "deny-set-conversation-locks"
+description = "Denies the set_conversation_locks command without any pre-configured scope."
+commands.deny = ["set_conversation_locks"]

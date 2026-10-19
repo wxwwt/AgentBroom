@@ -20,8 +20,8 @@ describe("language selection",()=>{
   expect(chooseLocale(null,["fr-FR"])).toBe("en");
  });
  it("preserves search and details without rescanning on a language switch",async()=>{
-  await start();fireEvent.click(screen.getByRole("button",{name:/Conversations/}));fireEvent.change(screen.getByRole("textbox",{name:"Search conversations"}),{target:{value:"Local synthetic 0"}});
-  fireEvent.click(screen.getByRole("button",{name:/Local synthetic 0/}));chinese();expect(screen.getByRole("textbox",{name:"搜索对话"})).toHaveValue("Local synthetic 0");
+  await start();fireEvent.click(screen.getByRole("button",{name:"Conversations"}));fireEvent.change(screen.getByRole("textbox",{name:"Search conversations"}),{target:{value:"Local synthetic 0"}});
+  fireEvent.click(screen.getByRole("button",{name:"Inspect Local synthetic 0"}));chinese();expect(screen.getByRole("textbox",{name:"搜索对话"})).toHaveValue("Local synthetic 0");
   expect(screen.getByText("关联依据")).toBeVisible();expect(document.title).toBe("AgentBroom · 本地存储");expect(bridge.load).toHaveBeenCalledTimes(1);
   fireEvent.change(screen.getByRole("combobox",{name:"语言"}),{target:{value:"en"}});expect(screen.getByText("Relationship evidence")).toBeVisible();
  });
@@ -30,19 +30,16 @@ describe("language selection",()=>{
   await screen.findByText("空间占用分布");expect(screen.getByRole("combobox",{name:"语言"})).toHaveValue("zh-CN");
   expect(Object.keys(localStorage)).toEqual([LANGUAGE_KEY]);
  });
- it("localizes existing events and protection reasons without translating user content",async()=>{
-  await start();chinese();fireEvent.click(screen.getByRole("button",{name:/操作记录/}));
-  expect(screen.getByText("已只读盘点本地 Codex")).toBeVisible();expect(screen.getByText(/已统计 13 个文件/)).toBeVisible();
-  fireEvent.click(screen.getByRole("button",{name:/对话/}));
-  fireEvent.click(screen.getByRole("button",{name:/Local synthetic 0/}));
-  expect(screen.queryByText("仅做只读盘点，不评估是否符合清理条件")).not.toBeInTheDocument();
-  expect(screen.getAllByText("未上锁").length).toBeGreaterThan(0);
-  expect(screen.getByText("atlas-web")).toBeVisible();
-  expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+ it("localizes the three pages and keeps user titles untranslated",async()=>{
+  await start();chinese();expect(screen.getByRole("button",{name:"执行日志"})).toBeVisible();
+  fireEvent.click(screen.getByRole("button",{name:"对话"}));
+  fireEvent.click(screen.getByRole("button",{name:"查看 Local synthetic 0"}));
+  expect(screen.getByText("关联依据")).toBeVisible();
+  expect(screen.getAllByText("Local synthetic 0").length).toBeGreaterThan(0);
  });
  it("keeps switching usable when preference storage is blocked",async()=>{
   await start();vi.spyOn(Storage.prototype,"setItem").mockImplementation(()=>{throw new Error("Blocked");});chinese();
-  expect(screen.getByText("空间占用分布")).toBeVisible();expect(screen.getByRole("status")).toHaveTextContent("未能保存语言偏好");
+  expect(screen.getByText("空间占用分布")).toBeVisible();expect(screen.getByRole("status")).toHaveTextContent("无法保存语言偏好");
  });
  it("keeps user values untranslated and does not expose reports",async()=>{
   await start();chinese();expect(screen.queryByRole("button",{name:/报告/})).not.toBeInTheDocument();

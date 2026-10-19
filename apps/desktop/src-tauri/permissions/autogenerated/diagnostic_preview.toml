@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-diagnostic-preview"
+description = "Enables the diagnostic_preview command without any pre-configured scope."
+commands.allow = ["diagnostic_preview"]
+
+[[permission]]
+identifier = "deny-diagnostic-preview"
+description = "Denies the diagnostic_preview command without any pre-configured scope."
+commands.deny = ["diagnostic_preview"]

@@ -237,6 +237,7 @@ impl NativeSandbox {
                 .cloned()
                 .collect(),
             native_ids,
+            root_ids: selected.to_vec(),
             executable: blocked.is_empty(),
             blocked_reasons: blocked.into_iter().collect(),
             warnings: vec![],
@@ -401,6 +402,7 @@ impl NativeSandbox {
             freed_bytes: None,
             error: (!errors.is_empty()).then(|| errors.join(",")),
             concurrent_changes: vec![],
+            warnings: vec![],
             source_id: String::new(),
             expected_ids: plan.view.native_ids.clone(),
             native_notifications_verified: notifications_verified,

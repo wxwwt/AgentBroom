@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-diagnostic-execute"
+description = "Enables the diagnostic_execute command without any pre-configured scope."
+commands.allow = ["diagnostic_execute"]
+
+[[permission]]
+identifier = "deny-diagnostic-execute"
+description = "Denies the diagnostic_execute command without any pre-configured scope."
+commands.deny = ["diagnostic_execute"]

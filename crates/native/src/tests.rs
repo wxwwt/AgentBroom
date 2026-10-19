@@ -211,6 +211,7 @@ fn unresolved_durable_intent_cannot_retry_after_restart_and_schema_changes_block
         freed_bytes: None,
         error: None,
         concurrent_changes: vec![],
+        warnings: vec![],
         source_id: f.store.source_id(),
         expected_ids: p.native_ids.clone(),
         native_notifications_verified: false,
@@ -593,4 +594,83 @@ fn copied_fork_reference_is_a_notice_and_native_outcome_preserves_the_fork() {
         assert!(database(&f.store.root).unwrap().rows.contains_key(ROOT));
         assert_eq!(stamps(&f.store.root).unwrap().len(), before.len());
     }
+}
+
+#[test]
+fn batch_selection_deduplicates_spawned_children_and_rejects_duplicate_inputs() {
+    let db = Database {
+        rows: BTreeMap::from([
+            (ROOT.into(), json!({})),
+            (CHILD.into(), json!({})),
+            (KEEP.into(), json!({})),
+        ]),
+        edges: vec![(ROOT.into(), CHILD.into(), "closed".into())],
+    };
+    let (roots, ids) = db
+        .selection(&[CHILD.into(), ROOT.into(), KEEP.into()])
+        .unwrap();
+    assert_eq!(roots, vec![ROOT, KEEP]);
+    assert_eq!(ids, vec![ROOT, CHILD, KEEP]);
+    assert!(db.selection(&[ROOT.into(), ROOT.into()]).is_err());
+}
+#[test]
+#[ignore = "explicit native runtime; generated multi-selection only"]
+fn batch_multiple_roots_and_parent_child_selection_confirm_once_and_verify() {
+    for selected in [
+        vec![ROOT.into(), CHILD.into()],
+        vec![CHILD.into(), KEEP.into()],
+    ] {
+        let mut f = Fixture::new(false, false);
+        let p = f.store.preview(&selected, &[]).unwrap();
+        assert!(p.executable, "{:?}", p.blocked_reasons);
+        assert_eq!(p.native_ids.len(), 2);
+        let expected_roots = if selected.contains(&ROOT.to_string()) {
+            1
+        } else {
+            2
+        };
+        assert_eq!(p.root_ids.len(), expected_roots);
+        let r = f.store.execute(confirmation(&p)).unwrap();
+        assert_eq!(r.status, "verified", "{r:?}");
+        assert_eq!(r.native_deleted_ids.len(), 2);
+        assert_eq!(stamps(&f.store.root).unwrap().len(), 1);
+        assert!(
+            f.store
+                .operations()
+                .unwrap()
+                .iter()
+                .any(|e| e.action == "cleanup" && e.status == "verified")
+        );
+    }
+}
+#[test]
+#[ignore = "explicit native runtime; generated multi-selection only"]
+fn batch_manual_lock_blocks_all_roots_before_any_native_delete() {
+    let mut f = Fixture::new(false, false);
+    f.store.set_locks(&[KEEP.into()], true).unwrap();
+    let p = f.store.preview(&[ROOT.into(), KEEP.into()], &[]).unwrap();
+    assert!(!p.executable);
+    assert_eq!(p.locked_ids, vec![KEEP]);
+    assert!(f.store.execute(confirmation(&p)).is_err());
+    assert_eq!(stamps(&f.store.root).unwrap().len(), 3);
+}
+
+#[test]
+#[ignore = "explicit native runtime; only newly generated roots"]
+fn broken_activity_log_does_not_block_locks_preview_or_durable_cleanup() {
+    let mut f = Fixture::new(false, false);
+    let dir = f.store.event_dir();
+    fs::write(&dir, b"generated unavailable directory").unwrap();
+    assert_eq!(f.store.set_locks(&[ROOT.into()], true).unwrap(), vec![ROOT]);
+    assert_eq!(f.store.locked_ids().unwrap(), vec![ROOT]);
+    assert!(f.store.set_locks(&[ROOT.into()], false).unwrap().is_empty());
+    let p = f.store.preview(&[ROOT.into()], &[]).unwrap();
+    assert!(p.executable);
+    assert!(p.warnings.iter().any(|w| w == events::HISTORY_WARNING));
+    let c = confirmation(&p);
+    let receipt = f.store.execute(c.clone()).unwrap();
+    assert_eq!(receipt.status, "verified", "{receipt:?}");
+    assert_eq!(receipt.warnings, vec![events::HISTORY_WARNING]);
+    assert_eq!(f.store.execute(c).unwrap().warnings, receipt.warnings);
+    assert_eq!(f.store.receipt(&p.plan_id).unwrap().status, "verified");
 }

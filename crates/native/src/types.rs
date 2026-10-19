@@ -7,6 +7,7 @@ pub struct NativePlan {
     pub test_only: bool,
     pub analysis: CleanupAnalysis,
     pub native_ids: Vec<String>,
+    pub root_ids: Vec<String>,
     pub retained_ids: Vec<String>,
     pub blocked_reasons: Vec<String>,
     pub warnings: Vec<String>,
@@ -38,6 +39,8 @@ pub struct Receipt {
     pub error: Option<String>,
     #[serde(default)]
     pub concurrent_changes: Vec<String>,
+    #[serde(default)]
+    pub warnings: Vec<String>,
     #[serde(default)]
     pub source_id: String,
     #[serde(default)]

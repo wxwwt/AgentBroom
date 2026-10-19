@@ -1,6 +1,8 @@
 //! Native deletion owner. Discovery is read-only; only confirmed execution starts a real server.
 //! No public constructor accepts an existing source directory, Inventory or renderer path.
 mod catalog;
+pub mod diagnostics;
+pub mod events;
 mod locks;
 pub mod rpc;
 mod source;
@@ -32,6 +34,8 @@ struct SavedPlan {
     selected_rows: BTreeMap<String, Value>,
     binary_hash: String,
     runtime_version: String,
+    file_owners: BTreeMap<String, String>,
+    header_parents: Vec<(String, String)>,
 }
 pub struct LiveCleanup {
     root: PathBuf,
@@ -46,9 +50,12 @@ struct Evaluation {
     db: Database,
     files: BTreeMap<String, Stamp>,
     ids: Vec<String>,
+    roots: Vec<String>,
     blocked: Vec<String>,
     warnings: Vec<String>,
     locked_ids: Vec<String>,
+    file_owners: BTreeMap<String, String>,
+    header_parents: Vec<(String, String)>,
 }
 impl LiveCleanup {
     /// Resolves the source and installed runtime internally. Does not launch native maintenance.
@@ -69,6 +76,38 @@ impl LiveCleanup {
             closed: false,
         })
     }
+    fn event_dir(&self) -> PathBuf {
+        self.receipts.parent().unwrap().join("activity")
+    }
+    pub fn operations(&self) -> Result<Vec<events::OperationEvent>, Error> {
+        events::read(&self.event_dir(), events::now())
+    }
+    fn record(
+        &self,
+        id: String,
+        action: &str,
+        status: &str,
+        ids: Vec<String>,
+        titles: Vec<String>,
+        count: usize,
+        bytes: u64,
+        error: Option<String>,
+    ) -> Result<(), Error> {
+        events::write(
+            &self.event_dir(),
+            events::OperationEvent {
+                id,
+                at: events::now(),
+                action: action.into(),
+                status: status.into(),
+                ids,
+                titles,
+                count,
+                bytes,
+                error,
+            },
+        )
+    }
     pub fn invalidate(&mut self) {
         self.pending = None;
     }
@@ -79,8 +118,33 @@ impl LiveCleanup {
     }
     pub fn inventory(&mut self) -> Result<Inventory, Error> {
         self.invalidate();
-        let db = database(&self.root)?;
-        catalog::inspect(&self.root, &db, &stamps(&self.root)?)
+        let mut inventory = match database(&self.root) {
+            Ok(db) => catalog::inspect(&self.root, &db, &stamps(&self.root)?)?,
+            Err(e) => {
+                let mut i = agentbroom_core::codex::scan_store(&self.root)?;
+                i.warnings
+                    .push(format!("Native cleanup unavailable: {}", e.code));
+                i
+            }
+        };
+        if self
+            .record(
+                String::new(),
+                "scan",
+                "verified",
+                vec![],
+                vec![],
+                inventory.items.len(),
+                0,
+                None,
+            )
+            .is_err()
+        {
+            inventory
+                .warnings
+                .push("Operation history could not be saved; inventory is still available.".into());
+        }
+        Ok(inventory)
     }
     pub fn locked_ids(&self) -> Result<Vec<String>, Error> {
         Ok(locks::read(&self.receipts, &self.source_id())?
@@ -88,19 +152,60 @@ impl LiveCleanup {
             .collect())
     }
     pub fn set_locked(&mut self, id: &str, locked: bool) -> Result<Vec<String>, Error> {
-        if !locks::uuid(id) {
+        self.set_locks(&[id.into()], locked)
+    }
+    pub fn set_locks(&mut self, selected: &[String], locked: bool) -> Result<Vec<String>, Error> {
+        if selected.is_empty()
+            || selected.len() > 20000
+            || selected.iter().any(|id| !locks::uuid(id))
+        {
             return Err(fail("invalidSelection"));
         }
-        let _operation_lock = source::operation_lock(&self.receipts)?;
+        let _guard = source::operation_lock(&self.receipts)?;
         let mut ids = locks::read(&self.receipts, &self.source_id())?;
-        let id = id.to_ascii_lowercase();
-        if locked {
-            ids.insert(id);
-        } else {
-            ids.remove(&id);
+        for id in selected {
+            let id = id.to_ascii_lowercase();
+            if locked {
+                ids.insert(id);
+            } else {
+                ids.remove(&id);
+            }
         }
-        locks::write(&self.receipts, &self.source_id(), ids.clone())?;
+        let event_id = events::new_id().unwrap_or_default();
+        let _ = self.record(
+            event_id.clone(),
+            if locked { "lock" } else { "unlock" },
+            "started",
+            selected.to_vec(),
+            vec![],
+            selected.len(),
+            0,
+            None,
+        );
+        if let Err(e) = locks::write(&self.receipts, &self.source_id(), ids.clone()) {
+            let _ = self.record(
+                event_id,
+                if locked { "lock" } else { "unlock" },
+                "verificationFailed",
+                selected.to_vec(),
+                vec![],
+                selected.len(),
+                0,
+                Some(e.code.clone()),
+            );
+            return Err(e);
+        }
         self.invalidate();
+        let _ = self.record(
+            event_id,
+            if locked { "lock" } else { "unlock" },
+            "verified",
+            selected.to_vec(),
+            vec![],
+            selected.len(),
+            0,
+            None,
+        );
         Ok(ids.into_iter().collect())
     }
     fn evaluate(
@@ -112,7 +217,11 @@ impl LiveCleanup {
         if self.closed {
             return Err(fail("runtimeStopped"));
         }
-        if selected.len() != 1 || !locks::uuid(&selected[0]) || kept.len() > 20000 {
+        if selected.is_empty()
+            || selected.len() > 128
+            || selected.iter().any(|id| !locks::uuid(id))
+            || kept.len() > 20000
+        {
             return Err(fail("invalidSelection"));
         }
         source::guard_root(&self.root)?;
@@ -125,7 +234,7 @@ impl LiveCleanup {
         }
         let files = stamps(&self.root)?;
         let db = database(&self.root)?;
-        let ids = db.subtree(&selected[0])?;
+        let (roots, ids) = db.selection(selected)?;
         let inventory = catalog::inspect(&self.root, &db, &files)?;
         let mut locked = locks::read(&self.receipts, &self.source_id())?;
         locked.extend(kept.iter().map(|id| id.to_ascii_lowercase()));
@@ -148,14 +257,19 @@ impl LiveCleanup {
             blocked.insert("nativeScopeBudget".into());
         }
         let mut selected_files = BTreeSet::new();
+        let mut file_owners = BTreeMap::new();
         for id in &ids {
             let path = db.rows[id]
                 .get("rollout_path")
                 .and_then(Value::as_str)
                 .ok_or_else(|| fail("nativePathMismatch"))?;
             let key = source::rollout_key(&self.root, path, &files)?;
+            file_owners.insert(key.clone(), id.clone());
             selected_files.insert(key);
             for t in inventory.threads.iter().filter(|t| t.id == *id) {
+                for key in &t.files {
+                    file_owners.insert(key.clone(), id.clone());
+                }
                 selected_files.extend(t.files.iter().cloned());
             }
         }
@@ -238,9 +352,12 @@ impl LiveCleanup {
             db,
             files,
             ids,
+            roots,
             blocked: blocked.into_iter().collect(),
             warnings,
             locked_ids,
+            file_owners,
+            header_parents,
         })
     }
     pub fn preview(&mut self, selected: &[String], kept: &[String]) -> Result<NativePlan, Error> {
@@ -261,10 +378,11 @@ impl LiveCleanup {
             .unwrap()
             .to_string_lossy()
             .into_owned();
-        let view = NativePlan {
+        let mut view = NativePlan {
             plan_id,
             test_only: false,
             native_ids: evaluation.ids.clone(),
+            root_ids: evaluation.roots.clone(),
             retained_ids: evaluation
                 .db
                 .rows
@@ -300,6 +418,21 @@ impl LiveCleanup {
             .filter(|(id, _)| view.native_ids.contains(id))
             .collect();
         let binary_hash = hash_file(&self.binary, 400 * 1024 * 1024)?;
+        if self
+            .record(
+                String::new(),
+                "preview",
+                if view.executable { "ready" } else { "blocked" },
+                selected.to_vec(),
+                vec![],
+                view.native_ids.len(),
+                view.analysis.observed_logical_bytes,
+                None,
+            )
+            .is_err()
+        {
+            view.warnings.push(events::HISTORY_WARNING.into());
+        }
         self.pending = Some(SavedPlan {
             view: view.clone(),
             kept: kept.to_vec(),
@@ -308,6 +441,8 @@ impl LiveCleanup {
             selected_rows,
             binary_hash,
             runtime_version: runtime,
+            file_owners: evaluation.file_owners,
+            header_parents: evaluation.header_parents,
         });
         Ok(view)
     }
@@ -325,6 +460,7 @@ impl LiveCleanup {
         }
         if !e.blocked.is_empty()
             || e.ids != plan.view.native_ids
+            || e.roots != plan.view.root_ids
             || e.analysis.included_ids != plan.view.analysis.included_ids
         {
             return Err(fail("staleSnapshot"));
@@ -447,7 +583,11 @@ impl LiveCleanup {
     }
     pub fn execute(&mut self, c: Confirmation) -> Result<Receipt, Error> {
         valid_id(&c.plan_id)?;
-        if c.phrase != "DELETE" || !c.acknowledged || c.selected_ids.len() != 1 {
+        if c.phrase != "DELETE"
+            || !c.acknowledged
+            || c.selected_ids.is_empty()
+            || c.selected_ids.len() > 128
+        {
             return Err(fail("invalidConfirmation"));
         }
         if let Ok(receipt) = self.receipt(&c.plan_id) {
@@ -497,6 +637,7 @@ impl LiveCleanup {
             freed_bytes: None,
             error: Some("Execution started; never automatically retry.".into()),
             concurrent_changes: vec![],
+            warnings: vec![],
             source_id: self.source_id(),
             expected_ids: plan.view.native_ids.clone(),
             native_notifications_verified: false,
@@ -505,6 +646,40 @@ impl LiveCleanup {
             state_verified: false,
         };
         self.write_receipt(&receipt)?;
+        let titles: Vec<String> = c
+            .selected_ids
+            .iter()
+            .map(|id| {
+                let title = before
+                    .db
+                    .rows
+                    .get(id)
+                    .and_then(|r| r.get("title"))
+                    .and_then(Value::as_str)
+                    .filter(|title| !title.trim().is_empty())
+                    .unwrap_or(id);
+                title
+                    .chars()
+                    .filter(|c| !c.is_control())
+                    .take(512)
+                    .collect()
+            })
+            .collect();
+        if self
+            .record(
+                receipt.plan_id.clone(),
+                "cleanup",
+                "unknown",
+                receipt.selected_ids.clone(),
+                titles.clone(),
+                plan.view.native_ids.len(),
+                0,
+                None,
+            )
+            .is_err()
+        {
+            receipt.warnings.push(events::HISTORY_WARNING.into());
+        }
         // This is the only real-store process start, after exact user confirmation and durable intent.
         let temp = tempfile::Builder::new()
             .prefix("agentbroom-native-operation-")
@@ -519,6 +694,22 @@ impl LiveCleanup {
             Err(error) => {
                 receipt.status = "verificationFailed".into();
                 receipt.error = Some(error.code);
+                if self
+                    .record(
+                        receipt.plan_id.clone(),
+                        "cleanup",
+                        &receipt.status,
+                        receipt.selected_ids.clone(),
+                        titles.clone(),
+                        0,
+                        0,
+                        receipt.error.clone(),
+                    )
+                    .is_err()
+                    && receipt.warnings.is_empty()
+                {
+                    receipt.warnings.push(events::HISTORY_WARNING.into());
+                }
                 self.write_receipt(&receipt)?;
                 return Ok(receipt);
             }
@@ -530,15 +721,88 @@ impl LiveCleanup {
             errors.push("staleAfterNativeInitialization");
         }
         if errors.is_empty() {
-            match server.request("thread/delete", json!({"threadId":c.selected_ids[0]})) {
-                Ok(v) if v == json!({}) => match server.deleted(plan.view.native_ids.len()) {
-                    Ok(mut ids) => {
-                        ids.sort();
-                        receipt.native_deleted_ids = ids;
+            let mut expected = BTreeSet::new();
+            for root in &plan.view.root_ids {
+                // Re-read the remaining authoritative subtree before each RPC. Earlier deletes
+                // may remove rows, but must not broaden another root or change its manual locks.
+                if plan.created.elapsed() > Duration::from_secs(300) {
+                    errors.push("batchTimeBudget");
+                    break;
+                }
+                let step = database(&self.root).and_then(|db| {
+                    let ids = db.subtree(root)?;
+                    Ok((db, ids))
+                });
+                let Ok((current_db, current_ids)) = step else {
+                    errors.push("batchScopeChanged");
+                    break;
+                };
+                let original: BTreeSet<_> = before.db.subtree(root)?.into_iter().collect();
+                let locks_now = locks::read(&self.receipts, &self.source_id());
+                let Ok(mut locks_now) = locks_now else {
+                    errors.push("lockStateUnavailable");
+                    break;
+                };
+                locks_now.extend(plan.kept.iter().map(|id| id.to_ascii_lowercase()));
+                if current_ids.iter().cloned().collect::<BTreeSet<_>>() != original
+                    || !catalog::lock_conflicts(
+                        &current_db,
+                        &current_ids,
+                        &locks_now,
+                        &plan.header_parents,
+                    )
+                    .is_empty()
+                    || identity(&self.root).ok() != Some(self.root_identity)
+                {
+                    errors.push("batchScopeChanged");
+                    break;
+                }
+                let rows_unchanged = current_ids
+                    .iter()
+                    .all(|id| current_db.rows.get(id) == plan.selected_rows.get(id));
+                let unchanged = plan
+                    .file_owners
+                    .iter()
+                    .filter(|(_, owner)| original.contains(*owner))
+                    .all(|(path, _)| {
+                        plan.selected_hashes.get(path).is_some_and(|expected| {
+                            hash_file(&self.root.join(path), 4 * 1024 * 1024 * 1024)
+                                .is_ok_and(|actual| &actual == expected)
+                        })
+                    });
+                if !unchanged || !rows_unchanged {
+                    errors.push("batchFilesChanged");
+                    break;
+                }
+                match server.request("thread/delete", json!({"threadId":root})) {
+                    Ok(v) if v == json!({}) => {
+                        expected.extend(original);
+                        match server.deleted(expected.len()) {
+                            Ok(mut ids) => {
+                                ids.sort();
+                                receipt.native_deleted_ids = ids;
+                                if receipt
+                                    .native_deleted_ids
+                                    .iter()
+                                    .cloned()
+                                    .collect::<BTreeSet<_>>()
+                                    != expected
+                                {
+                                    errors.push("nativeNotificationsUnverified");
+                                    break;
+                                }
+                            }
+                            Err(_) => {
+                                errors.push("nativeNotificationsUnavailable");
+                                break;
+                            }
+                        }
                     }
-                    Err(_) => errors.push("nativeNotificationsUnavailable"),
-                },
-                _ => errors.push("nativeRejectedOrUnknown"),
+                    _ => {
+                        errors.push("nativeRejectedOrUnknown");
+                        break;
+                    }
+                }
             }
         }
         receipt.native_notifications_verified = receipt.native_deleted_ids == plan.view.native_ids;
@@ -663,6 +927,22 @@ impl LiveCleanup {
                 readback_error.map_or(String::new(), |e| format!(":{e}"))
             )
         });
+        if self
+            .record(
+                receipt.plan_id.clone(),
+                "cleanup",
+                &receipt.status,
+                receipt.selected_ids.clone(),
+                titles,
+                receipt.removed.len(),
+                receipt.observed_removed_logical_bytes,
+                receipt.error.clone(),
+            )
+            .is_err()
+            && receipt.warnings.is_empty()
+        {
+            receipt.warnings.push(events::HISTORY_WARNING.into());
+        }
         self.write_receipt(&receipt)?;
         Ok(receipt)
     }

@@ -51,7 +51,7 @@ pub(crate) fn guard_root(path: &Path) -> Result<(), Error> {
     }
     Ok(())
 }
-fn safe_file(p: &Path) -> Result<fs::File, Error> {
+pub(crate) fn safe_file(p: &Path) -> Result<fs::File, Error> {
     for parent in p.parent().into_iter().flat_map(Path::ancestors) {
         if fs::symlink_metadata(parent)
             .map_err(|_| fail("sourceUnavailable"))?
@@ -306,6 +306,40 @@ pub(crate) struct Database {
     pub edges: Vec<(String, String, String)>,
 }
 impl Database {
+    pub fn selection(&self, selected: &[String]) -> Result<(Vec<String>, Vec<String>), Error> {
+        if selected.is_empty()
+            || selected.len() > 128
+            || selected.iter().any(|id| !crate::locks::uuid(id))
+            || selected
+                .iter()
+                .map(|id| id.to_ascii_lowercase())
+                .collect::<BTreeSet<_>>()
+                .len()
+                != selected.len()
+        {
+            return Err(fail("invalidSelection"));
+        }
+        let scopes: BTreeMap<String, BTreeSet<String>> = selected
+            .iter()
+            .map(|id| Ok((id.clone(), self.subtree(id)?.into_iter().collect())))
+            .collect::<Result<_, Error>>()?;
+        let roots: Vec<String> = selected
+            .iter()
+            .filter(|id| {
+                !scopes
+                    .iter()
+                    .any(|(other, scope)| other != *id && scope.contains(*id))
+            })
+            .cloned()
+            .collect();
+        let ids = scopes
+            .values()
+            .flat_map(|s| s.iter().cloned())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect();
+        Ok((roots, ids))
+    }
     pub fn subtree(&self, root: &str) -> Result<Vec<String>, Error> {
         if !self.rows.contains_key(root) {
             return Err(fail("nativeRootMissing"));

@@ -15,6 +15,13 @@
     "allow-cleanup-cancel",
     "allow-cleanup-history",
     "allow-conversation-locks",
-    "allow-set-conversation-lock"
+    "allow-set-conversation-lock",
+    "allow-set-conversation-locks",
+    "allow-operation-history",
+    "allow-diagnostic-inventory",
+    "allow-diagnostic-preview",
+    "allow-diagnostic-execute",
+    "allow-diagnostic-result",
+    "allow-diagnostic-cancel"
   ]
 }
