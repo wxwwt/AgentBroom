@@ -336,3 +336,54 @@ it("list delete opens a single confirmation and one explicit click executes, wit
     [],
   );
 });
+
+it("shows batch actions only for a selection and clears them without executing", async () => {
+  await start();
+  list();
+  expect(
+    screen.queryByRole("toolbar", { name: "Selected conversations" }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole("checkbox", { name: "Select Local synthetic 0" }),
+  );
+  expect(
+    screen.getByRole("toolbar", { name: "Selected conversations" }),
+  ).toHaveTextContent("1 selected");
+  fireEvent.click(screen.getByRole("button", { name: "Clear selection" }));
+  expect(
+    screen.queryByRole("toolbar", { name: "Selected conversations" }),
+  ).not.toBeInTheDocument();
+  expect(api.setLocks).not.toHaveBeenCalled();
+  expect(api.execute).not.toHaveBeenCalled();
+});
+it("preserves selection across pages and removes the toolbar when the final selection is cleared", async () => {
+  api.load.mockResolvedValue(testInventory(60));
+  await start();
+  list();
+  fireEvent.click(
+    screen.getByRole("checkbox", { name: "Select Local synthetic 0" }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+  expect(
+    screen.getByRole("toolbar", { name: "Selected conversations" }),
+  ).toHaveTextContent("1 selected");
+  fireEvent.click(screen.getByRole("button", { name: "Clear selection" }));
+  fireEvent.click(screen.getByRole("button", { name: "Previous page" }));
+  expect(
+    screen.getByRole("checkbox", { name: "Select Local synthetic 0" }),
+  ).not.toBeChecked();
+  expect(
+    screen.queryByRole("toolbar", { name: "Selected conversations" }),
+  ).not.toBeInTheDocument();
+});
+it("keeps the Chinese measurement disclosure available without another scan", async () => {
+  localStorage.setItem("agentbroom.language", "zh-CN");
+  render(<App />);
+  const summary = await screen.findByText("计量说明");
+  const details = summary.closest("details")!;
+  expect(details).not.toHaveAttribute("open");
+  fireEvent.click(summary);
+  expect(details).toHaveAttribute("open");
+  expect(details).toHaveTextContent("不代表清理后可回收的磁盘空间");
+  expect(api.load).toHaveBeenCalledOnce();
+});

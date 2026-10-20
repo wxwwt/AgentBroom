@@ -40,6 +40,9 @@ import {
 import NativeCleanupPanel from "./NativeCleanupPanel";
 import DiagnosticPanel from "./DiagnosticPanel";
 type Page = "overview" | "conversations" | "activity";
+// Stable semantic colors keep the chart and legend consistent across source order.
+const categoryColor = (category: string) =>
+  `var(--storage-${categories[category] ? category : "other"})`;
 const categories: Record<string, MessageKey> = {
   sessions: "Session files",
   archives: "Archived sessions",
@@ -290,7 +293,9 @@ function Workspace() {
   const currentDetail = detail ? byId.get(detail) : null;
   const event = eventDetail ? events.find((e) => e.id === eventDetail) : null;
   return (
-    <div className="workspace">
+    <div
+      className={`workspace ${page === "conversations" ? "list-workspace" : ""}`}
+    >
       <header className="app-header">
         <div className="brand">
           <Broom size={26} />
@@ -327,7 +332,9 @@ function Workspace() {
           </button>
         </div>
       </header>
-      <main className="content">
+      <main
+        className={`content ${page === "conversations" ? "conversation-content" : ""}`}
+      >
         {persistenceUnavailable && (
           <p role="status">{t("Language preference could not be saved.")}</p>
         )}
@@ -385,24 +392,29 @@ function Workspace() {
                   <div>
                     <div className="eyebrow">{t("Codex file usage")}</div>
                     <div className="storage-total">{bytes(totalBytes)}</div>
-                    {allocatedHome !== null && (
-                      <p className="muted">
-                        {t("Measured filesystem blocks")}:{" "}
-                        {bytes(
-                          allocatedHome +
-                            (diagnostics?.externalAllocatedBytes ?? 0),
-                        )}{" "}
-                        ·{" "}
-                        {t(
-                          "Blocks may be shared; this is not a freed-space estimate.",
+                    <details className="measurement-details">
+                      <summary>{t("Measurement details")}</summary>
+                      <div>
+                        {allocatedHome !== null && (
+                          <p className="muted">
+                            {t("Measured filesystem blocks")}:{" "}
+                            {bytes(
+                              allocatedHome +
+                                (diagnostics?.externalAllocatedBytes ?? 0),
+                            )}{" "}
+                            ·{" "}
+                            {t(
+                              "Blocks may be shared; this is not a freed-space estimate.",
+                            )}
+                          </p>
                         )}
-                      </p>
-                    )}
-                    <p className="muted">
-                      {t(
-                        "File lengths are measured; they are not a reclaimed-space estimate.",
-                      )}
-                    </p>
+                        <p className="muted">
+                          {t(
+                            "File lengths are measured; they are not a reclaimed-space estimate.",
+                          )}
+                        </p>
+                      </div>
+                    </details>
                     {(!diagnostics || !diagnostics.complete) && (
                       <p className="notice">
                         {t(
@@ -432,12 +444,12 @@ function Workspace() {
                 >
                   {inventory.totals
                     .filter((c) => c.logicalBytes)
-                    .map((c, i) => (
+                    .map((c) => (
                       <span
                         key={c.category}
                         style={{
                           width: `${(c.logicalBytes / Math.max(totalBytes, 1)) * 100}%`,
-                          background: `var(--chart-${i % 5})`,
+                          background: categoryColor(c.category),
                         }}
                         title={`${t(categories[c.category] ?? "Other local files")}: ${bytes(c.logicalBytes)}`}
                       />
@@ -446,7 +458,7 @@ function Workspace() {
                     <span
                       style={{
                         width: `${(diagnostics.externalBytes / totalBytes) * 100}%`,
-                        background: "var(--crash)",
+                        background: "var(--storage-crash)",
                       }}
                     />
                   )}
@@ -455,11 +467,11 @@ function Workspace() {
                   <section className="panel">
                     <h2>{t("Where the bytes live")}</h2>
                     <div className="breakdown">
-                      {inventory.totals.map((c, i) => (
+                      {inventory.totals.map((c) => (
                         <div className="breakdown-row" key={c.category}>
                           <span
                             className="category-dot"
-                            style={{ background: `var(--chart-${i % 5})` }}
+                            style={{ background: categoryColor(c.category) }}
                           />
                           <span>
                             {t(categories[c.category] ?? "Other local files")}
@@ -619,7 +631,11 @@ function Workspace() {
                     </select>
                   </label>
                 </div>
-                <div className="table-scroll">
+                <div
+                  className="table-scroll conversations-scroll"
+                  tabIndex={0}
+                  aria-label={t("Conversation list")}
+                >
                   <table className="conversation-table">
                     <thead>
                       <tr>
@@ -649,7 +665,7 @@ function Workspace() {
                             {t("Last activity")} ↕
                           </button>
                         </th>
-                        <th>
+                        <th className="numeric">
                           <button
                             onClick={() =>
                               setSort(
@@ -728,15 +744,20 @@ function Workspace() {
                               </span>
                             ) : (
                               <span className="status unlocked">
-                                <LockOpen size={15} />
-                                <span className="sr-only">{t("Unlocked")}</span>
+                                {t("Unlocked")}
                               </span>
                             )}
                           </td>
                           <td>
                             <div className="row-actions">
                               <button
-                                className="button compact secondary"
+                                className="icon-button row-lock"
+                                title={t(
+                                  lockSet.has(r.id.toLowerCase())
+                                    ? "Unlock {title}"
+                                    : "Lock {title}",
+                                  { title: r.title },
+                                )}
                                 disabled={
                                   mode !== "native" ||
                                   busy ||
@@ -757,10 +778,10 @@ function Workspace() {
                                   )
                                 }
                               >
-                                {t(
-                                  lockSet.has(r.id.toLowerCase())
-                                    ? "Unlock"
-                                    : "Lock",
+                                {lockSet.has(r.id.toLowerCase()) ? (
+                                  <LockKeyhole size={16} />
+                                ) : (
+                                  <LockOpen size={16} />
                                 )}
                               </button>
                               <button
@@ -821,72 +842,78 @@ function Workspace() {
                     </button>
                   </div>
                 </div>
-                <div className="selection-bar">
-                  <strong>
-                    {t("{count} selected", { count: selected.length })}
-                  </strong>
-                  <span className="muted">
-                    {bytes(ownSelectedBytes)} ·{" "}
-                    {t("Own file lengths; preview includes spawned scope.")}
-                  </span>
-                  <div className="selection-actions">
-                    <button
-                      className="button secondary"
-                      disabled={
-                        !selected.length ||
-                        busy ||
-                        lockFailure ||
-                        mode !== "native"
-                      }
-                      onClick={() => void changeLocks(selected, true)}
-                    >
-                      <LockKeyhole size={15} />
-                      {t("Lock selected")}
-                    </button>
-                    <button
-                      className="button secondary"
-                      disabled={
-                        !selected.length ||
-                        busy ||
-                        lockFailure ||
-                        mode !== "native"
-                      }
-                      onClick={() => void changeLocks(selected, false)}
-                    >
-                      {t("Unlock selected")}
-                    </button>
-                    <button
-                      className="button danger"
-                      disabled={
-                        !selected.length ||
-                        busy ||
-                        lockFailure ||
-                        mode !== "native" ||
-                        hasLockedSelection
-                      }
-                      onClick={() => clean(selected)}
-                    >
-                      <Trash2 size={15} />
-                      {t("Clean selected ({count})", {
-                        count: selected.length,
-                      })}
-                    </button>
-                    {!!selected.length && (
+                {selected.length > 0 && (
+                  <div
+                    className="selection-bar"
+                    role="toolbar"
+                    aria-label={t("Selected conversations")}
+                  >
+                    <strong>
+                      {t("{count} selected", { count: selected.length })}
+                    </strong>
+                    <span className="muted">
+                      {bytes(ownSelectedBytes)} ·{" "}
+                      {t("Own file lengths; preview includes spawned scope.")}
+                    </span>
+                    <div className="selection-actions">
                       <button
-                        className="icon-button"
-                        aria-label={t("Clear selection")}
-                        onClick={() => setSelected([])}
+                        className="button secondary"
+                        disabled={
+                          !selected.length ||
+                          busy ||
+                          lockFailure ||
+                          mode !== "native"
+                        }
+                        onClick={() => void changeLocks(selected, true)}
                       >
-                        <X size={16} />
+                        <LockKeyhole size={15} />
+                        {t("Lock selected")}
                       </button>
+                      <button
+                        className="button secondary"
+                        disabled={
+                          !selected.length ||
+                          busy ||
+                          lockFailure ||
+                          mode !== "native"
+                        }
+                        onClick={() => void changeLocks(selected, false)}
+                      >
+                        {t("Unlock selected")}
+                      </button>
+                      <button
+                        className="button danger"
+                        disabled={
+                          !selected.length ||
+                          busy ||
+                          lockFailure ||
+                          mode !== "native" ||
+                          hasLockedSelection
+                        }
+                        onClick={() => clean(selected)}
+                      >
+                        <Trash2 size={15} />
+                        {t("Clean selected ({count})", {
+                          count: selected.length,
+                        })}
+                      </button>
+                      {!!selected.length && (
+                        <button
+                          className="icon-button"
+                          aria-label={t("Clear selection")}
+                          onClick={() => setSelected([])}
+                        >
+                          <X size={16} />
+                        </button>
+                      )}
+                    </div>
+                    {hasLockedSelection && (
+                      <p className="tiny-note">
+                        {t("Unlock protected conversations before cleanup.")}
+                      </p>
                     )}
                   </div>
-                  {hasLockedSelection && (
-                    <p className="tiny-note">
-                      {t("Unlock protected conversations before cleanup.")}
-                    </p>
-                  )}
-                </div>
+                )}
               </>
             )}
             {page === "activity" && (

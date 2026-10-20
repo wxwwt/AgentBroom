@@ -1,4 +1,7 @@
 export const zhMessages = {
+  "Measurement details": "计量说明",
+  "Conversation list": "对话列表",
+  "Selected conversations": "所选对话操作",
   "Deletion did not start. Close this dialog and create a fresh preview.":
     "删除尚未开始。请关闭弹窗，重新选择并预览。",
   "Execution error: {details}": "执行错误：{details}",
