@@ -69,11 +69,7 @@ async function preview() {
 async function confirm() {
   await preview();
   expect(api.execute).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole("checkbox"));
-  fireEvent.change(screen.getByRole("textbox"), {
-    target: { value: "DELETE" },
-  });
-  fireEvent.click(screen.getByRole("button", { name: "Confirm execution" }));
+  fireEvent.click(screen.getByRole("button", { name: "Permanently delete" }));
 }
 it("previews exact report keys and requires explicit confirmation before removal", async () => {
   await confirm();
@@ -117,7 +113,7 @@ it("partial report failures are not displayed as verified", async () => {
     screen.queryByText("Crash report cleanup verified"),
   ).not.toBeInTheDocument();
 });
-it("known preflight rejection offers a fresh preview and requires a new confirmation", async () => {
+it("known preflight rejection offers a fresh preview and waits for another explicit click", async () => {
   api.execute.mockRejectedValue({ code: "planExpired" });
   await confirm();
   await screen.findByText(
@@ -127,13 +123,29 @@ it("known preflight rejection offers a fresh preview and requires a new confirma
     screen.queryByRole("button", { name: "Check execution result" }),
   ).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Create fresh preview" }));
-  await screen.findByRole("button", { name: "Confirm execution" });
-  await screen.findByRole("textbox");
-  expect(screen.getByRole("textbox")).toHaveValue("");
-  expect(screen.getByRole("checkbox")).not.toBeChecked();
+  await screen.findByRole("button", { name: "Permanently delete" });
+  expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   expect(
-    screen.getByRole("button", { name: "Confirm execution" }),
-  ).toBeDisabled();
+    screen.getByRole("button", { name: "Permanently delete" }),
+  ).toBeEnabled();
   expect(api.execute).toHaveBeenCalledOnce();
   expect(api.preview).toHaveBeenCalledTimes(2);
+});
+
+it("a failed fresh preview cannot leave the previous delete button active", async () => {
+  api.execute.mockRejectedValue({ code: "planExpired" });
+  await confirm();
+  await screen.findByText(
+    "Nothing was deleted. Create a fresh preview before confirming again.",
+  );
+  api.preview.mockRejectedValue(Error("unread"));
+  fireEvent.click(screen.getByRole("button", { name: "Create fresh preview" }));
+  await screen.findByText(
+    "Crash reports changed or could not be read. Rescan and try again.",
+  );
+  expect(
+    screen.queryByRole("button", { name: "Permanently delete" }),
+  ).not.toBeInTheDocument();
+  expect(api.execute).toHaveBeenCalledOnce();
 });

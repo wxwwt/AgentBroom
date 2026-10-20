@@ -1094,24 +1094,16 @@ function Workspace() {
         </div>
       )}
       {cleanupIds && inventory && (
-        <div className="modal-overlay">
-          <section
-            className="preview-shell compact-preview-shell"
-            role="dialog"
-            aria-modal="true"
-            aria-label={t("Cleanup preview")}
-          >
-            <NativeCleanupPanel
-              key={cleanupIds.join(",") + locked.join(",")}
-              inventory={inventory}
-              kept={locked}
-              initialSelected={cleanupIds}
-              testOnly={mode === "syntheticNativeTest"}
-              onClose={() => setCleanupIds(null)}
-              refresh={() => void rescan()}
-            />
-          </section>
-        </div>
+        <NativeCleanupPanel
+          key={cleanupIds.join(",") + locked.join(",")}
+          inventory={inventory}
+          kept={locked}
+          initialSelected={cleanupIds}
+          testOnly={mode === "syntheticNativeTest"}
+          directConfirm
+          onClose={() => setCleanupIds(null)}
+          refresh={() => void rescan()}
+        />
       )}
       {reportsOpen && diagnostics && (
         <div className="modal-overlay">

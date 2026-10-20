@@ -7,6 +7,7 @@ import {
   within,
   waitFor,
 } from "@testing-library/react";
+import { previewCleanup } from "./cleanup";
 import { testInventory } from "../test-fixtures/inventory";
 const api = vi.hoisted(() => ({
   load: vi.fn(),
@@ -17,6 +18,7 @@ const api = vi.hoisted(() => ({
   operations: vi.fn(),
   preview: vi.fn(),
   cancel: vi.fn(),
+  execute: vi.fn(),
 }));
 vi.mock("./bridge", () => ({
   loadInventory: api.load,
@@ -30,6 +32,7 @@ vi.mock("./nativeCleanup", () => ({
   readOperations: api.operations,
   previewNative: api.preview,
   cancelNative: api.cancel,
+  executeNative: api.execute,
   readNativeHistory: vi.fn().mockResolvedValue([]),
 }));
 import App from "./App";
@@ -216,7 +219,9 @@ it("opens a backend impact preview directly from a row without invoking deletion
   await waitFor(() =>
     expect(api.preview).toHaveBeenCalledWith(["synthetic-0"], []),
   );
-  expect(screen.getByRole("dialog", { name: "Cleanup preview" })).toBeVisible();
+  expect(
+    screen.getByRole("dialog", { name: "Delete selected conversations?" }),
+  ).toBeVisible();
 });
 it("does not silently truncate page selection at the batch limit", async () => {
   const inv = testInventory();
@@ -283,5 +288,51 @@ it("shows actual scan time and distinguishes preview bytes from removed bytes", 
   expect(screen.getByRole("dialog")).toHaveTextContent("Measured file lengths");
   expect(screen.getByRole("dialog")).not.toHaveTextContent(
     "Verified removed file lengths",
+  );
+});
+
+it("list delete opens a single confirmation and one explicit click executes, without text or extra checkbox", async () => {
+  const inv = testInventory(3);
+  api.load.mockResolvedValue(inv);
+  const analysis = previewCleanup(inv, ["synthetic-0"], []);
+  api.preview.mockResolvedValue({
+    planId: "list-confirmation",
+    testOnly: false,
+    analysis,
+    nativeIds: analysis.includedIds,
+    retainedIds: ["synthetic-1"],
+    blockedReasons: [],
+    executable: true,
+    expiresInSeconds: 120,
+  });
+  api.execute.mockResolvedValue({
+    status: "verified",
+    removed: [],
+    remaining: [],
+    observedRemovedLogicalBytes: 0,
+    freedBytes: null,
+  });
+  await start();
+  list();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Clean Local synthetic 0" }),
+  );
+  const button = await screen.findByRole("button", {
+    name: "Permanently delete",
+  });
+  const dialog = screen.getByRole("dialog");
+  expect(screen.getAllByRole("dialog")).toHaveLength(1);
+  expect(within(dialog).queryByRole("checkbox")).not.toBeInTheDocument();
+  expect(within(dialog).queryByRole("textbox")).not.toBeInTheDocument();
+  expect(
+    within(dialog).queryByRole("button", { name: "Continue to delete…" }),
+  ).not.toBeInTheDocument();
+  expect(api.execute).not.toHaveBeenCalled();
+  fireEvent.click(button);
+  await screen.findByText("Native cleanup verified");
+  expect(api.execute).toHaveBeenCalledExactlyOnceWith(
+    "list-confirmation",
+    { phrase: "DELETE", acknowledged: true, selectedIds: ["synthetic-0"] },
+    [],
   );
 });

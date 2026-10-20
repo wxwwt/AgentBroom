@@ -5,6 +5,7 @@ import {
   render,
   screen,
   within,
+  waitFor,
 } from "@testing-library/react";
 import { LocaleProvider } from "./i18n";
 import { previewCleanup } from "./cleanup";
@@ -73,10 +74,6 @@ async function review() {
   fireEvent.click(screen.getByRole("button", { name: "Continue to delete…" }));
 }
 function execute() {
-  fireEvent.click(screen.getByRole("checkbox"));
-  fireEvent.change(screen.getByRole("textbox"), {
-    target: { value: "DELETE" },
-  });
   fireEvent.click(screen.getByRole("button", { name: "Permanently delete" }));
 }
 describe("native desktop test flow", () => {
@@ -88,11 +85,13 @@ describe("native desktop test flow", () => {
     await review();
     expect(api.preview).toHaveBeenCalledWith(["a"], []);
     expect(
-      screen.getByText("2 other conversations will be kept."),
+      within(screen.getByRole("dialog")).getByText(
+        "2 other conversations will be kept.",
+      ),
     ).toBeVisible();
     expect(
       screen.getByRole("button", { name: "Permanently delete" }),
-    ).toBeDisabled();
+    ).toBeEnabled();
     execute();
     await screen.findByText("Native synthetic cleanup verified");
     expect(api.execute).toHaveBeenCalledExactlyOnceWith(
@@ -154,10 +153,6 @@ describe("native desktop test flow", () => {
     fireEvent.click(screen.getByRole("button", { name: "预览影响" }));
     await screen.findByRole("heading", { name: "待删除的对话" });
     fireEvent.click(screen.getByRole("button", { name: "确认删除…" }));
-    fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.change(screen.getByRole("textbox"), {
-      target: { value: "DELETE" },
-    });
     fireEvent.click(screen.getByRole("button", { name: "永久删除" }));
     await screen.findByText("原生合成清理验证通过");
   });
@@ -231,7 +226,7 @@ describe("native desktop test flow", () => {
     await review();
     expect(
       screen.getByText(
-        "This operation permanently deletes real conversations and their native metadata. A receipt is not a backup.",
+        "These real conversations and their Codex metadata will be permanently deleted. This cannot be undone.",
       ),
     ).toBeVisible();
     execute();
@@ -418,7 +413,7 @@ it("explains storage incompatibility in English without calling it a version rej
   ).toBeVisible();
   expect(api.execute).not.toHaveBeenCalled();
 });
-it("keeps thousands of retained conversations out of the preview and still requires DELETE", async () => {
+it("keeps thousands of retained conversations out of the preview and waits for the confirmation click", async () => {
   const p = plan();
   p.retainedIds = Array.from({ length: 3819 }, (_, i) => `retained-${i}`);
   api.preview.mockResolvedValue(p);
@@ -455,7 +450,7 @@ it("keeps thousands of retained conversations out of the preview and still requi
   fireEvent.click(screen.getByRole("button", { name: "Continue to delete…" }));
   expect(
     screen.getByRole("button", { name: "Permanently delete" }),
-  ).toBeDisabled();
+  ).toBeEnabled();
   expect(api.execute).not.toHaveBeenCalled();
 });
 
@@ -470,5 +465,129 @@ it("uses the native affected IDs again at final confirmation even when observati
     within(dialog).getByRole("list", { name: "Conversations to delete" }),
   ).toHaveTextContent("backend-extra");
   expect(dialog).toHaveTextContent("4 observed records");
+  expect(api.execute).not.toHaveBeenCalled();
+});
+it("direct list action opens only one confirmation without typing, clicking once executes once", async () => {
+  const close = vi.fn();
+  render(
+    <LocaleProvider>
+      <NativeCleanupPanel
+        inventory={inventory}
+        kept={[]}
+        refresh={() => {}}
+        initialSelected={["a"]}
+        testOnly
+        directConfirm
+        onClose={close}
+      />
+    </LocaleProvider>,
+  );
+  await screen.findByRole("button", { name: "Permanently delete" });
+  expect(screen.getAllByRole("dialog")).toHaveLength(1);
+  expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: "Continue to delete…" }),
+  ).not.toBeInTheDocument();
+  expect(api.execute).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "Permanently delete" }));
+  fireEvent.click(screen.getByRole("button", { name: "Permanently delete" }));
+  await screen.findByText("Native synthetic cleanup verified");
+  expect(api.execute).toHaveBeenCalledExactlyOnceWith(
+    "backend-owned",
+    { phrase: "DELETE", acknowledged: true, selectedIds: ["a"] },
+    [],
+  );
+});
+it("cancelling a loading confirmation immediately dismisses it and cancels the late plan even before unmount", async () => {
+  let resolve!: (p: ReturnType<typeof plan>) => void;
+  api.preview.mockImplementation(
+    () =>
+      new Promise((r) => {
+        resolve = r;
+      }),
+  );
+  const close = vi.fn();
+  const view = render(
+    <LocaleProvider>
+      <NativeCleanupPanel
+        inventory={inventory}
+        kept={[]}
+        refresh={() => {}}
+        initialSelected={["a"]}
+        testOnly
+        directConfirm
+        onClose={close}
+      />
+    </LocaleProvider>,
+  );
+  expect(
+    screen.queryByRole("button", { name: "Permanently delete" }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Cancel deletion" }));
+  expect(close).toHaveBeenCalledOnce();
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  resolve(plan());
+  await waitFor(() => expect(api.cancel).toHaveBeenCalledWith("backend-owned"));
+  expect(api.execute).not.toHaveBeenCalled();
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  view.unmount();
+});
+it("direct blocked plan shows reasons and cannot expose deletion", async () => {
+  api.preview.mockResolvedValue({
+    ...plan(),
+    executable: false,
+    blockedReasons: ["lockedConversation"],
+  });
+  render(
+    <LocaleProvider>
+      <NativeCleanupPanel
+        inventory={inventory}
+        kept={[]}
+        refresh={() => {}}
+        initialSelected={["a"]}
+        testOnly
+        directConfirm
+        onClose={() => {}}
+      />
+    </LocaleProvider>,
+  );
+  expect(await screen.findByRole("alert")).toBeVisible();
+  expect(
+    screen.getByText(
+      "Deletion is unavailable for this selection. Review the reasons below.",
+    ),
+  ).toBeVisible();
+  expect(
+    screen.queryByText(
+      "Real Codex deletion is locked in this release; native effects are not fully verified.",
+    ),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: "Permanently delete" }),
+  ).not.toBeInTheDocument();
+  expect(api.execute).not.toHaveBeenCalled();
+});
+
+it("cancel after loading dismisses the confirmation and never calls execute", async () => {
+  const close = vi.fn();
+  render(
+    <LocaleProvider>
+      <NativeCleanupPanel
+        inventory={inventory}
+        kept={[]}
+        refresh={() => {}}
+        initialSelected={["a"]}
+        testOnly
+        directConfirm
+        onClose={close}
+      />
+    </LocaleProvider>,
+  );
+  await screen.findByRole("button", { name: "Permanently delete" });
+  fireEvent.click(screen.getByRole("button", { name: "Cancel deletion" }));
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(close).toHaveBeenCalledOnce();
+  expect(api.cancel).toHaveBeenCalledWith("backend-owned");
   expect(api.execute).not.toHaveBeenCalled();
 });

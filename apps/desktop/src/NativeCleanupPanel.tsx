@@ -1,3 +1,4 @@
+import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale } from "./i18n";
 import { bytes, type Inventory } from "./types";
@@ -25,10 +26,12 @@ export default function NativeCleanupPanel({
   refresh,
   testOnly = true,
   initialSelected,
+  directConfirm = false,
   onClose,
 }: {
   testOnly?: boolean;
   initialSelected?: string[];
+  directConfirm?: boolean;
   onClose?: () => void;
   inventory: Inventory;
   kept: string[];
@@ -41,6 +44,7 @@ export default function NativeCleanupPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [stopped, setStopped] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const generation = useRef(0);
   const [history, setHistory] = useState<NativeReceipt[]>([]);
   const [historyError, setHistoryError] = useState("");
@@ -75,6 +79,7 @@ export default function NativeCleanupPanel({
     conversationLocked(id, recordsById, lockedSet);
   useEffect(
     () => () => {
+      generation.current++;
       if (latestPlan.current)
         void cancelNative(latestPlan.current).catch(() => {});
     },
@@ -92,6 +97,8 @@ export default function NativeCleanupPanel({
           throw Error("invalidPlan");
         latestPlan.current = next.planId;
         setPlan(next);
+      } else {
+        void cancelNative(next.planId).catch(() => {});
       }
     } catch (e) {
       const runtimeStopped =
@@ -125,6 +132,79 @@ export default function NativeCleanupPanel({
     if (initialSelected?.length) void preview();
   }, []);
   const title = (id: string) => recordsById.get(id)?.title ?? id;
+  function dismiss() {
+    // Cancel intent immediately, before waiting for the parent to unmount.
+    generation.current++;
+    if (latestPlan.current)
+      void cancelNative(latestPlan.current).catch(() => {});
+    latestPlan.current = null;
+    setConfirm(false);
+    setPlan(null);
+    setSelected([]);
+    if (directConfirm) setDismissed(true);
+    onClose?.();
+  }
+  const confirmation = plan && (
+    <CleanupConfirmation
+      plan={plan.analysis}
+      notices={plan.warnings}
+      blockingReasons={plan.blockedReasons}
+      retainedCount={plan.retainedIds.length}
+      affectedIds={plan.nativeIds}
+      records={recordsById}
+      close={() => {
+        dismiss();
+        refresh();
+      }}
+      nativeDriver={{
+        planId: plan.planId,
+        testOnly: plan.testOnly,
+        executable: plan.executable,
+        execute: (confirmation) =>
+          executeNative(plan.planId, confirmation, kept),
+        readReceipt: () => readNativeReceipt(plan.planId),
+      }}
+    />
+  );
+  if (directConfirm) {
+    if (dismissed) return null;
+    if (plan) return confirmation;
+    return (
+      <Dialog.Root
+        open
+        onOpenChange={(open) => {
+          if (!open) dismiss();
+        }}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="cleanup-overlay" />
+          <Dialog.Content className="cleanup-dialog">
+            <Dialog.Title>{t("Delete selected conversations?")}</Dialog.Title>
+            <Dialog.Description>
+              {t(
+                "Checking the selected conversations and related Sub Agents before confirmation.",
+              )}
+            </Dialog.Description>
+            {busy && <p role="status">{t("Preparing deletion summary…")}</p>}
+            {error && <p role="alert">{error}</p>}
+            <div className="cleanup-actions cleanup-sticky-actions">
+              <button className="button secondary" onClick={dismiss}>
+                {t("Cancel deletion")}
+              </button>
+              {!busy && error && (
+                <button
+                  className="button secondary"
+                  onClick={() => void preview()}
+                >
+                  {t("Retry inspection")}
+                </button>
+              )}
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+    );
+  }
   return (
     <section className="cleanup-page">
       {onClose && (
@@ -332,9 +412,7 @@ export default function NativeCleanupPanel({
             ))}
           </details>
           <div className="cleanup-sticky-actions">
-            <span className="muted">
-              {t("Next step: review and type DELETE.")}
-            </span>
+            <span className="muted">{t("Next step: confirm deletion.")}</span>
             <div>
               <button
                 className="button secondary"
@@ -391,30 +469,7 @@ export default function NativeCleanupPanel({
           ))}
         </details>
       )}
-      {confirm && plan && (
-        <CleanupConfirmation
-          plan={plan.analysis}
-          affectedIds={plan.nativeIds}
-          records={recordsById}
-          close={() => {
-            void cancelNative(plan.planId).catch(() => {});
-            latestPlan.current = null;
-            setConfirm(false);
-            setPlan(null);
-            setSelected([]);
-            refresh();
-            onClose?.();
-          }}
-          nativeDriver={{
-            planId: plan.planId,
-            testOnly: plan.testOnly,
-            executable: plan.executable,
-            execute: (confirmation) =>
-              executeNative(plan.planId, confirmation, kept),
-            readReceipt: () => readNativeReceipt(plan.planId),
-          }}
-        />
-      )}
+      {confirm && confirmation}
     </section>
   );
 }

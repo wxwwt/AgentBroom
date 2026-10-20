@@ -30,6 +30,7 @@ export const previewNative = (selectedIds: string[], kept: string[]) =>
   invoke<NativePlan>("cleanup_preview", { selectedIds, kept });
 export const cancelNative = (planId: string) =>
   invoke<void>("cleanup_cancel", { planId });
+/** Legacy wire markers are supplied only after the explicit confirmation button click. */
 export const executeNative = (
   planId: string,
   confirmation: {

@@ -24,12 +24,18 @@ export function CleanupConfirmation({
   plan,
   close,
   records,
+  notices = [],
+  blockingReasons = [],
+  retainedCount,
   affectedIds = plan.includedIds,
   testDriver,
   nativeDriver,
 }: {
   plan: CleanupAnalysis;
   close: () => void;
+  notices?: string[];
+  blockingReasons?: string[];
+  retainedCount?: number;
   affectedIds?: string[];
   records?: ReadonlyMap<string, import("./types").Thread>;
   nativeDriver?: {
@@ -50,9 +56,7 @@ export function CleanupConfirmation({
   }) => Promise<CleanupResult>;
 }) {
   const { t, systemText } = useLocale();
-  const [phrase, setPhrase] = useState(""),
-    [ack, setAck] = useState(false),
-    [running, setRunning] = useState(false),
+  const [running, setRunning] = useState(false),
     [result, setResult] = useState<CleanupResult | null>(null),
     [error, setError] = useState(""),
     [attempted, setAttempted] = useState(false);
@@ -66,15 +70,7 @@ export function CleanupConfirmation({
       !!nativeDriver.planId &&
       plan.sourceKind === "codex");
   async function execute() {
-    if (
-      !allowed ||
-      submitted.current ||
-      running ||
-      attempted ||
-      phrase !== "DELETE" ||
-      !ack
-    )
-      return;
+    if (!allowed || submitted.current || running || attempted) return;
     submitted.current = true;
     setAttempted(true);
     setRunning(true);
@@ -83,8 +79,9 @@ export function CleanupConfirmation({
       setError("");
       setResult(
         await (nativeDriver?.execute ?? testDriver!)({
-          phrase,
-          acknowledged: ack,
+          // Compatibility markers are emitted only by this explicit button click.
+          phrase: "DELETE",
+          acknowledged: true,
           selectedIds: plan.selectedIds,
         }),
       );
@@ -148,16 +145,24 @@ export function CleanupConfirmation({
           }}
         >
           <Dialog.Title>
-            {t(allowed ? "Confirm cleanup" : "Cleanup execution unavailable")}
+            {t(
+              allowed
+                ? "Delete selected conversations?"
+                : "Cleanup execution unavailable",
+            )}
           </Dialog.Title>
           <Dialog.Description>
             {t(
               allowed
-                ? "Permanent deletion cannot be undone. A receipt is not a backup."
-                : "Real Codex deletion is locked in this release; native effects are not fully verified.",
+                ? nativeDriver && !nativeDriver.testOnly
+                  ? "These real conversations and their Codex metadata will be permanently deleted. This cannot be undone."
+                  : "Permanent deletion cannot be undone. A receipt is not a backup."
+                : nativeDriver
+                  ? "Deletion is unavailable for this selection. Review the reasons below."
+                  : "This view is read-only. No deletion will be executed.",
             )}
           </Dialog.Description>
-          {nativeDriver && (
+          {nativeDriver?.testOnly && (
             <p className="scope-banner">
               {t(
                 nativeDriver.testOnly
@@ -204,31 +209,32 @@ export function CleanupConfirmation({
               <p key={f.key}>{f.key}</p>
             ))}
           </details>
-          {allowed && (
-            <>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={ack}
-                  disabled={running || !!result}
-                  onChange={(e) => setAck(e.target.checked)}
-                />
-                {t(
-                  "I reviewed the scope and understand deletion is permanent.",
-                )}
-              </label>
-              <label>
-                {t("Type DELETE to confirm")}
-                <input
-                  type="text"
-                  className="confirm-input"
-                  value={phrase}
-                  disabled={running || !!result}
-                  onChange={(e) => setPhrase(e.target.value)}
-                  aria-label={t("Type DELETE to confirm")}
-                />
-              </label>
-            </>
+          {retainedCount !== undefined && (
+            <p className="muted">
+              {t("{count} other conversations will be kept.", {
+                count: retainedCount,
+              })}
+            </p>
+          )}
+          <p>
+            <strong>{systemText(bytes(plan.observedLogicalBytes))}</strong> ·{" "}
+            {t("File sizes do not equal disk space reclaimed.")}
+          </p>
+          {notices.map((notice, index) => (
+            <p key={index}>{systemText(notice)}</p>
+          ))}
+          {blockingReasons.length > 0 && (
+            <div role="alert">
+              {blockingReasons.map((reason) => (
+                <p key={reason}>
+                  {systemText(
+                    reason in cleanupReasons
+                      ? cleanupReasons[reason as keyof typeof cleanupReasons]
+                      : reason,
+                  )}
+                </p>
+              ))}
+            </div>
           )}
           {running && <p role="status">{t("Executing and verifying…")}</p>}
           {error && <p role="alert">{error}</p>}
@@ -332,19 +338,16 @@ export function CleanupConfirmation({
               disabled={running}
               onClick={close}
             >
-              {t("Close dialog")}
+              {t(
+                allowed && !attempted && !result
+                  ? "Cancel deletion"
+                  : "Close dialog",
+              )}
             </button>
             {allowed && (
               <button
                 className="button danger"
-                disabled={
-                  !allowed ||
-                  running ||
-                  attempted ||
-                  !!result ||
-                  !ack ||
-                  phrase !== "DELETE"
-                }
+                disabled={!allowed || running || attempted || !!result}
                 onClick={() => void execute()}
               >
                 {t("Permanently delete")}

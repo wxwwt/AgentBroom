@@ -22,8 +22,6 @@ export default function DiagnosticPanel({
   const { t, systemText } = useLocale();
   const [selected, setSelected] = useState<string[]>([]),
     [plan, setPlan] = useState<DiagnosticPlan | null>(null),
-    [phrase, setPhrase] = useState(""),
-    [ack, setAck] = useState(false),
     [busy, setBusy] = useState(false),
     [attempted, setAttempted] = useState(false),
     [result, setResult] = useState<DiagnosticResult | null>(null),
@@ -40,9 +38,8 @@ export default function DiagnosticPanel({
   );
   async function preview() {
     setBusy(true);
+    setPlan(null);
     setError("");
-    setPhrase("");
-    setAck(false);
     setAttempted(false);
     setRejected(false);
     submitted.current = false;
@@ -65,7 +62,8 @@ export default function DiagnosticPanel({
     setBusy(true);
     setAttempted(true);
     try {
-      setResult(await executeDiagnostics(plan.planId, phrase, ack));
+      // Legacy wire markers represent this explicit confirmation click.
+      setResult(await executeDiagnostics(plan.planId, "DELETE", true));
     } catch (e) {
       const code =
         e && typeof e === "object" && "code" in e ? String(e.code) : "";
@@ -194,31 +192,12 @@ export default function DiagnosticPanel({
               "Permanent deletion cannot be undone. A receipt is not a backup.",
             )}
           </p>
-          <label className="ack">
-            <input
-              type="checkbox"
-              disabled={busy || attempted}
-              checked={ack}
-              onChange={(e) => setAck(e.target.checked)}
-            />
-            {t("I have reviewed the selected files.")}
-          </label>
-          <label>
-            {t("Type DELETE to confirm")}
-            <input
-              className="confirm-input"
-              aria-label={t("Type DELETE to confirm")}
-              disabled={busy || attempted}
-              value={phrase}
-              onChange={(e) => setPhrase(e.target.value)}
-            />
-          </label>
           <button
             className="button danger"
-            disabled={busy || attempted || !ack || phrase !== "DELETE"}
+            disabled={busy || attempted}
             onClick={() => void execute()}
           >
-            {t("Confirm execution")}
+            {t("Permanently delete")}
           </button>
         </>
       )}

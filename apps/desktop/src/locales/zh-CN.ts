@@ -1,4 +1,18 @@
 export const zhMessages = {
+  "These real conversations and their Codex metadata will be permanently deleted. This cannot be undone.":
+    "将永久删除这些真实对话及其 Codex 关联数据，无法撤销。",
+  "Deletion is unavailable for this selection. Review the reasons below.":
+    "当前选择无法删除，请查看下方原因。",
+  "This view is read-only. No deletion will be executed.":
+    "当前为只读查看，不会执行删除。",
+
+  "Next step: confirm deletion.": "下一步确认删除。",
+  "Delete selected conversations?": "确认删除所选对话？",
+  "Checking the selected conversations and related Sub Agents before confirmation.":
+    "正在核对所选对话及关联子 Agent，确认后执行删除。",
+  "Preparing deletion summary…": "正在准备删除清单…",
+  "Cancel deletion": "取消",
+
   "Conversations to delete": "待删除的对话",
   "{count} conversations · {files} files": "{count} 条对话 · {files} 个文件",
   "Selected conversation": "已选对话",

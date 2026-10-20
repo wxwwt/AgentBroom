@@ -146,11 +146,7 @@ describe("cleanup preview and confirmation, synthetic inventory only", () => {
       );
       expect(
         screen.getByRole("button", { name: "Permanently delete" }),
-      ).toBeDisabled();
-      fireEvent.click(screen.getByRole("checkbox"));
-      fireEvent.change(screen.getByRole("textbox"), {
-        target: { value: "DELETE" },
-      });
+      ).toBeEnabled();
       fireEvent.click(
         screen.getByRole("button", { name: "Permanently delete" }),
       );
@@ -189,7 +185,7 @@ describe("cleanup preview and confirmation, synthetic inventory only", () => {
         <CleanupConfirmation plan={p} close={close} testDriver={driver} />
       </LocaleProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Close dialog" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel deletion" }));
     expect(driver).not.toHaveBeenCalled();
     expect(close).toHaveBeenCalledOnce();
   });
@@ -205,10 +201,6 @@ describe("cleanup preview and confirmation, synthetic inventory only", () => {
         <CleanupConfirmation plan={p} close={() => {}} testDriver={driver} />
       </LocaleProvider>,
     );
-    fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.change(screen.getByRole("textbox"), {
-      target: { value: "DELETE" },
-    });
     fireEvent.click(screen.getByRole("button", { name: "Permanently delete" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Execution outcome is unknown. Do not automatically retry.",
