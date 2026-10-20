@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { LocaleProvider } from "./i18n";
 import { previewCleanup } from "./cleanup";
 import vectors from "../../../fixtures/cleanup-cases.json";
@@ -63,15 +69,15 @@ function show(kept: string[] = []) {
 async function review() {
   fireEvent.click(screen.getByLabelText("Select Synthetic a"));
   fireEvent.click(screen.getByRole("button", { name: "Preview impact" }));
-  await screen.findByText("Impact preview");
-  fireEvent.click(screen.getByRole("button", { name: "Review confirmation" }));
+  await screen.findByRole("heading", { name: "Conversations to delete" });
+  fireEvent.click(screen.getByRole("button", { name: "Continue to delete…" }));
 }
 function execute() {
   fireEvent.click(screen.getByRole("checkbox"));
   fireEvent.change(screen.getByRole("textbox"), {
     target: { value: "DELETE" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Confirm execution" }));
+  fireEvent.click(screen.getByRole("button", { name: "Permanently delete" }));
 }
 describe("native desktop test flow", () => {
   it("gets backend preview and confirms opaque plan once, then refreshes inventory", async () => {
@@ -81,9 +87,11 @@ describe("native desktop test flow", () => {
     ).toBeDisabled();
     await review();
     expect(api.preview).toHaveBeenCalledWith(["a"], []);
-    expect(screen.getByText(/^Retained conversations/)).toBeVisible();
     expect(
-      screen.getByRole("button", { name: "Confirm execution" }),
+      screen.getByText("2 other conversations will be kept."),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Permanently delete" }),
     ).toBeDisabled();
     execute();
     await screen.findByText("Native synthetic cleanup verified");
@@ -97,7 +105,7 @@ describe("native desktop test flow", () => {
       [],
     );
     expect(
-      screen.getByRole("button", { name: "Confirm execution" }),
+      screen.getByRole("button", { name: "Permanently delete" }),
     ).toBeDisabled();
     expect(
       screen.getByText(
@@ -116,9 +124,9 @@ describe("native desktop test flow", () => {
     show(["c"]);
     fireEvent.click(screen.getByLabelText("Select Synthetic a"));
     fireEvent.click(screen.getByRole("button", { name: "Preview impact" }));
-    await screen.findByText("Impact preview");
+    await screen.findByRole("heading", { name: "Conversations to delete" });
     expect(
-      screen.getByRole("button", { name: "Review confirmation" }),
+      screen.getByRole("button", { name: "Continue to delete…" }),
     ).toBeDisabled();
     expect(api.execute).not.toHaveBeenCalled();
     expect(api.preview).toHaveBeenCalledWith(["a"], ["c"]);
@@ -144,13 +152,13 @@ describe("native desktop test flow", () => {
     expect(screen.getByText("原生清理合成测试")).toBeVisible();
     fireEvent.click(screen.getByRole("radio", { name: "选择 Synthetic a" }));
     fireEvent.click(screen.getByRole("button", { name: "预览影响" }));
-    await screen.findByText("影响预览");
-    fireEvent.click(screen.getByRole("button", { name: "查看确认步骤" }));
+    await screen.findByRole("heading", { name: "待删除的对话" });
+    fireEvent.click(screen.getByRole("button", { name: "确认删除…" }));
     fireEvent.click(screen.getByRole("checkbox"));
     fireEvent.change(screen.getByRole("textbox"), {
       target: { value: "DELETE" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "确认执行" }));
+    fireEvent.click(screen.getByRole("button", { name: "永久删除" }));
     await screen.findByText("原生合成清理验证通过");
   });
   for (const status of ["partialFailure", "verificationFailed"] as const)
@@ -203,7 +211,7 @@ describe("native desktop test flow", () => {
     show();
     await review();
     execute();
-    fireEvent.click(screen.getByRole("button", { name: "Confirm execution" }));
+    fireEvent.click(screen.getByRole("button", { name: "Permanently delete" }));
     expect(api.execute).toHaveBeenCalledOnce();
     done(receipt);
     await screen.findByText("Native synthetic cleanup verified");
@@ -306,7 +314,7 @@ it("manual lock disables its candidate and scope lock blocks confirmation", asyn
   fireEvent.click(screen.getByRole("button", { name: "Preview impact" }));
   await screen.findByText("Locked conversations in this scope");
   expect(
-    screen.getByRole("button", { name: "Review confirmation" }),
+    screen.getByRole("button", { name: "Continue to delete…" }),
   ).toBeDisabled();
   expect(api.execute).not.toHaveBeenCalled();
 });
@@ -390,6 +398,7 @@ it("shows the detected runtime and storage contract before confirmation", async 
   });
   show();
   await review();
+  fireEvent.click(screen.getByText("Files and technical details"));
   expect(
     screen.getByText(
       "Native runtime 0.163.0-alpha.10.2 · storage contract state-v61",
@@ -407,5 +416,59 @@ it("explains storage incompatibility in English without calling it a version rej
       "Codex storage structure is not yet validated; no database upgrade or migration will be performed.",
     ),
   ).toBeVisible();
+  expect(api.execute).not.toHaveBeenCalled();
+});
+it("keeps thousands of retained conversations out of the preview and still requires DELETE", async () => {
+  const p = plan();
+  p.retainedIds = Array.from({ length: 3819 }, (_, i) => `retained-${i}`);
+  api.preview.mockResolvedValue(p);
+  render(
+    <LocaleProvider>
+      <NativeCleanupPanel
+        inventory={inventory}
+        kept={[]}
+        refresh={() => {}}
+        initialSelected={["a"]}
+        onClose={() => {}}
+      />
+    </LocaleProvider>,
+  );
+  expect(
+    await screen.findByText("3819 other conversations will be kept."),
+  ).toBeVisible();
+  const scope = screen.getByRole("list", { name: "Conversations to delete" });
+  expect(scope).toHaveTextContent("Synthetic a");
+  expect(scope).toHaveTextContent("Synthetic b");
+  expect(scope).toHaveTextContent("Related Sub Agent");
+  expect(scope).toHaveTextContent("68 B");
+  expect(screen.queryByText("Synthetic d")).not.toBeInTheDocument();
+  expect(screen.queryByText("retained-0")).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: "Show 50 more" }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.getByText("Files and technical details").closest("details"),
+  ).not.toHaveAttribute("open");
+  expect(
+    screen.queryByRole("button", { name: "Preview impact" }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Continue to delete…" }));
+  expect(
+    screen.getByRole("button", { name: "Permanently delete" }),
+  ).toBeDisabled();
+  expect(api.execute).not.toHaveBeenCalled();
+});
+
+it("uses the native affected IDs again at final confirmation even when observation IDs differ", async () => {
+  const p = plan();
+  p.nativeIds = [...p.nativeIds, "backend-extra"];
+  api.preview.mockResolvedValue(p);
+  show();
+  await review();
+  const dialog = screen.getByRole("dialog");
+  expect(
+    within(dialog).getByRole("list", { name: "Conversations to delete" }),
+  ).toHaveTextContent("backend-extra");
+  expect(dialog).toHaveTextContent("4 observed records");
   expect(api.execute).not.toHaveBeenCalled();
 });

@@ -7,6 +7,7 @@ import {
   conversationLocked,
   cleanupMessage,
 } from "./cleanup";
+import CleanupScope from "./CleanupScope";
 import { CleanupConfirmation } from "./CleanupPanel";
 import {
   previewNative,
@@ -65,7 +66,6 @@ export default function NativeCleanupPanel({
   const latestPlan = useRef<string | null>(null);
   const [search, setSearch] = useState("");
   const [limit, setLimit] = useState(50);
-  const [retainedLimit, setRetainedLimit] = useState(50);
   const recordsById = useMemo(
     () => new Map(inventory.threads.map((thread) => [thread.id, thread])),
     [inventory],
@@ -142,22 +142,24 @@ export default function NativeCleanupPanel({
           </button>
         </div>
       )}
-      <div className="scope-banner">
-        <strong>
-          {t(
-            testOnly
-              ? "Synthetic native cleanup test"
-              : "Real data · manual cleanup",
-          )}
-        </strong>
-        <p>
-          {t(
-            testOnly
-              ? "This build only uses a newly generated test store. Real Agent data is never loaded or deleted."
-              : "Nothing is selected automatically. Review the complete subtree and retained conversations before permanent deletion.",
-          )}
-        </p>
-      </div>
+      {(!initialSelected || testOnly) && (
+        <div className="scope-banner">
+          <strong>
+            {t(
+              testOnly
+                ? "Synthetic native cleanup test"
+                : "Real data · manual cleanup",
+            )}
+          </strong>
+          <p>
+            {t(
+              testOnly
+                ? "This build only uses a newly generated test store. Real Agent data is never loaded or deleted."
+                : "Nothing is selected automatically. Review the complete subtree and retained conversations before permanent deletion.",
+            )}
+          </p>
+        </div>
+      )}
       {!initialSelected && (
         <section className="panel cleanup-candidates">
           <h2>{t("Cleanup candidates")}</h2>
@@ -227,77 +229,46 @@ export default function NativeCleanupPanel({
           )}
         </section>
       )}
-      <div className="cleanup-actions">
-        <button
-          className="button primary"
-          disabled={stopped || busy || confirm || !selected.length}
-          onClick={() => void preview()}
-        >
-          {t(busy ? "Creating native preview…" : "Preview impact")}
-        </button>
-      </div>
+      {(!plan || busy) && (
+        <div className="cleanup-actions">
+          <button
+            className="button primary"
+            disabled={stopped || busy || confirm || !selected.length}
+            onClick={() => void preview()}
+          >
+            {t(busy ? "Creating native preview…" : "Preview impact")}
+          </button>
+        </div>
+      )}
       {error && <p role="alert">{error}</p>}
       {plan && (
         <section className="panel cleanup-impact">
-          <h2>{t("Impact preview")}</h2>
-          <p>
-            {t(
-              "Plan expires after {seconds} seconds. Any file or state change requires a fresh preview.",
-              { seconds: plan.expiresInSeconds },
-            )}
+          <div className="impact-summary">
+            <div>
+              <h2>{t("Conversations to delete")}</h2>
+              <span className="muted">
+                {t("{count} conversations · {files} files", {
+                  count: plan.nativeIds.length,
+                  files: plan.analysis.observedFiles.length,
+                })}
+              </span>
+            </div>
+            <strong>{bytes(plan.analysis.observedLogicalBytes)}</strong>
+          </div>
+          <CleanupScope
+            ids={plan.nativeIds}
+            selectedIds={plan.analysis.selectedIds}
+            records={recordsById}
+            files={plan.analysis.observedFiles}
+          />
+          <p className="retained-summary">
+            {t("{count} other conversations will be kept.", {
+              count: plan.retainedIds.length,
+            })}
           </p>
-          <p>
-            {t("{count} observed records · {files} measured files", {
-              count: plan.nativeIds.length,
-              files: plan.analysis.observedFiles.length,
-            })}{" "}
-            · {systemText(bytes(plan.analysis.observedLogicalBytes))}
+          <p className="muted">
+            {t("File sizes do not equal disk space reclaimed.")}
           </p>
-          <h3>{t("Observed main and spawned scope")}</h3>
-          <ul>
-            {plan.nativeIds.map((id) => (
-              <li key={id}>
-                {title(id)} · {id}
-              </li>
-            ))}
-          </ul>
-          <h3>
-            {t("Retained conversations")} ({plan.retainedIds.length})
-          </h3>
-          <ul>
-            {plan.retainedIds.slice(0, retainedLimit).map((id) => (
-              <li key={id}>
-                {title(id)} · {id}
-              </li>
-            ))}
-          </ul>
-          {plan.retainedIds.length > retainedLimit && (
-            <button
-              className="text-button"
-              onClick={() => setRetainedLimit((n) => n + 50)}
-            >
-              {t("Show 50 more")}
-            </button>
-          )}
-          <p>{t("Independent forks are never automatically selected.")}</p>
-          <details>
-            <summary>
-              {t("Observed files ({count})", {
-                count: plan.analysis.observedFiles.length,
-              })}
-            </summary>
-            {plan.analysis.observedFiles.map((file) => (
-              <p key={file.key}>{file.key}</p>
-            ))}
-          </details>
-          {plan.runtimeVersion && (
-            <p className="muted">
-              {t("Native runtime {version} · storage contract {profile}", {
-                version: plan.runtimeVersion,
-                profile: plan.storageProfile ?? "—",
-              })}
-            </p>
-          )}
           {!!plan.warnings?.length && (
             <>
               <h3>{t("Notices")}</h3>
@@ -332,18 +303,55 @@ export default function NativeCleanupPanel({
               </ul>
             </>
           )}
-          <p>
-            {t(
-              "Native deletion is verified against files, thread rows, spawn edges and deleted notifications. No reclaimed-space estimate is available.",
+          <details className="preview-technical">
+            <summary>{t("Files and technical details")}</summary>
+            <p>
+              {t(
+                "Plan expires after {seconds} seconds. Any file or state change requires a fresh preview.",
+                { seconds: plan.expiresInSeconds },
+              )}
+            </p>
+            <p>{t("Independent forks are never automatically selected.")}</p>
+            {plan.runtimeVersion && (
+              <p>
+                {t("Native runtime {version} · storage contract {profile}", {
+                  version: plan.runtimeVersion,
+                  profile: plan.storageProfile ?? "—",
+                })}
+              </p>
             )}
-          </p>
-          <button
-            className="button secondary"
-            disabled={!plan.executable || confirm}
-            onClick={() => setConfirm(true)}
-          >
-            {t("Review confirmation")}
-          </button>
+            {plan.nativeIds.map((id) => (
+              <p className="file-path" key={id}>
+                {title(id)} · {id}
+              </p>
+            ))}
+            {plan.analysis.observedFiles.map((file) => (
+              <p className="file-path" key={file.key}>
+                {file.key} · {bytes(file.logicalBytes)}
+              </p>
+            ))}
+          </details>
+          <div className="cleanup-sticky-actions">
+            <span className="muted">
+              {t("Next step: review and type DELETE.")}
+            </span>
+            <div>
+              <button
+                className="button secondary"
+                disabled={stopped || busy || confirm}
+                onClick={() => void preview()}
+              >
+                {t("Refresh preview")}
+              </button>
+              <button
+                className="button danger"
+                disabled={!plan.executable || busy || confirm}
+                onClick={() => setConfirm(true)}
+              >
+                {t("Continue to delete…")}
+              </button>
+            </div>
+          </div>
         </section>
       )}
       {!testOnly && !initialSelected && (
@@ -386,6 +394,8 @@ export default function NativeCleanupPanel({
       {confirm && plan && (
         <CleanupConfirmation
           plan={plan.analysis}
+          affectedIds={plan.nativeIds}
+          records={recordsById}
           close={() => {
             void cancelNative(plan.planId).catch(() => {});
             latestPlan.current = null;

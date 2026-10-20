@@ -41,7 +41,9 @@ describe("cleanup preview and confirmation, synthetic inventory only", () => {
       screen.getByText(/3 observed records · 4 measured files/),
     ).toBeVisible();
     expect(screen.getByText("Synthetic b · b · spawned")).toBeVisible();
-    expect(screen.getByText("Retained — this plan cannot run.")).toBeVisible();
+    expect(
+      screen.getByText("2 other conversations will be kept."),
+    ).toBeVisible();
     expect(screen.queryByText("Synthetic d · d")).not.toBeInTheDocument();
     expect(
       screen.getByText(
@@ -83,7 +85,7 @@ describe("cleanup preview and confirmation, synthetic inventory only", () => {
     expect(within(dialog).queryByRole("checkbox")).not.toBeInTheDocument();
     expect(within(dialog).queryByRole("textbox")).not.toBeInTheDocument();
     expect(
-      within(dialog).queryByRole("button", { name: "Confirm execution" }),
+      within(dialog).queryByRole("button", { name: "Permanently delete" }),
     ).not.toBeInTheDocument();
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Close dialog" }),
@@ -97,7 +99,7 @@ describe("cleanup preview and confirmation, synthetic inventory only", () => {
       screen.getByText("A selected tree contains a conversation marked Keep."),
     ).toBeVisible();
     expect(
-      screen.getByText("Synthetic c · c · Kept this session"),
+      screen.getByText("A selected tree contains a conversation marked Keep."),
     ).toBeVisible();
     fireEvent.click(
       screen.getByRole("checkbox", { name: "Select Synthetic e" }),
@@ -115,7 +117,7 @@ describe("cleanup preview and confirmation, synthetic inventory only", () => {
       "在此确认不会删除本机 Codex 数据。",
     );
     expect(
-      screen.queryByRole("button", { name: "确认执行" }),
+      screen.queryByRole("button", { name: "永久删除" }),
     ).not.toBeInTheDocument();
   });
   for (const status of [
@@ -143,14 +145,14 @@ describe("cleanup preview and confirmation, synthetic inventory only", () => {
         </LocaleProvider>,
       );
       expect(
-        screen.getByRole("button", { name: "Confirm execution" }),
+        screen.getByRole("button", { name: "Permanently delete" }),
       ).toBeDisabled();
       fireEvent.click(screen.getByRole("checkbox"));
       fireEvent.change(screen.getByRole("textbox"), {
         target: { value: "DELETE" },
       });
       fireEvent.click(
-        screen.getByRole("button", { name: "Confirm execution" }),
+        screen.getByRole("button", { name: "Permanently delete" }),
       );
       await screen.findByText(
         status === "verified"
@@ -161,7 +163,7 @@ describe("cleanup preview and confirmation, synthetic inventory only", () => {
       );
       expect(driver).toHaveBeenCalledTimes(1);
       expect(
-        screen.getByRole("button", { name: "Confirm execution" }),
+        screen.getByRole("button", { name: "Permanently delete" }),
       ).toBeDisabled();
       expect(
         screen.getByText(/Removed file lengths, not disk space reclaimed/),
@@ -171,7 +173,7 @@ describe("cleanup preview and confirmation, synthetic inventory only", () => {
           screen.queryByText("Synthetic cleanup verified"),
         ).not.toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: "Confirm execution" }),
+        screen.getByRole("button", { name: "Permanently delete" }),
       ).toBeDisabled();
     });
   it("cancelling never calls the synthetic driver", () => {
@@ -207,7 +209,7 @@ describe("cleanup preview and confirmation, synthetic inventory only", () => {
     fireEvent.change(screen.getByRole("textbox"), {
       target: { value: "DELETE" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Confirm execution" }));
+    fireEvent.click(screen.getByRole("button", { name: "Permanently delete" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Execution outcome is unknown. Do not automatically retry.",
     );
@@ -215,7 +217,7 @@ describe("cleanup preview and confirmation, synthetic inventory only", () => {
       screen.queryByText("Synthetic cleanup verified"),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Confirm execution" }),
+      screen.getByRole("button", { name: "Permanently delete" }),
     ).toBeDisabled();
   });
 });

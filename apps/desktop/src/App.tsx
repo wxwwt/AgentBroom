@@ -1096,7 +1096,7 @@ function Workspace() {
       {cleanupIds && inventory && (
         <div className="modal-overlay">
           <section
-            className="preview-shell"
+            className="preview-shell compact-preview-shell"
             role="dialog"
             aria-modal="true"
             aria-label={t("Cleanup preview")}

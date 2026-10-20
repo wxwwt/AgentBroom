@@ -1,4 +1,18 @@
 export const zhMessages = {
+  "Conversations to delete": "待删除的对话",
+  "{count} conversations · {files} files": "{count} 条对话 · {files} 个文件",
+  "Selected conversation": "已选对话",
+  "Related Sub Agent": "关联子 Agent",
+  "Included conversation": "关联对话",
+  "{count} other conversations will be kept.": "其余 {count} 条对话将保留。",
+  "File sizes do not equal disk space reclaimed.":
+    "文件大小不等于实际释放的磁盘空间。",
+  "Files and technical details": "文件与技术细节",
+  "Next step: review and type DELETE.": "下一步需核对并输入 DELETE。",
+  "Refresh preview": "重新预览",
+  "Continue to delete…": "确认删除…",
+  "Permanently delete": "永久删除",
+
   "Cleanup execution unavailable": "当前无法执行清理",
   "Outside dependencies retained": "保留的外部依赖",
   "Independent forks are never automatically selected.":

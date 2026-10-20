@@ -1,3 +1,4 @@
+import CleanupScope from "./CleanupScope";
 import { useMemo, useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useLocale } from "./i18n";
@@ -22,11 +23,15 @@ export interface CleanupResult {
 export function CleanupConfirmation({
   plan,
   close,
+  records,
+  affectedIds = plan.includedIds,
   testDriver,
   nativeDriver,
 }: {
   plan: CleanupAnalysis;
   close: () => void;
+  affectedIds?: string[];
+  records?: ReadonlyMap<string, import("./types").Thread>;
   nativeDriver?: {
     planId: string;
     testOnly: boolean;
@@ -168,18 +173,27 @@ export function CleanupConfirmation({
           )}
           <p>
             {t("{count} observed records · {files} measured files", {
-              count: plan.includedIds.length,
+              count: affectedIds.length,
               files: plan.observedFiles.length,
             })}
           </p>
-          <details open>
-            <summary>{t("Observed main and spawned scope")}</summary>
-            <ul>
-              {plan.includedIds.map((id) => (
-                <li key={id}>{id}</li>
-              ))}
-            </ul>
-          </details>
+          {records ? (
+            <CleanupScope
+              ids={affectedIds}
+              selectedIds={plan.selectedIds}
+              records={records}
+              files={plan.observedFiles}
+            />
+          ) : (
+            <details open>
+              <summary>{t("Observed main and spawned scope")}</summary>
+              <ul>
+                {affectedIds.map((id) => (
+                  <li key={id}>{id}</li>
+                ))}
+              </ul>
+            </details>
+          )}
           <details>
             <summary>
               {t("Observed files ({count})", {
@@ -206,6 +220,8 @@ export function CleanupConfirmation({
               <label>
                 {t("Type DELETE to confirm")}
                 <input
+                  type="text"
+                  className="confirm-input"
                   value={phrase}
                   disabled={running || !!result}
                   onChange={(e) => setPhrase(e.target.value)}
@@ -310,7 +326,7 @@ export function CleanupConfirmation({
               {t("Check execution result")}
             </button>
           )}
-          <div className="cleanup-actions">
+          <div className="cleanup-actions cleanup-sticky-actions">
             <button
               className="button secondary"
               disabled={running}
@@ -320,7 +336,7 @@ export function CleanupConfirmation({
             </button>
             {allowed && (
               <button
-                className="button primary"
+                className="button danger"
                 disabled={
                   !allowed ||
                   running ||
@@ -331,7 +347,7 @@ export function CleanupConfirmation({
                 }
                 onClick={() => void execute()}
               >
-                {t("Confirm execution")}
+                {t("Permanently delete")}
               </button>
             )}
           </div>
@@ -399,6 +415,11 @@ export default function CleanupPanel({
     }
   }
   const title = (id: string) => recordsById.get(id)?.title ?? id;
+  const included = new Set(preview?.includedIds ?? []);
+  const unaffectedCount = inventory.threads.reduce(
+    (count, thread) => count + (included.has(thread.id) ? 0 : 1),
+    0,
+  );
   return (
     <section className="cleanup-page">
       <div className="scope-banner">
@@ -516,15 +537,11 @@ export default function CleanupPanel({
               </li>
             ))}
           </ul>
-          <details open>
-            <summary>{t("Retained — this plan cannot run.")}</summary>
-            {preview.retainedIds.map((id) => (
-              <p key={id}>
-                {title(id)} · {id}
-                {kept.includes(id) ? ` · ${t("Kept this session")}` : ""}
-              </p>
-            ))}
-          </details>
+          <p>
+            {t("{count} other conversations will be kept.", {
+              count: unaffectedCount,
+            })}
+          </p>
           <p>{t("Independent forks are never automatically selected.")}</p>
           <details open>
             <summary>{t("Outside dependencies retained")}</summary>
