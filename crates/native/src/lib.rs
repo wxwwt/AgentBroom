@@ -18,7 +18,7 @@ use std::{
     path::PathBuf,
     time::{Duration, Instant},
 };
-pub use types::{Confirmation, NativePlan, Receipt};
+pub use types::{Confirmation, ExecutionFailure, ExecutionPhase, NativePlan, Receipt};
 pub type Error = InspectError;
 pub(crate) fn fail(code: &str) -> Error {
     Error {
@@ -595,7 +595,42 @@ impl LiveCleanup {
             .and_then(|f| f.sync_all())
             .map_err(|_| fail("receiptUnavailable"))
     }
-    pub fn execute(&mut self, c: Confirmation) -> Result<Receipt, Error> {
+    pub fn execute(&mut self, c: Confirmation) -> Result<Receipt, ExecutionFailure> {
+        let mut intent = false;
+        let result = self.execute_inner(c.clone(), &mut intent);
+        result.map_err(|e| {
+            if !intent {
+                // A rejected preflight has no execution receipt. Preserve its reason in the
+                // seven-day activity log without overwriting an earlier durable intent.
+                let ids: Vec<_> = c
+                    .selected_ids
+                    .iter()
+                    .filter(|id| locks::uuid(id))
+                    .take(128)
+                    .cloned()
+                    .collect();
+                let _ = self.record(
+                    String::new(),
+                    "cleanup",
+                    "blocked",
+                    ids.clone(),
+                    vec![],
+                    ids.len(),
+                    0,
+                    Some(e.code.clone()),
+                );
+            }
+            ExecutionFailure::new(
+                e,
+                if intent {
+                    ExecutionPhase::Unknown
+                } else {
+                    ExecutionPhase::NotStarted
+                },
+            )
+        })
+    }
+    fn execute_inner(&mut self, c: Confirmation, intent: &mut bool) -> Result<Receipt, Error> {
         valid_id(&c.plan_id)?;
         if c.phrase != "DELETE"
             || !c.acknowledged
@@ -661,6 +696,9 @@ impl LiveCleanup {
             state_verified: false,
             related_verified: false,
         };
+        // Once durable-intent persistence is attempted, remain conservative even if the
+        // filesystem reports an error after persisting it. Never offer an automatic retry.
+        *intent = true;
         self.write_receipt(&receipt)?;
         let titles: Vec<String> = c
             .selected_ids

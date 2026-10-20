@@ -375,7 +375,10 @@ it("locked parent disables its child while an independent fork stays selectable"
 });
 
 it("a lock added after preview is a clear pre-deletion rejection", async () => {
-  api.execute.mockRejectedValue({ code: "lockedConversation" });
+  api.execute.mockRejectedValue({
+    code: "lockedConversation",
+    executionPhase: "notStarted",
+  });
   show();
   await review();
   execute();
@@ -590,4 +593,74 @@ it("cancel after loading dismisses the confirmation and never calls execute", as
   expect(close).toHaveBeenCalledOnce();
   expect(api.cancel).toHaveBeenCalledWith("backend-owned");
   expect(api.execute).not.toHaveBeenCalled();
+});
+
+it("preserves the original execution error when receipt lookup fails, with no repeat execution", async () => {
+  api.execute.mockRejectedValue({
+    code: "sourceChanged",
+    message: "sourceChanged",
+    executionPhase: "unknown",
+  });
+  api.receipt.mockRejectedValue({ code: "receiptUnavailable" });
+  show();
+  await review();
+  execute();
+  await screen.findByText("Execution error: sourceChanged");
+  fireEvent.click(
+    screen.getByRole("button", { name: "Check execution result" }),
+  );
+  await screen.findByText(
+    "No receipt is available yet. Do not repeat deletion.",
+  );
+  expect(screen.getByText("Execution error: sourceChanged")).toBeVisible();
+  expect(
+    screen.getByText(
+      "Execution outcome is unknown. Do not automatically retry.",
+    ),
+  ).toBeVisible();
+  expect(
+    screen.getByRole("button", { name: "Permanently delete" }),
+  ).toBeDisabled();
+  expect(api.execute).toHaveBeenCalledOnce();
+});
+it.each([
+  "sourceChanged",
+  "runtimeChanged",
+  "relatedStateUnavailable",
+  "invalidPlan",
+])("uses the owner phase for %s preflight rejection", async (code) => {
+  api.execute.mockRejectedValue({
+    code,
+    message: code,
+    executionPhase: "notStarted",
+  });
+  show();
+  await review();
+  execute();
+  await screen.findByText(
+    "Deletion did not start. Close this dialog and create a fresh preview.",
+  );
+  expect(screen.getByText(`Execution error: ${code}`)).toBeVisible();
+  expect(
+    screen.queryByRole("button", { name: "Check execution result" }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: "Permanently delete" }),
+  ).toBeDisabled();
+  expect(api.execute).toHaveBeenCalledOnce();
+});
+it("keeps string IPC failures visible and never infers preflight safety from a code", async () => {
+  api.execute.mockRejectedValue("IPC transport disconnected");
+  show();
+  await review();
+  execute();
+  await screen.findByText("Execution error: IPC transport disconnected");
+  expect(
+    screen.getByText(
+      "Execution outcome is unknown. Do not automatically retry.",
+    ),
+  ).toBeVisible();
+  expect(
+    screen.getByRole("button", { name: "Check execution result" }),
+  ).toBeVisible();
 });

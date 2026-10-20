@@ -54,3 +54,27 @@ pub struct Receipt {
     #[serde(default)]
     pub related_verified: bool,
 }
+
+/// The phase is produced by the deletion owner, never inferred from an error-code list.
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExecutionFailure {
+    pub code: String,
+    pub message: String,
+    pub execution_phase: ExecutionPhase,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ExecutionPhase {
+    NotStarted,
+    Unknown,
+}
+impl ExecutionFailure {
+    pub fn new(error: agentbroom_core::InspectError, execution_phase: ExecutionPhase) -> Self {
+        Self {
+            code: error.code,
+            message: error.message,
+            execution_phase,
+        }
+    }
+}

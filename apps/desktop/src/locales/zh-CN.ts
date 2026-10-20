@@ -1,4 +1,8 @@
 export const zhMessages = {
+  "Deletion did not start. Close this dialog and create a fresh preview.":
+    "删除尚未开始。请关闭弹窗，重新选择并预览。",
+  "Execution error: {details}": "执行错误：{details}",
+
   "These real conversations and their Codex metadata will be permanently deleted. This cannot be undone.":
     "将永久删除这些真实对话及其 Codex 关联数据，无法撤销。",
   "Deletion is unavailable for this selection. Review the reasons below.":

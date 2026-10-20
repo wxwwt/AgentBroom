@@ -59,6 +59,9 @@ export function CleanupConfirmation({
   const [running, setRunning] = useState(false),
     [result, setResult] = useState<CleanupResult | null>(null),
     [error, setError] = useState(""),
+    [executionDetails, setExecutionDetails] = useState(""),
+    [receiptError, setReceiptError] = useState(""),
+    [notStarted, setNotStarted] = useState(false),
     [attempted, setAttempted] = useState(false);
   const submitted = useRef(false);
   const allowed =
@@ -86,29 +89,38 @@ export function CleanupConfirmation({
         }),
       );
     } catch (e) {
-      const code =
-        e && typeof e === "object" && "code" in e ? String(e.code) : "";
+      const failure =
+        e && typeof e === "object"
+          ? (e as {
+              code?: unknown;
+              message?: unknown;
+              executionPhase?: unknown;
+            })
+          : null;
+      const beforeDeletion =
+        !!nativeDriver && failure?.executionPhase === "notStarted";
+      setNotStarted(beforeDeletion);
       setError(
         t(
-          code === "lockedConversation"
-            ? "This conversation was locked after the preview. Create a new preview to review the locks."
-            : nativeDriver &&
-                [
-                  "planExpired",
-                  "staleSnapshot",
-                  "lockedConversation",
-                  "planBlocked",
-                  "invalidConfirmation",
-                  "invalidPlan",
-                  "cleanupBusy",
-                  "relatedSchemaUnsupported",
-                  "relatedStateUnavailable",
-                  "relatedStateBudget",
-                  "runtimeStopped",
-                ].includes(code)
-              ? "Cleanup was rejected before deletion. Create a fresh preview."
-              : "Execution outcome is unknown. Do not automatically retry.",
+          beforeDeletion
+            ? failure?.code === "lockedConversation"
+              ? "This conversation was locked after the preview. Create a new preview to review the locks."
+              : "Deletion did not start. Close this dialog and create a fresh preview."
+            : "Execution outcome is unknown. Do not automatically retry.",
         ),
+      );
+      // Keep the original failure even when a later receipt query fails. Render text only.
+      const details = [failure?.code, failure?.message].filter(
+        (v): v is string => typeof v === "string" && !!v,
+      );
+      setExecutionDetails(
+        [
+          ...new Set(
+            details.length ? details : typeof e === "string" ? [e] : [],
+          ),
+        ]
+          .join(": ")
+          .slice(0, 512),
       );
     } finally {
       setRunning(false);
@@ -120,8 +132,12 @@ export function CleanupConfirmation({
     try {
       setResult(await nativeDriver.readReceipt());
       setError("");
+      setExecutionDetails("");
+      setReceiptError("");
     } catch {
-      setError(t("No receipt is available yet. Do not repeat deletion."));
+      setReceiptError(
+        t("No receipt is available yet. Do not repeat deletion."),
+      );
     } finally {
       setRunning(false);
     }
@@ -238,6 +254,12 @@ export function CleanupConfirmation({
           )}
           {running && <p role="status">{t("Executing and verifying…")}</p>}
           {error && <p role="alert">{error}</p>}
+          {executionDetails && (
+            <p className="file-path">
+              {t("Execution error: {details}", { details: executionDetails })}
+            </p>
+          )}
+          {receiptError && <p role="alert">{receiptError}</p>}
           {result && (
             <div role={result.status === "verified" ? "status" : "alert"}>
               <strong>
@@ -323,7 +345,7 @@ export function CleanupConfirmation({
               )}
             </div>
           )}
-          {nativeDriver && attempted && !result && (
+          {nativeDriver && attempted && !result && !notStarted && (
             <button
               className="button secondary"
               disabled={running}

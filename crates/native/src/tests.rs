@@ -885,3 +885,63 @@ fn expired_retained_logs_are_reported_as_startup_maintenance_and_deletion_still_
     );
     assert_eq!(f.store.receipt(&p.plan_id).unwrap().warnings, r.warnings);
 }
+
+#[test]
+fn rejected_preflight_has_an_explicit_phase_and_activity_without_execution_receipt() {
+    let t = tempfile::tempdir().unwrap();
+    let root = t.path().canonicalize().unwrap();
+    let file = root.join("synthetic-keep.jsonl");
+    fs::write(&file, b"synthetic only").unwrap();
+    let mut store = LiveCleanup {
+        root_identity: identity(&root).unwrap(),
+        root: root.clone(),
+        binary: root.join("must-never-run"),
+        receipts: root.join("receipts"),
+        pending: None,
+        closed: false,
+        runtime_contract: None,
+    };
+    let error = store
+        .execute(Confirmation {
+            plan_id: "synthetic-plan".into(),
+            selected_ids: vec![ROOT.into()],
+            phrase: "DELETE".into(),
+            acknowledged: true,
+            kept: vec![],
+        })
+        .unwrap_err();
+    assert_eq!(error.code, "invalidPlan");
+    assert_eq!(error.execution_phase, ExecutionPhase::NotStarted);
+    assert_eq!(fs::read(&file).unwrap(), b"synthetic only");
+    assert!(store.history().unwrap().is_empty());
+    let events = store.operations().unwrap();
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0].status, "blocked");
+    assert_eq!(events[0].error.as_deref(), Some("invalidPlan"));
+    assert_eq!(events[0].ids, vec![ROOT]);
+}
+#[test]
+#[ignore = "explicit native runtime; only newly generated roots"]
+fn related_preflight_failure_keeps_generated_threads_and_records_reason() {
+    let mut f = Fixture::new(false, false);
+    let p = f.store.preview(&[ROOT.into()], &[]).unwrap();
+    let before = stamps(&f.store.root).unwrap();
+    fs::rename(
+        f.store.root.join("memories_1.sqlite"),
+        f.store.root.join("memories_1.sqlite.saved"),
+    )
+    .unwrap();
+    let err = f.store.execute(confirmation(&p)).unwrap_err();
+    assert_eq!(err.execution_phase, ExecutionPhase::NotStarted);
+    assert!(f.store.history().unwrap().is_empty());
+    assert_eq!(stamps(&f.store.root).unwrap(), before);
+    assert!(
+        f.store
+            .operations()
+            .unwrap()
+            .iter()
+            .any(|e| e.action == "cleanup"
+                && e.status == "blocked"
+                && e.error.as_deref() == Some(err.code.as_str()))
+    );
+}

@@ -7,7 +7,7 @@ fn error(code: &str) -> InspectError {
 }
 mod native_session {
     use super::*;
-    use agentbroom_native::{Confirmation, NativePlan, Receipt};
+    use agentbroom_native::{Confirmation, ExecutionFailure, ExecutionPhase, NativePlan, Receipt};
     #[cfg(feature = "native-cleanup-test")]
     type Store = agentbroom_native_test::NativeSandbox;
     #[cfg(not(feature = "native-cleanup-test"))]
@@ -257,8 +257,35 @@ mod native_session {
     pub async fn cleanup_execute(
         state: tauri::State<'_, Session>,
         confirmation: Confirmation,
-    ) -> Result<Receipt, InspectError> {
-        with_store(state.inner().clone(), move |s| s.execute(confirmation)).await
+    ) -> Result<Receipt, ExecutionFailure> {
+        #[cfg(not(feature = "native-cleanup-test"))]
+        {
+            let dispatched = Arc::new(std::sync::atomic::AtomicBool::new(false));
+            let started = dispatched.clone();
+            with_store(state.inner().clone(), move |s| {
+                started.store(true, Ordering::SeqCst);
+                Ok(s.execute(confirmation))
+            })
+            .await
+            .map_err(|e| {
+                ExecutionFailure::new(
+                    e,
+                    if dispatched.load(Ordering::SeqCst) {
+                        ExecutionPhase::Unknown
+                    } else {
+                        ExecutionPhase::NotStarted
+                    },
+                )
+            })?
+        }
+        #[cfg(feature = "native-cleanup-test")]
+        {
+            // The independent synthetic owner has no phase contract. Its errors remain
+            // unknown rather than borrowing the real owner's preflight guarantees.
+            with_store(state.inner().clone(), move |s| s.execute(confirmation))
+                .await
+                .map_err(|e| ExecutionFailure::new(e, ExecutionPhase::Unknown))
+        }
     }
     #[tauri::command]
     pub async fn cleanup_result(
@@ -388,12 +415,17 @@ mod ipc_contract_tests {
         }
     }
     #[test]
-    fn lock_commands_pass_the_real_generated_capability_before_the_stopped_worker_guard() {
+    fn commands_pass_the_real_generated_capability_before_the_stopped_worker_guard() {
         // Real generated app context binds build.rs command permissions and capabilities/main.json.
         // A stopped worker ensures these requests cannot discover or read a real source.
         let app = tauri::test::mock_builder()
             .manage(native_session::Session::stopped_for_test())
             .invoke_handler(tauri::generate_handler![
+                cleanup_preview,
+                cleanup_execute,
+                cleanup_result,
+                cleanup_cancel,
+                cleanup_history,
                 conversation_locks,
                 set_conversation_lock,
                 set_conversation_locks,
@@ -410,6 +442,23 @@ mod ipc_contract_tests {
             .build()
             .unwrap();
         for (command, body) in [
+            (
+                "cleanup_preview",
+                serde_json::json!({"selectedIds":["00000000-0000-4000-8000-000000000001"],"kept":[]}),
+            ),
+            (
+                "cleanup_execute",
+                serde_json::json!({"confirmation":{"planId":"synthetic-only", "selectedIds":["00000000-0000-4000-8000-000000000001"], "phrase":"DELETE", "acknowledged":true, "kept":[]}}),
+            ),
+            (
+                "cleanup_result",
+                serde_json::json!({"planId":"synthetic-only"}),
+            ),
+            (
+                "cleanup_cancel",
+                serde_json::json!({"planId":"synthetic-only"}),
+            ),
+            ("cleanup_history", serde_json::json!({})),
             ("conversation_locks", serde_json::json!({})),
             (
                 "set_conversation_lock",
@@ -438,11 +487,19 @@ mod ipc_contract_tests {
                 serde_json::json!({"planId":"reports-synthetic"}),
             ),
         ] {
-            tauri::test::assert_ipc_response(
-                &window,
-                request(command, body),
-                Err::<InspectError, _>(error("cleanupClosing")),
-            );
+            if command == "cleanup_execute" {
+                let result =
+                    tauri::test::get_ipc_response(&window, request(command, body)).unwrap_err();
+                assert_eq!(result["code"], "cleanupClosing");
+                #[cfg(not(feature = "native-cleanup-test"))]
+                assert_eq!(result["executionPhase"], "notStarted");
+            } else {
+                tauri::test::assert_ipc_response(
+                    &window,
+                    request(command, body),
+                    Err::<InspectError, _>(error("cleanupClosing")),
+                );
+            }
         }
     }
     #[test]
