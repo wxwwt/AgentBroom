@@ -663,18 +663,24 @@ impl LiveCleanup {
         let before = self.revalidate(plan)?;
         let mut related_before = related::snapshot(&self.root, before.db.storage_profile)?;
         let plan = self.pending.take().unwrap();
-        // Kernel stamps prove unchanged retained files. For recently written files, preserve a
-        // content prefix so legitimate concurrent appends cannot hide rewrites of existing bytes.
+        // Capture per-file content before intent, not stale global-scan timestamps.
+        // Every proof stays anchored to this extent/digest through native execution.
         let mut retained_prefixes = BTreeMap::new();
+        let current_files = stamps(&self.root)?;
         for (path, stamp) in before
             .files
             .iter()
-            .filter(|(path, stamp)| !plan.selected_hashes.contains_key(*path) && stamp.recent())
+            .filter(|(path, _)| !plan.selected_hashes.contains_key(*path))
         {
-            retained_prefixes.insert(
-                path.clone(),
-                source::checked_prefix(&self.root.join(path), stamp.length, stamp)?,
-            );
+            let current = current_files
+                .get(path)
+                .ok_or_else(|| fail("sourceChanged"))?;
+            if stamp.recent() || current.recent() || current != stamp {
+                retained_prefixes.insert(
+                    path.clone(),
+                    source::capture_retained_prefix(&self.root.join(path), stamp)?,
+                );
+            }
         }
         let mut receipt = Receipt {
             plan_id: c.plan_id,
@@ -902,17 +908,17 @@ impl LiveCleanup {
                     .filter(|(p, _)| !plan.selected_hashes.contains_key(*p))
                 {
                     match after_files.get(path) {
-                        Some(new) if new == old => {}
                         Some(new)
-                            if new.identity == old.identity
-                                && new.length >= old.length
-                                && retained_prefixes.get(path).is_some_and(|hash| {
-                                    source::checked_prefix(&self.root.join(path), old.length, new)
-                                        .is_ok_and(|after| after == *hash)
-                                }) =>
+                            if retained_prefixes.get(path).is_some_and(|proof| {
+                                source::verify_retained_prefix(&self.root.join(path), proof)
+                                    .unwrap_or(false)
+                            }) =>
                         {
-                            receipt.concurrent_changes.push(path.clone())
+                            if new != old {
+                                receipt.concurrent_changes.push(path.clone());
+                            }
                         }
+                        Some(new) if new == old && !retained_prefixes.contains_key(path) => {}
                         _ => {
                             receipt.files_verified = false;
                             errors.push("retainedFileChangedOrMissing");

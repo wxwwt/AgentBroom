@@ -52,6 +52,9 @@ pub(crate) fn guard_root(path: &Path) -> Result<(), Error> {
     Ok(())
 }
 pub(crate) fn safe_file(p: &Path) -> Result<fs::File, Error> {
+    open_regular_file(p, false)
+}
+fn open_regular_file(p: &Path, allow_growth: bool) -> Result<fs::File, Error> {
     for parent in p.parent().into_iter().flat_map(Path::ancestors) {
         if fs::symlink_metadata(parent)
             .map_err(|_| fail("sourceUnavailable"))?
@@ -71,7 +74,15 @@ pub(crate) fn safe_file(p: &Path) -> Result<fs::File, Error> {
         .open(p)
         .map_err(|_| fail("sourceUnavailable"))?;
     let opened = file.metadata().map_err(|_| fail("sourceUnavailable"))?;
-    if (meta.dev(), meta.ino(), meta.len()) != (opened.dev(), opened.ino(), opened.len()) {
+    if (meta.dev(), meta.ino()) != (opened.dev(), opened.ino())
+        || !opened.is_file()
+        || opened.nlink() != 1
+        || if allow_growth {
+            opened.len() < meta.len()
+        } else {
+            opened.len() != meta.len()
+        }
+    {
         return Err(fail("sourceChanged"));
     }
     Ok(file)
@@ -526,53 +537,81 @@ pub(crate) fn operation_lock(directory: &Path) -> Result<fs::File, Error> {
     Ok(file)
 }
 
-pub(crate) fn checked_prefix(path: &Path, length: u64, expected: &Stamp) -> Result<String, Error> {
-    if length > 4 * 1024 * 1024 * 1024 {
-        return Err(fail("hashBudget"));
-    }
-    let mut file = safe_file(path)?;
-    let stamp = |m: fs::Metadata| Stamp {
+/// Content baseline owned by one pre-deletion capture. Never rebase it after intent.
+#[derive(Debug)]
+pub(crate) struct RetainedPrefix {
+    stamp: Stamp,
+    digest: String,
+}
+fn file_stamp(m: fs::Metadata) -> Stamp {
+    Stamp {
         identity: (m.dev(), m.ino()),
         length: m.len(),
         modified: (m.mtime(), m.mtime_nsec()),
         changed: (m.ctime(), m.ctime_nsec()),
-    };
-    let before = stamp(file.metadata().map_err(|_| fail("sourceUnavailable"))?);
-    if &before != expected || before.length < length {
+    }
+}
+/// Read only a fixed, anchored extent. Growth/mtime alone does not prove or disprove
+/// preservation: the caller compares the digest. Selected-file checks stay strict.
+fn retained_digest(path: &Path, expected: &Stamp) -> Result<String, Error> {
+    if expected.length > 4 * 1024 * 1024 * 1024 {
+        return Err(fail("hashBudget"));
+    }
+    let mut file = open_regular_file(path, true)?;
+    let before = file_stamp(file.metadata().map_err(|_| fail("sourceUnavailable"))?);
+    if before.identity != expected.identity || before.length < expected.length {
         return Err(fail("sourceChanged"));
     }
     let mut hash = Sha256::new();
-    let mut size = 0;
+    let mut remaining = expected.length;
     let mut buffer = [0u8; 65536];
-    {
-        let mut reader = (&mut file).take(length);
-        loop {
-            let n = reader
-                .read(&mut buffer)
-                .map_err(|_| fail("sourceUnavailable"))?;
-            if n == 0 {
-                break;
-            }
-            size += n as u64;
-            hash.update(&buffer[..n]);
+    while remaining > 0 {
+        let length = remaining.min(buffer.len() as u64) as usize;
+        let n = file
+            .read(&mut buffer[..length])
+            .map_err(|_| fail("sourceUnavailable"))?;
+        if n == 0 {
+            return Err(fail("sourceChanged"));
         }
+        hash.update(&buffer[..n]);
+        remaining -= n as u64;
     }
-    let after = stamp(file.metadata().map_err(|_| fail("sourceUnavailable"))?);
-    if size != length || after != before {
+    let after = file_stamp(file.metadata().map_err(|_| fail("sourceUnavailable"))?);
+    // Re-open the path too: a descriptor surviving unlink/replacement is not preservation.
+    let current = file_stamp(
+        open_regular_file(path, true)?
+            .metadata()
+            .map_err(|_| fail("sourceUnavailable"))?,
+    );
+    if after.identity != expected.identity
+        || current.identity != expected.identity
+        || after.length < expected.length
+        || current.length < expected.length
+    {
         return Err(fail("sourceChanged"));
     }
     Ok(format!("{:x}", hash.finalize()))
 }
-#[cfg(test)]
-pub(crate) fn hash_prefix(path: &Path, length: u64) -> Result<String, Error> {
-    let m = fs::symlink_metadata(path).map_err(|_| fail("sourceUnavailable"))?;
-    let stamp = Stamp {
-        identity: (m.dev(), m.ino()),
-        length: m.len(),
-        modified: (m.mtime(), m.mtime_nsec()),
-        changed: (m.ctime(), m.ctime_nsec()),
-    };
-    checked_prefix(path, length, &stamp)
+pub(crate) fn capture_retained_prefix(
+    path: &Path,
+    observed: &Stamp,
+) -> Result<RetainedPrefix, Error> {
+    let stamp = file_stamp(
+        open_regular_file(path, true)?
+            .metadata()
+            .map_err(|_| fail("sourceUnavailable"))?,
+    );
+    if stamp.identity != observed.identity || stamp.length < observed.length {
+        return Err(fail("sourceChanged"));
+    }
+    let digest = retained_digest(path, &stamp)?;
+    if retained_digest(path, &stamp)? != digest {
+        return Err(fail("sourceChanged"));
+    }
+    Ok(RetainedPrefix { stamp, digest })
+}
+pub(crate) fn verify_retained_prefix(path: &Path, proof: &RetainedPrefix) -> Result<bool, Error> {
+    Ok(retained_digest(path, &proof.stamp)? == proof.digest)
 }
 
 fn auxiliary_schemas(root: &Path) -> Result<(), Error> {

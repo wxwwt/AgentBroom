@@ -309,37 +309,93 @@ fn fully_parsed_unrelated_orphan_stays_retained_and_does_not_disable_other_roots
 #[test]
 fn retained_prefix_allows_append_but_detects_existing_data_rewrite() {
     let temp = tempfile::tempdir().unwrap();
-    let path = temp.path().canonicalize().unwrap().join("generated.jsonl");
+    let root = temp.path().canonicalize().unwrap();
+    fs::create_dir(root.join("sessions")).unwrap();
+    let path = root.join("sessions/retained.jsonl");
     fs::write(&path, b"generated retained bytes\n").unwrap();
-    let size = fs::metadata(&path).unwrap().len();
-    let hash = source::hash_prefix(&path, size).unwrap();
+    let observed = stamps(&root).unwrap()["sessions/retained.jsonl"].clone();
+    // Reproduce an append between the global scan and per-file content capture.
     OpenOptions::new()
         .append(true)
         .open(&path)
         .unwrap()
-        .write_all(b"new append\n")
+        .write_all(b"before capture\n")
         .unwrap();
-    assert_eq!(source::hash_prefix(&path, size).unwrap(), hash);
-    fs::write(&path, b"rewritten retained bytes\nnew append\n").unwrap();
-    assert_ne!(source::hash_prefix(&path, size).unwrap(), hash);
+    let proof = source::capture_retained_prefix(&path, &observed).unwrap();
+    OpenOptions::new()
+        .append(true)
+        .open(&path)
+        .unwrap()
+        .write_all(b"during deletion\n")
+        .unwrap();
+    assert!(source::verify_retained_prefix(&path, &proof).unwrap());
+    // Growth must never hide a rewrite of the original prefix.
+    fs::write(
+        &path,
+        b"rewritten retained bytes\nbefore capture\nduring deletion\nplus growth\n",
+    )
+    .unwrap();
+    assert!(!source::verify_retained_prefix(&path, &proof).unwrap());
 }
 #[test]
-fn stale_stamp_cannot_be_rebound_to_a_rewritten_prefix() {
+fn frozen_retained_prefix_cannot_be_rebound_to_rewritten_truncated_or_replaced_data() {
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().canonicalize().unwrap();
     fs::create_dir(root.join("sessions")).unwrap();
     let path = root.join("sessions/retained.jsonl");
     fs::write(&path, b"original retained bytes\n").unwrap();
-    let old = stamps(&root).unwrap()["sessions/retained.jsonl"].clone();
-    fs::write(&path, b"rewritten retained bytes\nappended\n").unwrap();
-    assert_eq!(
-        source::checked_prefix(&path, old.length, &old)
-            .unwrap_err()
-            .code,
-        "sourceChanged"
-    );
-    let new = stamps(&root).unwrap()["sessions/retained.jsonl"].clone();
-    assert!(source::checked_prefix(&path, new.length, &new).is_ok());
+    let observed = stamps(&root).unwrap()["sessions/retained.jsonl"].clone();
+    let proof = source::capture_retained_prefix(&path, &observed).unwrap();
+    fs::write(&path, b"rewritten retain bytes!\n").unwrap();
+    assert!(!source::verify_retained_prefix(&path, &proof).unwrap());
+    fs::write(&path, b"truncated").unwrap();
+    assert!(source::verify_retained_prefix(&path, &proof).is_err());
+    assert!(source::capture_retained_prefix(&path, &observed).is_err());
+    fs::rename(&path, root.join("saved-original")).unwrap();
+    fs::write(&path, b"original retained bytes\n").unwrap();
+    assert!(source::verify_retained_prefix(&path, &proof).is_err());
+    assert!(source::capture_retained_prefix(&path, &observed).is_err());
+    fs::remove_file(&path).unwrap();
+    assert!(source::verify_retained_prefix(&path, &proof).is_err());
+    std::os::unix::fs::symlink(root.join("saved-original"), &path).unwrap();
+    assert!(source::verify_retained_prefix(&path, &proof).is_err());
+}
+#[test]
+fn retained_content_capture_and_verification_tolerate_a_continuous_append_writer() {
+    use std::sync::{
+        Arc,
+        atomic::{AtomicBool, AtomicUsize, Ordering},
+    };
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().canonicalize().unwrap();
+    fs::create_dir(root.join("sessions")).unwrap();
+    let path = root.join("sessions/retained.jsonl");
+    fs::write(&path, vec![b'x'; 8 * 1024 * 1024]).unwrap();
+    let observed = stamps(&root).unwrap()["sessions/retained.jsonl"].clone();
+    let running = Arc::new(AtomicBool::new(true));
+    let writes = Arc::new(AtomicUsize::new(0));
+    let run = running.clone();
+    let count = writes.clone();
+    let writer_path = path.clone();
+    let worker = std::thread::spawn(move || {
+        let mut f = OpenOptions::new().append(true).open(writer_path).unwrap();
+        while run.load(Ordering::SeqCst) {
+            f.write_all(b"concurrent append\n").unwrap();
+            count.fetch_add(1, Ordering::SeqCst);
+            std::thread::sleep(Duration::from_millis(1));
+        }
+    });
+    while writes.load(Ordering::SeqCst) == 0 {
+        std::thread::yield_now();
+    }
+    let result = (|| {
+        let proof = source::capture_retained_prefix(&path, &observed)?;
+        source::verify_retained_prefix(&path, &proof)
+    })();
+    running.store(false, Ordering::SeqCst);
+    worker.join().unwrap();
+    assert!(result.unwrap());
+    assert!(writes.load(Ordering::SeqCst) > 1);
 }
 #[test]
 #[ignore = "explicit native runtime; only newly generated roots"]
@@ -944,4 +1000,118 @@ fn related_preflight_failure_keeps_generated_threads_and_records_reason() {
                 && e.status == "blocked"
                 && e.error.as_deref() == Some(err.code.as_str()))
     );
+}
+
+#[test]
+#[ignore = "explicit official runtime; only newly generated roots"]
+fn native_cleanup_verifies_while_an_unselected_conversation_continuously_appends() {
+    use std::sync::{
+        Arc,
+        atomic::{AtomicBool, AtomicUsize, Ordering},
+    };
+    let mut f = Fixture::new(false, false);
+    let p = f.store.preview(&[ROOT.into()], &[]).unwrap();
+    let kept = stamps(&f.store.root)
+        .unwrap()
+        .keys()
+        .find(|p| p.contains(KEEP))
+        .unwrap()
+        .clone();
+    let path = f.store.root.join(&kept);
+    let original = fs::read(&path).unwrap();
+    let running = Arc::new(AtomicBool::new(true));
+    let count = Arc::new(AtomicUsize::new(0));
+    let run = running.clone();
+    let writes = count.clone();
+    let worker = std::thread::spawn(move || {
+        let mut file = OpenOptions::new().append(true).open(path).unwrap();
+        let line = format!(
+            "{}\n",
+            json!({"timestamp":"2026-01-01T00:00:02Z","type":"event_msg","payload":{"type":"user_message","message":"Synthetic concurrent append","kind":"plain"}})
+        );
+        while run.load(Ordering::SeqCst) {
+            file.write_all(line.as_bytes()).unwrap();
+            writes.fetch_add(1, Ordering::SeqCst);
+            std::thread::sleep(Duration::from_millis(5));
+        }
+    });
+    while count.load(Ordering::SeqCst) == 0 {
+        std::thread::yield_now();
+    }
+    let result = f.store.execute(confirmation(&p));
+    running.store(false, Ordering::SeqCst);
+    worker.join().unwrap();
+    let receipt = result.unwrap();
+    assert_eq!(receipt.status, "verified", "{receipt:?}");
+    assert!(receipt.files_verified && receipt.state_verified && receipt.related_verified);
+    assert!(receipt.concurrent_changes.contains(&kept));
+    assert!(count.load(Ordering::SeqCst) > 1);
+    let remaining = fs::read(f.store.root.join(&kept)).unwrap();
+    assert!(remaining.starts_with(&original));
+    assert!(database(&f.store.root).unwrap().rows.contains_key(KEEP));
+    assert!(receipt.native_deleted_ids.contains(&ROOT.into()));
+    assert!(receipt.native_deleted_ids.contains(&CHILD.into()));
+}
+
+#[test]
+#[ignore = "explicit official runtime; only newly generated roots"]
+fn native_cleanup_does_not_verify_a_retained_prefix_rewrite_after_intent() {
+    use std::{
+        os::unix::fs::FileExt,
+        sync::{
+            Arc,
+            atomic::{AtomicBool, Ordering},
+        },
+    };
+    let mut f = Fixture::new(false, false);
+    let p = f.store.preview(&[ROOT.into()], &[]).unwrap();
+    let kept = stamps(&f.store.root)
+        .unwrap()
+        .keys()
+        .find(|p| p.contains(KEEP))
+        .unwrap()
+        .clone();
+    let path = f.store.root.join(&kept);
+    let bytes = fs::read(&path).unwrap();
+    let offset = bytes
+        .windows(b"Synthetic native contract only".len())
+        .position(|s| s == b"Synthetic native contract only")
+        .unwrap() as u64;
+    let intent = f.store.receipts.join(format!("{}.json", p.plan_id));
+    let running = Arc::new(AtomicBool::new(true));
+    let run = running.clone();
+    let worker = std::thread::spawn(move || {
+        let started = Instant::now();
+        while run.load(Ordering::SeqCst) && started.elapsed() < Duration::from_secs(45) {
+            if intent.exists() {
+                let file = OpenOptions::new().write(true).open(&path).unwrap();
+                file.write_all_at(b"R", offset).unwrap();
+                // A rewrite accompanied by growth must not be mistaken for pure append.
+                OpenOptions::new()
+                    .append(true)
+                    .open(&path)
+                    .unwrap()
+                    .write_all(b"\n")
+                    .unwrap();
+                return true;
+            }
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        false
+    });
+    let result = f.store.execute(confirmation(&p));
+    running.store(false, Ordering::SeqCst);
+    assert!(worker.join().unwrap());
+    let receipt = result.unwrap();
+    assert_ne!(receipt.status, "verified");
+    assert!(!receipt.files_verified);
+    assert!(
+        receipt
+            .error
+            .as_deref()
+            .unwrap()
+            .contains("retainedFileChangedOrMissing"),
+        "{receipt:?}"
+    );
+    assert!(database(&f.store.root).unwrap().rows.contains_key(KEEP));
 }
