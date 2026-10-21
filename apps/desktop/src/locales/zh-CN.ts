@@ -1,4 +1,40 @@
 export const zhMessages = {
+  "Error codes": "错误码",
+  "Selected reports": "选中的报告",
+  "The local data source changed during inspection.":
+    "本地数据源在检查期间发生变化。",
+  "File removal or preservation could not be fully verified.":
+    "未能完整验证文件移除或保留结果。",
+  "An unselected file changed or is missing; preservation could not be verified.":
+    "未选中的文件有变化或缺失，未能确认其完整保留。",
+  "Conversation index removal or preservation could not be fully verified.":
+    "未能完整验证对话索引的移除或保留结果。",
+  Warnings: "提示与注意事项",
+  "{count} scanned files": "已扫描 {count} 个文件",
+  "Recorded cleanup scope": "记录的清理范围",
+  "Deletion did not start.": "删除尚未开始。",
+  "Loading saved execution receipt…": "正在读取已保存的执行回执…",
+  "The saved execution receipt could not be read. Only the operation log is shown.":
+    "无法读取已保存的执行回执，当前仅显示日志记录。",
+  "Retry reading receipt": "重新读取回执",
+  "Observed scope": "观测范围",
+  "Observed removed files": "观测到已移除的文件",
+  "Observed removed file lengths": "观测到的移除文件大小",
+  "Verification results": "验证结果",
+  "Native deletion notifications": "原生删除通知",
+  "File verification": "文件验证",
+  "Conversation index verification": "对话索引验证",
+  "Associated data verification": "关联数据验证",
+  Passed: "通过",
+  "Not verified": "未验证通过",
+  "Not recorded": "未记录",
+  "Native deletion reported {count} conversations.":
+    "原生删除通知记录了 {count} 条对话。",
+  "No entries recorded.": "没有记录条目。",
+  "Concurrent changes": "同时发生的其他变化",
+  "Recorded error": "记录的错误",
+  "Operation identifier": "操作标识",
+
   "Measurement details": "计量说明",
   "Conversation list": "对话列表",
   "Selected conversations": "所选对话操作",

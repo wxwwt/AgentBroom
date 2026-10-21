@@ -18,6 +18,7 @@ export interface NativePlan {
 export interface NativeReceipt extends CleanupResult {
   planId: string;
   selectedIds: string[];
+  expectedIds?: string[];
   testOnly: boolean;
   nativeDeletedIds: string[];
   concurrentChanges: string[];

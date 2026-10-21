@@ -1129,3 +1129,95 @@ td {
     gap: 8px;
   }
 }
+
+.operation-details {
+  width: min(760px, 92vw);
+}
+.operation-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  padding: 16px 0;
+  border-block: 1px solid var(--border);
+  margin-top: 20px;
+}
+.operation-metrics > div {
+  color: var(--muted);
+  font-size: 12px;
+}
+.operation-metrics strong {
+  display: block;
+  font-size: 20px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  margin-top: 6px;
+}
+.operation-scope-list {
+  list-style: none;
+  padding: 0;
+  max-height: 200px;
+  overflow: auto;
+}
+.operation-scope-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.operation-scope-list .file-path {
+  display: block;
+}
+.operation-file-details {
+  margin: 12px 0;
+  font-size: 13px;
+}
+.operation-file-details summary {
+  cursor: pointer;
+}
+.operation-file-list {
+  max-height: 200px;
+  overflow: auto;
+  padding-left: 20px;
+}
+.operation-file-list li {
+  margin-block: 6px;
+}
+.verification-list > div {
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding: 8px 0;
+}
+.verification-list dd {
+  margin: 0;
+  white-space: nowrap;
+}
+.verification-pass {
+  color: var(--green);
+}
+.verification-attention {
+  color: var(--warning);
+}
+.operation-errors {
+  background: var(--danger-soft);
+  color: var(--danger);
+  padding: 12px 14px;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+.operation-errors h3 {
+  margin-top: 0;
+}
+.operation-errors p:last-child {
+  margin-bottom: 0;
+}
+.operation-errors code {
+  display: block;
+  font-size: 12px;
+  margin-top: 6px;
+}
+@media (max-width: 600px) {
+  .operation-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

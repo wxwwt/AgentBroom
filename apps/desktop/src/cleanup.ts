@@ -189,6 +189,12 @@ export function previewCleanup(
   };
 }
 export const cleanupReasons = {
+  sourceChanged: "The local data source changed during inspection.",
+  filesUnverified: "File removal or preservation could not be fully verified.",
+  retainedFileChangedOrMissing:
+    "An unselected file changed or is missing; preservation could not be verified.",
+  stateUnverified:
+    "Conversation index removal or preservation could not be fully verified.",
   runtimeStorageMismatch:
     "The installed Codex runtime and storage have different structures. Open Codex to update its own data, then rescan.",
   nativeSchemaUnsupported:

@@ -19,6 +19,8 @@ const api = vi.hoisted(() => ({
   preview: vi.fn(),
   cancel: vi.fn(),
   execute: vi.fn(),
+  receipt: vi.fn(),
+  reportResult: vi.fn(),
 }));
 vi.mock("./bridge", () => ({
   loadInventory: api.load,
@@ -34,6 +36,8 @@ vi.mock("./nativeCleanup", () => ({
   cancelNative: api.cancel,
   executeNative: api.execute,
   readNativeHistory: vi.fn().mockResolvedValue([]),
+  readNativeReceipt: api.receipt,
+  readDiagnosticResult: api.reportResult,
 }));
 import App from "./App";
 const emptyReports = {
@@ -55,6 +59,8 @@ beforeEach(() => {
   api.diagnostics.mockResolvedValue(emptyReports);
   api.operations.mockResolvedValue([]);
   api.cancel.mockResolvedValue(undefined);
+  api.receipt.mockRejectedValue({ code: "receiptUnavailable" });
+  api.reportResult.mockRejectedValue({ code: "receiptUnavailable" });
 });
 afterEach(() => {
   cleanup();
@@ -185,9 +191,11 @@ describe("C layout", () => {
     ).toBeVisible();
     expect(screen.getByText("Keep 7 days")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "View details" }));
-    expect(
-      screen.getByRole("dialog", { name: "Operation details" }),
-    ).toHaveTextContent("Verified removed file lengths");
+    await waitFor(() =>
+      expect(
+        screen.getByRole("dialog", { name: "Conversation cleanup" }),
+      ).toHaveTextContent("Observed removed file lengths"),
+    );
   });
   it("keeps the browser read-only while allowing theme changes", async () => {
     api.mode.mockResolvedValue("readOnly");
@@ -287,7 +295,7 @@ it("shows actual scan time and distinguishes preview bytes from removed bytes", 
   fireEvent.click(screen.getByRole("button", { name: "View details" }));
   expect(screen.getByRole("dialog")).toHaveTextContent("Measured file lengths");
   expect(screen.getByRole("dialog")).not.toHaveTextContent(
-    "Verified removed file lengths",
+    "Observed removed file lengths",
   );
 });
 
@@ -386,4 +394,38 @@ it("keeps the Chinese measurement disclosure available without another scan", as
   expect(details).toHaveAttribute("open");
   expect(details).toHaveTextContent("不代表清理后可回收的磁盘空间");
   expect(api.load).toHaveBeenCalledOnce();
+});
+
+it("keeps scan counts inline and removes redundant scan and single-lock detail actions", async () => {
+  api.operations.mockResolvedValue([
+    {
+      id: "scan-synthetic",
+      at: 1792396800,
+      action: "scan",
+      status: "verified",
+      ids: [],
+      titles: [],
+      count: 1234,
+      bytes: 0,
+      error: null,
+    },
+    {
+      id: "lock-synthetic",
+      at: 1792396800,
+      action: "lock",
+      status: "verified",
+      ids: ["synthetic-0"],
+      titles: ["Synthetic lock"],
+      count: 1,
+      bytes: 0,
+      error: null,
+    },
+  ]);
+  await start();
+  fireEvent.click(screen.getByRole("button", { name: "Execution log" }));
+  await screen.findByText(/1234 scanned files/);
+  expect(
+    screen.queryByRole("button", { name: "View details" }),
+  ).not.toBeInTheDocument();
+  expect(api.receipt).not.toHaveBeenCalled();
 });

@@ -39,6 +39,11 @@ import {
 } from "./nativeCleanup";
 import NativeCleanupPanel from "./NativeCleanupPanel";
 import DiagnosticPanel from "./DiagnosticPanel";
+import OperationDetails, {
+  operationHasDetails,
+  operationActionLabels as actions,
+  operationStatusLabels as statuses,
+} from "./OperationDetails";
 type Page = "overview" | "conversations" | "activity";
 // Stable semantic colors keep the chart and legend consistent across source order.
 const categoryColor = (category: string) =>
@@ -52,23 +57,6 @@ const categories: Record<string, MessageKey> = {
   worktrees: "Worktrees",
   cache: "Tools & cache",
   other: "Other local files",
-};
-const actions: Record<string, MessageKey> = {
-  scan: "Storage scan",
-  preview: "Cleanup preview",
-  lock: "Conversation locked",
-  unlock: "Conversation unlocked",
-  cleanup: "Conversation cleanup",
-  crashCleanup: "Crash report cleanup",
-};
-const statuses: Record<string, MessageKey> = {
-  verified: "Completed",
-  ready: "Ready",
-  blocked: "Blocked",
-  started: "In progress",
-  unknown: "Needs verification",
-  partialFailure: "Cleanup partially failed",
-  verificationFailed: "Cleanup verification failed",
 };
 export default function App() {
   return (
@@ -958,7 +946,11 @@ function Workspace() {
                               byId.get(e.ids[0])?.title ||
                               e.ids[0] ||
                               t("Local Codex home")}{" "}
-                            {e.count > 1 ? ` · ${e.count}` : ""}
+                            {e.action === "scan"
+                              ? ` · ${t("{count} scanned files", { count: e.count })}`
+                              : e.count > 1
+                                ? ` · ${e.count}`
+                                : ""}
                           </td>
                           <td>
                             <span
@@ -968,12 +960,18 @@ function Workspace() {
                             </span>
                           </td>
                           <td>
-                            <button
-                              className="text-button"
-                              onClick={() => setEventDetail(e.id)}
-                            >
-                              {t("View details")}
-                            </button>
+                            {operationHasDetails(e) ? (
+                              <button
+                                className="text-button"
+                                onClick={() => setEventDetail(e.id)}
+                              >
+                                {t("View details")}
+                              </button>
+                            ) : (
+                              <span className="muted" aria-hidden="true">
+                                —
+                              </span>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -1149,45 +1147,12 @@ function Workspace() {
         </div>
       )}
       {event && (
-        <div className="modal-overlay">
-          <section
-            className="panel detail-panel"
-            role="dialog"
-            aria-modal="true"
-            aria-label={t("Operation details")}
-          >
-            <div className="dialog-heading">
-              <h2>{t(actions[event.action] ?? "Operation")}</h2>
-              <button
-                className="icon-button"
-                aria-label={t("Close details")}
-                onClick={() => setEventDetail(null)}
-              >
-                <X />
-              </button>
-            </div>
-            <p>
-              {date(event.at * 1000)} ·{" "}
-              {t(statuses[event.status] ?? "Needs verification")}
-            </p>
-            {event.ids.map((id, i) => (
-              <p className="file-path" key={id}>
-                {event.titles[i] ?? byId.get(id)?.title ?? id}
-              </p>
-            ))}
-            {!!event.bytes && (
-              <p>
-                {t(
-                  event.action === "preview"
-                    ? "Measured file lengths"
-                    : "Verified removed file lengths",
-                )}
-                : {bytes(event.bytes)}
-              </p>
-            )}
-            {event.error && <p role="alert">{systemText(event.error)}</p>}
-          </section>
-        </div>
+        <OperationDetails
+          key={event.id}
+          event={event}
+          records={byId}
+          close={() => setEventDetail(null)}
+        />
       )}
     </div>
   );
