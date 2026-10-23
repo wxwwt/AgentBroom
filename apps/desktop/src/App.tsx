@@ -37,6 +37,7 @@ import {
   type DiagnosticInventory,
   type OperationEvent,
 } from "./nativeCleanup";
+import WorktreesPage from "./WorktreesPage";
 import NativeCleanupPanel from "./NativeCleanupPanel";
 import DiagnosticPanel from "./DiagnosticPanel";
 import OperationDetails, {
@@ -44,7 +45,7 @@ import OperationDetails, {
   operationActionLabels as actions,
   operationStatusLabels as statuses,
 } from "./OperationDetails";
-type Page = "overview" | "conversations" | "activity";
+type Page = "overview" | "conversations" | "activity" | "worktrees";
 // Stable semantic colors keep the chart and legend consistent across source order.
 const categoryColor = (category: string) =>
   `var(--storage-${categories[category] ? category : "other"})`;
@@ -182,6 +183,13 @@ function Workspace() {
     () => new Map(records.map((r) => [r.id, r])),
     [inventory],
   );
+  const worktreeProjects = useMemo(
+    () =>
+      Array.from(new Set(records.map((r) => r.project)))
+        .filter((p) => p.startsWith("/"))
+        .slice(0, 512),
+    [inventory],
+  );
   const lockSet = useMemo(() => new Set(locked), [locked]);
   const isLocked = (id: string) => conversationLocked(id, byId, lockSet);
   const matching = useMemo(
@@ -282,7 +290,7 @@ function Workspace() {
   const event = eventDetail ? events.find((e) => e.id === eventDetail) : null;
   return (
     <div
-      className={`workspace ${page === "conversations" ? "list-workspace" : ""}`}
+      className={`workspace ${page === "conversations" || page === "worktrees" ? "list-workspace" : ""}`}
     >
       <header className="app-header">
         <div className="brand">
@@ -294,6 +302,7 @@ function Workspace() {
             [
               { id: "overview", label: "Overview" },
               { id: "conversations", label: "Conversations" },
+              { id: "worktrees", label: "Worktrees" },
               { id: "activity", label: "Execution log" },
             ] as const
           ).map((p) => (
@@ -313,6 +322,7 @@ function Workspace() {
           <button
             className="icon-button"
             aria-label={t("Rescan Codex")}
+            hidden={page === "worktrees"}
             disabled={loading || busy || !!cleanupIds || reportsOpen}
             onClick={() => void rescan()}
           >
@@ -321,27 +331,30 @@ function Workspace() {
         </div>
       </header>
       <main
-        className={`content ${page === "conversations" ? "conversation-content" : ""}`}
+        className={`content ${page === "conversations" || page === "worktrees" ? "conversation-content" : ""}`}
       >
         {persistenceUnavailable && (
           <p role="status">{t("Language preference could not be saved.")}</p>
         )}
-        <div className="mode-note">
-          {t(
-            mode === "native"
-              ? "Local data · manual cleanup"
-              : mode === "syntheticNativeTest"
-                ? "Generated native test store"
-                : "Browser inspection · read-only",
-          )}
-        </div>
-        {loading && (
+        {page !== "worktrees" && (
+          <div className="mode-note">
+            {t(
+              mode === "native"
+                ? "Local data · manual cleanup"
+                : mode === "syntheticNativeTest"
+                  ? "Generated native test store"
+                  : "Browser inspection · read-only",
+            )}
+          </div>
+        )}
+        {page === "worktrees" && <WorktreesPage projects={worktreeProjects} />}
+        {page !== "worktrees" && loading && (
           <div className="loading" role="status">
             <RefreshCw className="spinning" size={20} />
             {t("Inspecting local storage…")}
           </div>
         )}
-        {error && (
+        {page !== "worktrees" && error && (
           <div className="empty-state" role="alert">
             <AlertCircle />
             <h2>{t("Local inspection unavailable")}</h2>
@@ -351,7 +364,7 @@ function Workspace() {
             </button>
           </div>
         )}
-        {!loading && inventory && (
+        {page !== "worktrees" && !loading && inventory && (
           <>
             {operationError && (
               <p className="alert" role="alert">

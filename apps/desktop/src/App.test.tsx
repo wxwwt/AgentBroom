@@ -21,6 +21,7 @@ const api = vi.hoisted(() => ({
   execute: vi.fn(),
   receipt: vi.fn(),
   reportResult: vi.fn(),
+  worktrees: vi.fn(),
 }));
 vi.mock("./bridge", () => ({
   loadInventory: api.load,
@@ -39,6 +40,11 @@ vi.mock("./nativeCleanup", () => ({
   readNativeReceipt: api.receipt,
   readDiagnosticResult: api.reportResult,
 }));
+vi.mock("./worktrees", async (original) => ({
+  ...(await original<typeof import("./worktrees")>()),
+  inspectWorktrees: api.worktrees,
+  worktreeInspectionAvailable: () => true,
+}));
 import App from "./App";
 const emptyReports = {
   files: [],
@@ -50,6 +56,11 @@ const emptyReports = {
 beforeEach(() => {
   localStorage.setItem("agentbroom.language", "en");
   localStorage.setItem("agentbroom.theme", "light");
+  api.worktrees.mockResolvedValue({
+    scannedAt: 1700001000,
+    repositories: [],
+    warnings: [],
+  });
   api.load.mockResolvedValue(testInventory());
   api.mode.mockResolvedValue("native");
   api.locks.mockResolvedValue([]);
@@ -75,7 +86,7 @@ function list() {
   fireEvent.click(screen.getByRole("button", { name: "Conversations" }));
 }
 describe("C layout", () => {
-  it("includes crash reports once and exposes the three main pages", async () => {
+  it("includes crash reports once and exposes the four main pages", async () => {
     const base = testInventory();
     api.load.mockResolvedValue(base);
     api.diagnostics.mockResolvedValue({
@@ -428,4 +439,17 @@ it("keeps scan counts inline and removes redundant scan and single-lock detail a
     screen.queryByRole("button", { name: "View details" }),
   ).not.toBeInTheDocument();
   expect(api.receipt).not.toHaveBeenCalled();
+});
+
+it("opens the independent worktree page when Codex inventory is unavailable", async () => {
+  api.load.mockRejectedValue(new Error("source unavailable"));
+  render(<App />);
+  await screen.findByRole("alert");
+  fireEvent.click(screen.getByRole("button", { name: "Worktrees" }));
+  await screen.findByText(
+    "No worktrees found. Enter a repository path and scan again.",
+  );
+  expect(screen.queryByText("source unavailable")).not.toBeInTheDocument();
+  expect(api.worktrees).toHaveBeenCalledOnce();
+  expect(api.execute).not.toHaveBeenCalled();
 });

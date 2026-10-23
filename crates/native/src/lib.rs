@@ -8,6 +8,7 @@ mod related;
 pub mod rpc;
 mod source;
 mod types;
+pub mod worktrees;
 use agentbroom_core::{InspectError, Inventory, cleanup};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};

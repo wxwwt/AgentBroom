@@ -1,4 +1,102 @@
 export const zhMessages = {
+  "Git index flags can hide local changes; inspect this directory manually.":
+    "Git 索引标记可能隐藏本地修改，需要人工检查此目录。",
+  "Read-only": "只读",
+  Name: "名称",
+  Path: "路径",
+  HEAD: "HEAD",
+  "Worktree inspection · read-only": "Worktree 盘点 · 只读",
+  "Inspect merged work and local changes before deciding what to keep.":
+    "查看合并状态与本地修改，判断哪些工作目录需要保留。",
+  "Repository path": "仓库路径",
+  "Target branch": "目标分支",
+  "Auto-discover Codex worktrees and conversation projects":
+    "留空自动发现 Codex worktree 和对话关联项目",
+  "Auto: origin/HEAD, main, master": "自动：origin/HEAD、main、master",
+  "Inspecting worktrees…": "正在盘点 Worktree…",
+  "Scan worktrees": "扫描 Worktree",
+  "Uses local Git references without fetching. No worktrees or branches are modified.":
+    "仅检查本地 Git 引用，不联网更新，不修改工作目录或分支。",
+  Repositories: "仓库",
+  "Consider cleanup": "可考虑清理",
+  "Keep worktree": "建议保留",
+  "Review required": "需要核查",
+  "Measured worktree files": "工作目录已测大小",
+  "Excludes shared Git storage. File lengths are not reclaimable disk space.":
+    "不含共享 Git 对象库。文件大小不代表可回收磁盘空间。",
+  "Scanned {time}": "扫描于 {time}",
+  "Search worktrees": "搜索工作目录或分支",
+  "Filter worktrees": "筛选 Worktree",
+  "Sort worktrees": "排序 Worktree",
+  "All worktrees": "全部 Worktree",
+  "HEAD contained": "当前提交已包含",
+  "HEAD not contained": "当前提交未包含",
+  "Containment unknown": "包含关系待确认",
+  "Recently modified first": "最近修改优先",
+  "Oldest modification first": "最早修改优先",
+  "Latest commit first": "最近提交优先",
+  "Repository / worktree": "仓库 / 工作目录",
+  Containment: "提交包含关系",
+  "Local changes": "本地修改",
+  "Recent source modification": "最近源文件修改",
+  Assessment: "建议",
+  "Detached HEAD": "游离 HEAD",
+  "Main checkout": "主工作目录",
+  "{count} commits outside target": "目标分支未包含 {count} 个提交",
+  "Modified {count}": "已修改 {count}",
+  "Untracked {count}": "未跟踪 {count}",
+  "Ignored entries {count}": "忽略条目 {count}",
+  "Commit: {time}": "最后提交：{time}",
+  Incomplete: "未完整扫描",
+  "Reasons and paths": "原因与路径",
+  "HEAD is contained and no local changes were observed. Confirm the directory is no longer needed.":
+    "当前提交已被目标分支包含，未观察到本地修改。仍需确认不再使用此目录。",
+  "Target commit": "目标提交",
+  "Lock reason": "锁定原因",
+  "Shallow history can make containment inconclusive.":
+    "浅克隆的历史可能不足以确认提交包含关系。",
+  "No worktrees match these filters.": "没有符合筛选条件的 Worktree。",
+  "No worktrees found. Enter a repository path and scan again.":
+    "未发现 Worktree。请输入仓库路径后重新扫描。",
+  "{count} worktrees shown": "共 {count} 个 Worktree",
+  "Source modification is an observed file timestamp, not last use. Dependencies and build output are excluded; deletions may not be reflected. Containment alone does not prove a squash or cherry-pick merge.":
+    "源文件修改时间是观测值，不代表最后使用时间；排除依赖和构建产物，可能无法反映文件删除。提交包含关系不能单独证明 Squash 或 Cherry-pick 的合并结果。",
+  "Git inspection failed or Git is unavailable.":
+    "Git 检查失败或未安装可用的 Git。",
+  "Scan limit reached. Some results are incomplete.":
+    "已达到扫描上限，部分结果不完整。",
+  "Some files or Git state could not be inspected.":
+    "部分文件或 Git 状态未能完整检查。",
+  "The repository path is unavailable or is not a Git repository.":
+    "仓库路径不可访问或不是 Git 仓库。",
+  "Git returned a path encoding that cannot be displayed safely.":
+    "Git 返回了无法安全显示的路径编码。",
+  "Choose an existing target branch to check containment.":
+    "请选择已有的目标分支以检查提交包含关系。",
+  "Git references changed during the scan. Scan again.":
+    "扫描期间 Git 引用发生变化，请重新扫描。",
+  "Main checkout: keep this directory.": "这是主工作目录，建议保留。",
+  "This worktree is locked in Git.": "此工作目录已被 Git 锁定。",
+  "The registered directory is missing or unavailable.":
+    "已注册的工作目录不存在或无法访问。",
+  "Bare repository metadata is retained.": "裸仓库的 Git 元数据需要保留。",
+  "Containment is unverified; squash or cherry-pick may require manual review.":
+    "未确认提交包含关系；Squash 或 Cherry-pick 需要人工核查。",
+  "The target branch does not contain the current HEAD. Review unmerged commits.":
+    "目标分支未包含当前 HEAD，请核查尚未合并的提交。",
+  "Working directory status is unavailable.": "无法读取工作目录状态。",
+  "There are uncommitted changes.": "存在尚未提交的修改。",
+  "There are untracked files.": "存在尚未跟踪的文件。",
+  "Ignored entries may contain local docs, secrets or build output. Check before removal.":
+    "忽略条目可能含本地文档、密钥配置或构建产物，移除前需要检查。",
+  "A nested repository was found; inspect it separately.":
+    "发现嵌套仓库，需要单独检查。",
+  "A worktree scan is already running. Try again shortly.":
+    "已有 Worktree 扫描正在进行，请稍后重试。",
+  "The inspection request exceeds supported limits.": "盘点请求超出支持范围。",
+  "Worktree inspection is available in the regular desktop app.":
+    "Worktree 盘点仅在正式桌面应用中提供。",
+  "Worktree inspection failed. Scan again.": "Worktree 盘点失败，请重新扫描。",
   "Error codes": "错误码",
   "Selected reports": "选中的报告",
   "The local data source changed during inspection.":

@@ -1,11 +1,12 @@
 {
   "identifier": "main",
-  "description": "Local inventory and explicitly confirmed native conversation cleanup; no renderer-supplied source paths.",
+  "description": "Local inventory and confirmed conversation cleanup. Worktree inspection accepts read-only repository paths; cleanup sources remain internally resolved.",
   "windows": [
     "main"
   ],
   "permissions": [
     "core:default",
+    "allow-inspect-worktrees",
     "allow-scan-codex",
     "core:window:allow-set-title",
     "allow-cleanup-execute",

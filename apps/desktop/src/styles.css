@@ -1221,3 +1221,189 @@ td {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+/* Worktree inspection shares the desktop table layout, with no mutation actions. */
+.worktrees-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 6px;
+}
+.worktrees-page > .tiny-note {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.35;
+}
+.worktrees-page .page-heading h1 {
+  font-size: 26px;
+}
+.worktrees-page .page-heading p {
+  margin-top: 4px;
+  font-size: 12px;
+}
+.worktrees-page .page-heading {
+  margin-bottom: 2px;
+}
+.read-only-pill {
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 12px;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.worktree-scan-form {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.worktree-scan-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  flex: 2;
+  min-width: 220px;
+}
+.worktree-scan-form label:nth-child(2) {
+  flex: 1;
+  min-width: 180px;
+}
+.worktree-scan-form input,
+.worktree-controls input,
+.worktree-controls select {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  min-height: 36px;
+  padding: 7px 10px;
+  width: 100%;
+}
+.worktree-scan-form button {
+  min-height: 36px;
+  margin: 0;
+}
+.worktree-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 16px;
+  gap: 18px;
+}
+.worktree-stats div {
+  display: grid;
+  gap: 3px;
+}
+.worktree-stats strong {
+  font-size: 20px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.worktree-stats span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.worktree-controls {
+  display: flex;
+  gap: 10px;
+}
+.worktree-controls > select {
+  width: auto;
+  max-width: 230px;
+}
+.worktree-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+.worktree-table {
+  flex: 1;
+  min-height: 180px;
+  overflow: auto;
+}
+.worktree-table table {
+  min-width: 1080px;
+  width: 100%;
+}
+.worktree-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface);
+}
+.worktree-table td {
+  vertical-align: top;
+  padding: 14px 12px;
+}
+.worktree-name {
+  display: block;
+  max-width: 230px;
+  overflow-wrap: anywhere;
+}
+.worktree-secondary {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  margin-top: 5px;
+  max-width: 230px;
+  overflow-wrap: anywhere;
+}
+.worktree-size {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.worktree-merge,
+.worktree-assessment {
+  font-size: 12px;
+}
+.worktree-merge.contained,
+.worktree-assessment.candidate {
+  color: var(--success, #36836a);
+}
+.worktree-details {
+  max-width: 260px;
+  margin-top: 7px;
+  font-size: 11px;
+}
+.worktree-details summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+.worktree-details ul {
+  padding-left: 15px;
+}
+.worktree-details li {
+  margin: 7px 0;
+}
+.worktree-details dt {
+  color: var(--muted);
+  margin-top: 8px;
+}
+.worktree-details dd {
+  margin-left: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  .worktree-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .worktree-controls {
+    flex-wrap: wrap;
+  }
+  .worktree-search {
+    flex-basis: 100%;
+  }
+  .worktree-table {
+    max-height: 500px;
+  }
+}
+
+.header-actions button[hidden] {
+  display: none;
+}

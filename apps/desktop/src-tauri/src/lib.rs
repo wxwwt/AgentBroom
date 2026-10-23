@@ -18,6 +18,7 @@ mod native_session {
     };
     #[derive(Clone, Default)]
     pub struct Session {
+        worktree_scan: Arc<Mutex<()>>,
         sandbox: Arc<Mutex<Option<Store>>>,
         reports: Arc<Mutex<Option<agentbroom_native::diagnostics::Diagnostics>>>,
         // 0=running, 1=waiting for the current worker and cleanup, 2=ready to exit.
@@ -101,6 +102,32 @@ mod native_session {
         })
         .await
         .map_err(|_| error("cleanupWorkerFailed"))?
+    }
+    #[tauri::command]
+    pub async fn inspect_worktrees(
+        state: tauri::State<'_, Session>,
+        request: agentbroom_native::worktrees::Request,
+    ) -> Result<agentbroom_native::worktrees::Inventory, InspectError> {
+        let state = state.inner().clone();
+        tauri::async_runtime::spawn_blocking(move || {
+            state.running()?;
+            let _scan = state
+                .worktree_scan
+                .try_lock()
+                .map_err(|_| error("worktreeScanBusy"))?;
+            state.running()?;
+            #[cfg(feature = "native-cleanup-test")]
+            {
+                let _ = request;
+                Err(error("worktreeInspectionUnavailable"))
+            }
+            #[cfg(not(feature = "native-cleanup-test"))]
+            {
+                agentbroom_native::worktrees::inspect(request)
+            }
+        })
+        .await
+        .map_err(|_| error("worktreeGitUnavailable"))?
     }
     #[tauri::command]
     pub async fn scan_codex(state: tauri::State<'_, Session>) -> Result<Inventory, InspectError> {
@@ -357,8 +384,8 @@ mod native_session {
 use native_session::{
     cleanup_cancel, cleanup_execute, cleanup_history, cleanup_preview, cleanup_result,
     conversation_locks, diagnostic_cancel, diagnostic_execute, diagnostic_inventory,
-    diagnostic_preview, diagnostic_result, operation_history, scan_codex, set_conversation_lock,
-    set_conversation_locks,
+    diagnostic_preview, diagnostic_result, inspect_worktrees, operation_history, scan_codex,
+    set_conversation_lock, set_conversation_locks,
 };
 #[tauri::command]
 fn cleanup_mode() -> &'static str {
@@ -376,6 +403,7 @@ pub fn run() {
     let builder = builder.manage(native_session::Session::default());
     builder
         .invoke_handler(tauri::generate_handler![
+            inspect_worktrees,
             scan_codex,
             set_conversation_locks,
             operation_history,
@@ -421,6 +449,7 @@ mod ipc_contract_tests {
         let app = tauri::test::mock_builder()
             .manage(native_session::Session::stopped_for_test())
             .invoke_handler(tauri::generate_handler![
+                inspect_worktrees,
                 cleanup_preview,
                 cleanup_execute,
                 cleanup_result,
@@ -442,6 +471,10 @@ mod ipc_contract_tests {
             .build()
             .unwrap();
         for (command, body) in [
+            (
+                "inspect_worktrees",
+                serde_json::json!({"request":{"repository":null,"target":null,"projects":[]}}),
+            ),
             (
                 "cleanup_preview",
                 serde_json::json!({"selectedIds":["00000000-0000-4000-8000-000000000001"],"kept":[]}),
